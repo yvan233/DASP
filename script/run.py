@@ -3,7 +3,7 @@ import os
 import json
 import socket
 import sys
-
+# yvan
 remoteID = sys.argv[1]
 # remoteIP = sys.argv[1]
 path = os.getcwd() + "\\IoT\\binding.csv"
