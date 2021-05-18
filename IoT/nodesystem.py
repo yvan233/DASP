@@ -333,7 +333,14 @@ class Sensor(object):
                             tempiplist.append(jdata["host"])
                             tempiplist.append(jdata["port"])
                             tempiplist.append(jdata["id"])
-                            self.TASKIPLIST[0].append(tempiplist)
+                            for m in range(len(self.TASKIPLIST)):
+                                self.TASKIPLIST[m].append(tempiplist)
+                                self.TASKadjID[m].append(jdata["id"])
+                                self.TASKadjDirection[m].append(jdata["applydirection"])
+                                self.adjSyncStatus[m].append([])   #同步标志位  
+                                self.adjSyncStatus2[m].append([])    
+                                self.adjData[m].append([])
+                                self.adjFeedback[m].append([])
                         else:
                             conn.send(str.encode(cont + "节点"+str(self.sensorID)+"方向"+str(jdata["applydirection"])+"已被占用，请选择其他方向！"))
 

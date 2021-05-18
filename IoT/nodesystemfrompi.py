@@ -1097,8 +1097,6 @@ class Sensor(object):
         for i in range(len(self.adjData[tasknum])):
             self.adjData[tasknum][i] = []
             self.adjFeedback[tasknum][i] = []
-            # self.adjSyncStatus[tasknum][i] = []
-            # self.adjSyncStatus2[tasknum][i] = []
 
 
     def transmitData(self,direclist,datalist,tasknum = 0):
