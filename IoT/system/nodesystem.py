@@ -10,7 +10,6 @@ import sys
 import threading
 import time
 import traceback
-# import pysnooper
 
 class Sensor(object):
     taskFuncList = []
@@ -548,7 +547,6 @@ class Sensor(object):
                     del self.sonData[m][index]
                     del self.sonFlag[m][index]
 
-    # @pysnooper.snoop("sever_connect.log")
     def connect(self,host1,port1,host2,port2,adjID,tasknum):
         data = {
             "key": "connect",
@@ -606,8 +604,7 @@ class Sensor(object):
             # print(traceback.format_exc())
             print ("与邻居节点"+adjID+"连接失败")
             return adjID
-
-    # @pysnooper.snoop("sever_send.log")  
+  
     def send(self,id,data):
         for ele in self.TASKIPLIST[0]:
             if ele!=[]:
@@ -737,7 +734,6 @@ class Sensor(object):
         except Exception as e:
             print (info)
 
-    # @pysnooper.snoop("sever_task.log")
     def taskFunction(self,tasknum = 0):
         try:
             num = tasknum
