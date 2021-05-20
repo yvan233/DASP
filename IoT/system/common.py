@@ -1,10 +1,13 @@
 import socket
-class DspFuncMixin():
+import ctypes
+import inspect
+class DaspFuncMixin():
     '''
     Dsp基础方法混合
     '''
     def __init__(self):
         pass
+
     def sendall_length(self, s, head, data):
         '''
         为发送数据添加length报头
@@ -29,3 +32,40 @@ class DspFuncMixin():
             else:
                 break
         return message
+
+    def _async_raise(self, tid, exctype):
+        '''
+        抛出异常
+        '''
+        tid = ctypes.c_long(tid)
+        if not inspect.isclass(exctype):
+            exctype = type(exctype)
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+        if res == 0:
+            raise ValueError("invalid thread id")
+        elif res != 1:
+            # """if it returns a number greater than one, you're in trouble,
+            # and you should call it again with exc=NULL to revert the effect"""
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+
+    def stop_thread(self, thread):
+        '''
+        强制停止某个线程
+        '''
+        self._async_raise(thread.ident, SystemExit)
+
+    def samlpe(self):
+        '''基本描述
+
+        详细描述
+
+        Args:
+            path (str): The path of the file to wrap
+            field_storage (FileStorage): The :class:`FileStorage` instance to wrap
+            temporary (bool): Whether or not to delete the file when the File instance is destructed
+
+        Returns:
+            BufferedFileStorage: A buffered writable file descriptor
+        '''
+        pass

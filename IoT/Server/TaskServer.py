@@ -4,18 +4,28 @@ import sys
 import time
 import threading
 
-sys.path.append(".")  # 把上一级目录加入搜索路径
-from IoT.system.common import DspFuncMixin
-class TaskServer(DspFuncMixin):
-    """
-    外部交互服务器，用于节点和外部交互
+sys.path.insert(1,".")  # 把上一级目录加入搜索路径
+from IoT.system.common import DaspFuncMixin
+
+class TaskServer(DaspFuncMixin):
+    """外部交互服务器
+    
+    用于节点和外部交互
+    
+    属性:
+        host: 绑定IP
+        port: 绑定port
+        GUIinfo: GUI的ip和端口
     """
     host = "locolhost"
-    port = 0
+    port = 10000
+    GUIinfo = ["locolhost",50000] 
+
     def __init__(self,host,port):
         self.host = host
         self.port = port
 
+     # 123
     def run(self):
         cont = """HTTP/1.1 200 OK\r\n"""
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,8 +38,7 @@ class TaskServer(DspFuncMixin):
             request = self.recv_length(conn)
             method = request.split(' ')[0]
             if method == "POST":
-                form = request.split('\r\n')
-                data = form[-1]
+                data = request.split('\r\n')[-1]
                 try:
                     jdata = json.loads(data)
                 except (ValueError, KeyError, TypeError):

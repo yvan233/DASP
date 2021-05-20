@@ -13,7 +13,8 @@ if __name__ == '__main__':
     datalist = []
     adjDirection = []
     localIP = socket.gethostbyname(socket.gethostname())
-    path = os.getcwd() + "\\IoT\\topology.txt"
+    path = os.getcwd() + "\\IoT\\system\\topology.txt"
+    path = path.replace('\\', '/')  
     text = codecs.open(path, 'r', 'utf-8').read()
     js = json.loads(text)
     for ele in js:
