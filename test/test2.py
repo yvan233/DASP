@@ -1,3 +1,3 @@
-from IoT.server.TaskServer import TaskServer
+from IoT.server import TaskServer
 
 taskserver = TaskServer()

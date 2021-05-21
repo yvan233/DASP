@@ -1,13 +1,275 @@
-import json
 import socket
+import ctypes
+import inspect
+import json
 import sys
 import time
 import threading
 
-sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-from IoT.system.common import DaspFuncMixin
+class DaspFuncMixin():
+    '''
+    Dsp基础方法混合
+    '''
+    def __init__(self):
+        pass
 
-class CommServer(DaspFuncMixin):
+    def sendall_length(self, s, head, data):
+        '''
+        为发送数据添加length报头
+        '''
+        length = "content-length:"+str(len(data)) + "\r\n\r\n"
+        message = head + length + data
+        s.sendall(str.encode(message))
+
+    def recv_length(self, conn):
+        '''
+        循环接收数据，直到收完报头中length长度的数据
+        '''
+        request = conn.recv(1024)
+        message = bytes.decode(request)
+        message_split = message.split('\r\n')
+        content_length = message_split[1][15:]
+        message_length =  len(message_split[0]) + len(message_split[1]) + 2*(len(message_split)-1) + int(content_length)
+        while True:
+            if len(message) < message_length:
+                request = conn.recv(1024)
+                message += bytes.decode(request)
+            else:
+                break
+        return message
+
+    def _async_raise(self, tid, exctype):
+        '''
+        抛出异常
+        '''
+        tid = ctypes.c_long(tid)
+        if not inspect.isclass(exctype):
+            exctype = type(exctype)
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+        if res == 0:
+            raise ValueError("invalid thread id")
+        elif res != 1:
+            # """if it returns a number greater than one, you're in trouble,
+            # and you should call it again with exc=NULL to revert the effect"""
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+
+    def stop_thread(self, thread):
+        '''
+        强制停止某个线程
+        '''
+        self._async_raise(thread.ident, SystemExit)
+
+class BaseServer(DaspFuncMixin):
+    '''基础服务器
+
+    Dsp基础服务器
+
+    '''
+    def __init__(self):
+        pass
+
+    def samlpe(self):
+        '''基本描述
+
+        详细描述
+
+        Args:
+            path (str): The path of the file to wrap
+            field_storage (FileStorage): The :class:`FileStorage` instance to wrap
+            temporary (bool): Whether or not to delete the file when the File instance is destructed
+
+        Returns:
+            BufferedFileStorage: A buffered writable file descriptor
+        '''
+        pass
+
+
+class TaskServer(BaseServer):
+    """外部交互服务器
+    
+    用于节点和外部交互
+    
+    属性:
+        host: 绑定IP
+        port: 绑定port
+        GUIinfo: GUI的ip和端口
+    """
+    host = "127.0.0.1"
+    port = 10000
+    GUIinfo = ["127.0.0.1",50000] 
+
+    def __init__(self,host,port):
+        self.host = host
+        self.port = port
+
+     # 123
+    def run(self):
+        cont = """HTTP/1.1 200 OK\r\n"""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((self.host, self.port))
+        s.listen(100)
+        print ("TaskServer: " + self.host + ":" + str(self.port))
+
+        while 1:
+            conn, addr = s.accept()
+            request = self.recv_length(conn)
+            method = request.split(' ')[0]
+            if method == "POST":
+                data = request.split('\r\n')[-1]
+                try:
+                    jdata = json.loads(data)
+                except (ValueError, KeyError, TypeError):
+                    conn.send(str.encode(cont + "请输入JSON格式的数据！"))
+                else:
+                    if jdata["key"] == "task":
+                        try:
+                            self.GUIinfo = jdata["GUIinfo"]
+                            self.sendUDP("接收任务请求")
+                        except KeyError:
+                            print ("非来自GUI的任务请求")
+                        self.flag[0] = 1
+                        sum = 0
+                        deleteID = []
+                        for ele in self.TASKIPLIST[0]:
+                            if ele != []:
+                                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], 0)
+                                if returnID:
+                                    deleteID.append(returnID)
+                                sum += 1
+                        for k in range(len(deleteID)):
+                            self.deleteadjID(deleteID[k])
+                        if(sum == 0): self.treeFlag[0] = 1
+                        while (self.treeFlag[0] == 0): {time.sleep(0.01)}
+                        self.sendUDP("通信树建立完成")
+                        sdata = {
+                            "key": "task",
+                            "GUIinfo": self.GUIinfo
+                        }
+                        sjdata = json.dumps(sdata)
+                        for ele in reversed(self.TASKIPLIST[0]):
+                            if ele != []:
+                                if ele[4] in self.sonID[0]:
+                                    self.send(ele[4], data=sjdata)
+
+                        self.taskBeginFlag[0] = 1
+                        self.sendUDPflag(2,0)
+
+                        waitend = threading.Thread(target=self.waitforend,args=())
+                        waitend.start()
+                        self.waitflag = 1
+
+                    elif jdata["key"] == "newtask":
+                        num = int(jdata["tasknum"])
+                        try:
+                            self.GUIinfo = jdata["GUIinfo"]
+                            self.sendUDP("接收任务请求",num)
+                        except KeyError:
+                            print ("非来自GUI的任务请求")
+
+                        self.loadNewTask(num)
+                        self.createNewTask(num)
+                        self.sendUDPflag(1,num)
+                        self.reset(num)
+
+                        self.flag[num] = 1
+                        sum = 0
+                        deleteID = []
+                        for ele in self.TASKIPLIST[num]:
+                            if ele != []:
+                                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], num)
+                                if returnID:
+                                    deleteID.append(returnID)
+                                sum += 1
+                        for k in range(len(deleteID)):
+                            self.deleteadjID(deleteID[k])
+
+                        if(sum == 0): self.treeFlag[num] = 1
+                        while (self.treeFlag[num] == 0): {time.sleep(0.01)}
+                        self.sendUDP("通信树建立完成")
+                        for ele in reversed(self.TASKIPLIST[num]):
+                            if ele != []:
+                                if ele[4] in self.sonID[num]:
+                                    sdata = {
+                                        "key": "newtask",
+                                        "GUIinfo": self.GUIinfo,
+                                        "tasknum": jdata["tasknum"]
+                                    }
+                                    sjdata = json.dumps(sdata)
+                                    self.send(ele[4], data=sjdata)
+
+                        delay = jdata["delay"]
+                        if delay > 0:
+                            self.sendUDP("任务"+str(num)+"将于"+str(jdata["delay"])+"秒后开始",num)
+                        self.taskthreads[num].start()
+                        starttaskthread = threading.Thread(target=self.starttask,args=(num, delay ,))
+                        starttaskthread.start()
+
+                        if self.waitflag == 0:
+                            waitend = threading.Thread(target=self.waitforend,args=())
+                            waitend.start()
+                            self.waitflag = 1
+
+                    elif jdata["key"] == "shutdowntask":
+                        num = int(jdata["tasknum"])
+                        for ele in reversed(self.TASKIPLIST[num]):
+                            if ele != []:
+                                if ele[4] in self.sonID[num]:
+                                    sdata = {
+                                        "key": "shutdowntask",
+                                        "tasknum": jdata["tasknum"]
+                                    }
+                                    sjdata = json.dumps(sdata)
+                                    self.send(ele[4], data=sjdata)
+                        if self.sensorID in self.TASKID[num]:
+                            self.stop_thread(self.taskthreads[num])
+                        self.sendUDPflag(0,num)
+                        self.reset(num)
+
+                    elif jdata["key"] == "restart":
+                        try:
+                            self.GUIinfo = jdata["GUIinfo"]
+                            self.sendUDP("接收任务请求")
+                        except KeyError:
+                            print ("非来自GUI的任务请求")
+                        self.flag[0] = 1
+                        deleteID = []
+                        for ele in self.TASKIPLIST[0]:
+                            if ele != []:
+                                index = self.adjID.index(ele[4])
+                                returnID = self.reconnect(ele[0], ele[1], ele[2], ele[3], ele[4], self.AdjOtherSideDirection[index])
+                                if returnID:
+                                    deleteID.append(returnID)
+                        for k in range(len(deleteID)):
+                            self.deleteadjID(deleteID[k])                        
+                        self.taskBeginFlag[0] = 1
+                        self.sendUDPflag(2,0)
+
+                        waitend = threading.Thread(target=self.waitforend,args=())
+                        waitend.start()
+                        self.waitflag = 1
+
+                    else:
+                        conn.send(str.encode(cont + "您输入的任务信息有误！"))
+            else:
+                conn.send(str.encode(cont + "暂未提供GET接口返回数据"))
+            conn.close()
+
+    def task():
+        pass
+
+    def newtask(): 
+        pass
+
+    def shutdowntask():
+        pass
+
+    def restart():
+        pass
+
+
+
+class CommServer(BaseServer):
     """
     通信服务器，用于节点和其他节点通信
     """
