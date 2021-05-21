@@ -4,10 +4,11 @@ import sys
 import time
 import threading
 
-sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-from IoT.system.common import DaspFuncMixin
+# 把上一级目录加入搜索路径
+sys.path.insert(1,".")
 
-class TaskServer(DaspFuncMixin):
+from IoT.server.BaseServer import BaseServer
+class TaskServer(BaseServer):
     """外部交互服务器
     
     用于节点和外部交互
@@ -17,9 +18,9 @@ class TaskServer(DaspFuncMixin):
         port: 绑定port
         GUIinfo: GUI的ip和端口
     """
-    host = "locolhost"
+    host = "127.0.0.1"
     port = 10000
-    GUIinfo = ["locolhost",50000] 
+    GUIinfo = ["127.0.0.1",50000] 
 
     def __init__(self,host,port):
         self.host = host
@@ -176,3 +177,15 @@ class TaskServer(DaspFuncMixin):
             else:
                 conn.send(str.encode(cont + "暂未提供GET接口返回数据"))
             conn.close()
+
+    def task():
+        pass
+
+    def newtask(): 
+        pass
+
+    def shutdowntask():
+        pass
+
+    def restart():
+        pass

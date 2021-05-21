@@ -1,15 +1,16 @@
 import threading
 class FbPageRollback:
     def __init__(self):
-    	pass
+        self.i = 0
     def run(self):
-    	for i in range(10):
-    		print(i)
+        for j in range(10):
+            self.i = self.i + 1
+            print (self.i)
 
 if __name__ == '__main__':
-    rollback_obj = FbPageRollback()
     threads = []
     for i in range(4):
+        rollback_obj = FbPageRollback()
         t = threading.Thread(target=rollback_obj.run,args=())
         threads.append(t)
     for i in range(4):
