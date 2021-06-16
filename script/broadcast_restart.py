@@ -3,7 +3,7 @@ import os
 import csv
 
     
-localpath = os.getcwd() + "\\IoT\\binding.csv"
+localpath = os.getcwd() + "\\DASP\\binding.csv"
 with open(localpath,'r')as f:
     data = csv.reader(f)
     idiplist = []

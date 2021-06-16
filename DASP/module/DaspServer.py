@@ -60,6 +60,7 @@ class DaspFuncMixin():
         '''
         self._async_raise(thread.ident, SystemExit)
 
+
 class BaseServer(DaspFuncMixin):
     '''基础服务器
 
@@ -266,7 +267,6 @@ class TaskServer(BaseServer):
 
     def restart():
         pass
-
 
 
 class CommServer(BaseServer):

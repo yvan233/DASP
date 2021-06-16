@@ -10,8 +10,9 @@ import time
 
 if __name__ == '__main__':
     time.sleep(2)
-    # path = os.getcwd() + "\\IoT\binding.csv"
-    path = "/home/pi/zhongdy/IoT/binding.csv"
+    # path = os.getcwd() + "\\DASP\binding.csv"
+    else if
+    path = "/home/pi/zhongdy/DASP/binding.csv"
     with open(path,'r')as f:
         data = csv.reader(f)
         idiplist = []
@@ -37,8 +38,8 @@ if __name__ == '__main__':
         adjID = []
         datalist = []
         adjDirection = []
-        # path = os.getcwd() + "\\IoT\\topology.txt"
-        path = "/home/pi/zhongdy/IoT/topology.txt"
+        # path = os.getcwd() + "\\DASP\\topology.txt"
+        path = "/home/pi/zhongdy/DASP/topology.txt"
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
         for ele in js:
@@ -88,3 +89,6 @@ if __name__ == '__main__':
         sensor.run()
     else:
         print("该节点IP未被录入！")
+
+
+

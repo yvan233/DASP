@@ -2,7 +2,7 @@ import paramiko
 import os
 import csv
 
-localpath = os.getcwd() + "\\DASP\\binding.csv"
+localpath = os.getcwd() + "\\IoT\\binding.csv"
 with open(localpath,'r')as f:
     data = csv.reader(f)
     idiplist = []
@@ -21,7 +21,7 @@ for ele in idiplist[1:]:
             ssh._transport = t
             # 打开一个Channel并执行命令
             # stdin, stdout, stderr = ssh.exec_command('ls') 
-            stdin, stdout, stderr = ssh.exec_command('mysql -u root -pcfins -D data </home/pi/zhongdy/DASP/device.sql',timeout=2)  # stdout 为正确输出，stderr为错误输出，同时是有1个变量有值
+            stdin, stdout, stderr = ssh.exec_command('mysql -u root -pcfins -D data </home/pi/zhongdy/IoT/device.sql',timeout=2)  # stdout 为正确输出，stderr为错误输出，同时是有1个变量有值
             # 打印执行结果
             print(stdout.read().decode('utf-8'))
             # 关闭SSHClient

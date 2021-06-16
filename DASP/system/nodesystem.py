@@ -121,7 +121,7 @@ class Sensor(object):
 
 
     def createServer(self,host, port):
-        cont = """HTTP/1.1 200 OK\r\n\r\n"""
+        cont = """HTTP/1.1 200 OK\r\n"""
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((host, port))
         s.listen(100)
@@ -129,13 +129,7 @@ class Sensor(object):
 
         while 1:
             conn, addr = s.accept()
-            request = conn.recv(10000000)
-            try:
-                request = bytes.decode(request)
-            except Exception:
-                print('错误通信数据',request)
-                self.sendUDP("通信数据传输错误")
-
+            request = self.recv_length(conn)
             method = request.split(' ')[0]
             if method == 'POST':
                 form = request.split('\r\n')
@@ -143,7 +137,7 @@ class Sensor(object):
                 try:
                     jdata = json.loads(data)
                 except Exception:
-                    self.sendUDP("通信JSON数据格式错误\n"+str(data))
+                    self.sendUDP("通信JSON数据格式错误")
                 else:
                 #Comunication Topology Construction
                     if jdata["key"] == "connect":
@@ -172,8 +166,7 @@ class Sensor(object):
                                 "tasknum": num
                             }
                             ndata = json.dumps(data)
-                            content = cont + ndata
-                            conn.sendall(str.encode(content))
+                            self.sendall_length(conn, cont, ndata)
                             
                             deleteID = []
                             for ele in self.TASKIPLIST[num]:
@@ -206,8 +199,7 @@ class Sensor(object):
                                 "tasknum": num
                             }
                             mdata = json.dumps(data)
-                            content = cont + mdata
-                            conn.sendall(str.encode(content))
+                            self.sendall_length(conn, cont, mdata)
 
                     elif jdata["key"] == "OK":
                         num = int(jdata["tasknum"])
@@ -359,7 +351,7 @@ class Sensor(object):
 
 
     def taskServer(self,host,port):
-        cont = """HTTP/1.1 200 OK\r\n\r\n"""
+        cont = """HTTP/1.1 200 OK\r\n"""
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((host, port))
         s.listen(100)
@@ -367,8 +359,7 @@ class Sensor(object):
 
         while 1:
             conn, addr = s.accept()
-            request = conn.recv(10000000)
-            request = bytes.decode(request)
+            request = self.recv_length(conn)
             method = request.split(' ')[0]
             if method == "POST":
                 form = request.split('\r\n')
@@ -570,12 +561,10 @@ class Sensor(object):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             remote_ip = socket.gethostbyname(host2)
             s.connect((remote_ip, port2))
-            message = "POST / HTTP/1.1\r\n\r\n"
+            cont = "POST / HTTP/1.1\r\n"
             jsondata = json.dumps(data)
-            message += jsondata
-            s.sendall(str.encode(message))
-            reply = s.recv(10000)
-            reply = bytes.decode(reply)
+            self.sendall_length(s, cont, jsondata)
+            reply = self.recv_length(s)
             res = reply.split('\r\n')[-1]
             jres = json.loads(res)
             # print (str(res))
@@ -606,17 +595,16 @@ class Sensor(object):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             remote_ip = socket.gethostbyname(host2)
             s.connect((remote_ip, port2))
-            message = "POST / HTTP/1.1\r\n\r\n"
+            cont = "POST / HTTP/1.1\r\n"
             jsondata = json.dumps(data)
-            message += jsondata
-            s.sendall(str.encode(message))
+            self.sendall_length(s, cont, jsondata)
             s.close()
         except Exception as e:
             self.sendUDP("邻居节点"+adjID+"连接不上")
             # print(traceback.format_exc())
             print ("与邻居节点"+adjID+"连接失败")
             return adjID
-                    
+  
     def send(self,id,data):
         for ele in self.TASKIPLIST[0]:
             if ele!=[]:
@@ -627,9 +615,8 @@ class Sensor(object):
                         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         remote_ip = socket.gethostbyname(host)
                         s.connect((remote_ip, port))
-                        message = "POST / HTTP/1.1\r\n\r\n"
-                        message += data
-                        s.sendall(str.encode(message))
+                        cont = "POST / HTTP/1.1\r\n"
+                        self.sendall_length(s, cont, data)
                         s.close()
                     except Exception as e:
                         self.sendUDP("邻居节点"+id+"连接不上")
@@ -747,7 +734,6 @@ class Sensor(object):
         except Exception as e:
             print (info)
 
-
     def taskFunction(self,tasknum = 0):
         try:
             num = tasknum
@@ -766,7 +752,7 @@ class Sensor(object):
                         self.sensorInfo[num]["value"] = ""
                         self.sendUDP("任务"+ str(tasknum) +" 执行出错",tasknum)
                         self.sendUDP(traceback.format_exc(),tasknum)
-                    # self.syncNode(num) 
+
                     self.taskFlag[num] = 1
                     if self.sonID[num] == []:
                         if self.parentID[num] == self.sensorID:
@@ -800,25 +786,21 @@ class Sensor(object):
                             ii = ii + 1
                         if ii == 1000:
                             print ("timeout!")
-                            sdata = {
-                                "id": self.sensorID,
-                                "info": {"value" : "Miss Node"}
-                            }
-                            # deleteID = []
-                            # for k in range(len(self.sonData[tasknum])):
-                            #     if not self.sonData[tasknum][k]:
-                            #         deleteID.append(self.sonID[tasknum][k])
-                            # for k in range(len(deleteID)):   
-                            #     self.sendUDP("邻居节点"+deleteID[k]+"连接不上")
-                            #     print ("与邻居节点"+deleteID[k]+"连接失败")
-                            #     self.deleteadjID(deleteID[k])  
-                            #     self.sendUDP("已删除和邻居节点"+(deleteID[k])+"的连接") 
-                        else:
-                            print ("sonflag2 complete")
-                            sdata = {
-                                "id": self.sensorID,
-                                "info": self.sensorInfo[num]
-                            }
+                            deleteID = []
+                            for k in range(len(self.sonData[tasknum])):
+                                if not self.sonData[tasknum][k]:
+                                    deleteID.append(self.sonID[tasknum][k])
+                            for k in range(len(deleteID)):   
+                                self.sendUDP("邻居节点"+deleteID[k]+"连接不上")
+                                print ("与邻居节点"+deleteID[k]+"连接失败")
+                                self.deleteadjID(deleteID[k])  
+                                self.sendUDP("已删除和邻居节点"+(deleteID[k])+"的连接") 
+
+                        print ("sonflag2 complete")
+                        sdata = {
+                            "id": self.sensorID,
+                            "info": self.sensorInfo[num]
+                        }
                         self.mesQue[num].append(sdata)
                         for ele in self.sonData[tasknum]:
                             for ele2 in ele:
@@ -884,25 +866,17 @@ class Sensor(object):
                     ii = ii + 1
                 if ii == 1000:
                     print ("timeout!")
-                    sdata = {
-                        "id": self.sensorID,
-                        "info": {"value" : "Miss Node"}
-                    }
-                    # deleteID = []
-                    # for k in range(len(self.sonData[tasknum])):
-                    #     if not self.sonData[tasknum][k]:
-                    #         deleteID.append(self.sonID[tasknum][k])
-                    # for k in range(len(deleteID)):   
-                    #     self.sendUDP("邻居节点"+deleteID[k]+"连接不上")
-                    #     print ("与邻居节点"+deleteID[k]+"连接失败")
-                    #     self.deleteadjID(deleteID[k])  
-                    #     self.sendUDP("已删除和邻居节点"+(deleteID[k])+"的连接") 
-                else:
-                    print ("sonflag2 complete")
-                    sdata = {
-                        "id": self.sensorID,
-                        "info": self.sensorInfo[num]
-                    }
+                    deleteID = []
+                    for k in range(len(self.sonData[tasknum])):
+                        if not self.sonData[tasknum][k]:
+                            deleteID.append(self.sonID[tasknum][k])
+                    for k in range(len(deleteID)):   
+                        self.deleteadjID(deleteID[k])  
+
+                sdata = {
+                    "id": self.sensorID,
+                    "info": self.sensorInfo[num]
+                }
                 self.mesQue[num].append(sdata)
                 for ele in self.sonData[tasknum]:
                     for ele2 in ele:
@@ -968,8 +942,8 @@ class Sensor(object):
         adjID = []
         datalist = []
         adjDirection = []
-        # path = os.getcwd() + "\\IoT\\task\\topology"+str(num)+".txt"
-        path = "/home/pi/zhongdy/IoT/task/topology"+str(num)+".txt"
+        path = os.getcwd() + "\\DASP\\task\\topology"+str(num)+".txt"
+        # path = "/home/pi/zhongdy/DASP/task/topology"+str(num)+".txt"
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
         for ele in js:
@@ -1098,7 +1072,6 @@ class Sensor(object):
             self.adjData[tasknum][i] = []
             self.adjFeedback[tasknum][i] = []
 
-
     def transmitData(self,direclist,datalist,tasknum = 0):
         num = tasknum
         if (self.tk[num] % 2 == 0):
@@ -1183,3 +1156,22 @@ class Sensor(object):
 
     def stop_thread(self, thread):
         self._async_raise(thread.ident, SystemExit)
+
+    def sendall_length(self, s, head, data):
+        length = "content-length:"+str(len(data)) + "\r\n\r\n"
+        message = head + length + data
+        s.sendall(str.encode(message))
+
+    def recv_length(self, conn):
+        request = conn.recv(1024)
+        message = bytes.decode(request)
+        message_split = message.split('\r\n')
+        content_length = message_split[1][15:]
+        message_length =  len(message_split[0]) + len(message_split[1]) + 2*(len(message_split)-1) + int(content_length)
+        while True:
+            if len(message) < message_length:
+                request = conn.recv(1024)
+                message += bytes.decode(request)
+            else:
+                break
+        return message

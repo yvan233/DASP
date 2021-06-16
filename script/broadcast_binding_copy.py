@@ -2,9 +2,9 @@ import paramiko
 import os
 import csv
 
-# localpath2 = os.getcwd() + "\\IoT\\nodesystem_pi_newnode.py"
-localpath2 = os.getcwd() + "\\IoT\\topology.txt"
-localpath = os.getcwd() + "\\IoT\\binding.csv"
+# localpath2 = os.getcwd() + "\\DASP\\nodesystem_pi_newnode.py"
+localpath2 = os.getcwd() + "\\DASP\\topology.txt"
+localpath = os.getcwd() + "\\DASP\\binding.csv"
 with open(localpath,'r')as f:
     data = csv.reader(f)
     idiplist = []
@@ -20,7 +20,7 @@ for ele in idiplist[1:]:
             t=paramiko.Transport((hostname,port))
             t.connect(username=username,password=password)
             sftp = paramiko.SFTPClient.from_transport(t)
-            remotepath = '/home/pi/zhongdy/IoT/topology.txt'
+            remotepath = '/home/pi/zhongdy/DASP/topology.txt'
             sftp.put(localpath2, remotepath) #将windows的文件上传到linux中，put上传
             sftp.close()
             print( ele[0] + '上传成功！')  
