@@ -13,13 +13,13 @@ class DaspFuncMixin():
     def __init__(self):
         pass
 
-    def sendall_length(self, s, head, data):
+    def sendall_length(self, socket, head, data):
         '''
         为发送数据添加length报头
         '''
         length = "content-length:"+str(len(data)) + "\r\n\r\n"
         message = head + length + data
-        s.sendall(str.encode(message))
+        socket.sendall(str.encode(message))
 
     def recv_length(self, conn):
         '''
@@ -40,7 +40,7 @@ class DaspFuncMixin():
 
     def _async_raise(self, tid, exctype):
         '''
-        抛出异常
+        主动抛出异常
         '''
         tid = ctypes.c_long(tid)
         if not inspect.isclass(exctype):
@@ -104,16 +104,18 @@ class TaskServer(BaseServer):
         self.host = host
         self.port = port
 
-     # 123
     def run(self):
-        cont = """HTTP/1.1 200 OK\r\n"""
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((self.host, self.port))
-        s.listen(100)
+        """
+        服务器开始运行
+        """
+        head = """HTTP/1.1 200 OK\r\n"""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((self.host, self.port))
+        sock.listen(100)
         print ("TaskServer: " + self.host + ":" + str(self.port))
 
         while 1:
-            conn, addr = s.accept()
+            conn, addr = sock.accept()
             request = self.recv_length(conn)
             method = request.split(' ')[0]
             if method == "POST":
@@ -121,44 +123,15 @@ class TaskServer(BaseServer):
                 try:
                     jdata = json.loads(data)
                 except (ValueError, KeyError, TypeError):
-                    conn.send(str.encode(cont + "请输入JSON格式的数据！"))
+                    conn.send(str.encode(head + "请输入JSON格式的数据！"))
                 else:
-                    if jdata["key"] == "task":
+                    if jdata["key"] == "startsystem":
                         try:
                             self.GUIinfo = jdata["GUIinfo"]
                             self.sendUDP("接收任务请求")
                         except KeyError:
                             print ("非来自GUI的任务请求")
-                        self.flag[0] = 1
-                        sum = 0
-                        deleteID = []
-                        for ele in self.TASKIPLIST[0]:
-                            if ele != []:
-                                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], 0)
-                                if returnID:
-                                    deleteID.append(returnID)
-                                sum += 1
-                        for k in range(len(deleteID)):
-                            self.deleteadjID(deleteID[k])
-                        if(sum == 0): self.treeFlag[0] = 1
-                        while (self.treeFlag[0] == 0): {time.sleep(0.01)}
-                        self.sendUDP("通信树建立完成")
-                        sdata = {
-                            "key": "task",
-                            "GUIinfo": self.GUIinfo
-                        }
-                        sjdata = json.dumps(sdata)
-                        for ele in reversed(self.TASKIPLIST[0]):
-                            if ele != []:
-                                if ele[4] in self.sonID[0]:
-                                    self.send(ele[4], data=sjdata)
-
-                        self.taskBeginFlag[0] = 1
-                        self.sendUDPflag(2,0)
-
-                        waitend = threading.Thread(target=self.waitforend,args=())
-                        waitend.start()
-                        self.waitflag = 1
+                        self.startsystem()
 
                     elif jdata["key"] == "newtask":
                         num = int(jdata["tasknum"])
@@ -202,13 +175,13 @@ class TaskServer(BaseServer):
                         delay = jdata["delay"]
                         if delay > 0:
                             self.sendUDP("任务"+str(num)+"将于"+str(jdata["delay"])+"秒后开始",num)
-                        self.taskthreads[num].start()
+                        self.taskthreads[num].startsystem()
                         starttaskthread = threading.Thread(target=self.starttask,args=(num, delay ,))
-                        starttaskthread.start()
+                        starttaskthread.startsystem()
 
                         if self.waitflag == 0:
                             waitend = threading.Thread(target=self.waitforend,args=())
-                            waitend.start()
+                            waitend.startsystem()
                             self.waitflag = 1
 
                     elif jdata["key"] == "shutdowntask":
@@ -247,17 +220,49 @@ class TaskServer(BaseServer):
                         self.sendUDPflag(2,0)
 
                         waitend = threading.Thread(target=self.waitforend,args=())
-                        waitend.start()
+                        waitend.startsystem()
                         self.waitflag = 1
 
                     else:
-                        conn.send(str.encode(cont + "您输入的任务信息有误！"))
+                        conn.send(str.encode(head + "您输入的任务信息有误！"))
             else:
-                conn.send(str.encode(cont + "暂未提供GET接口返回数据"))
+                conn.send(str.encode(head + "暂未提供POST以外的接口"))
             conn.close()
 
-    def task():
-        pass
+    def startsystem(self):
+        """
+        启动系统
+        """
+        self.flag[0] = 1
+        sum = 0
+        deleteID = []
+        for ele in self.TASKIPLIST[0]:
+            if ele != []:
+                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], 0)
+                if returnID:
+                    deleteID.append(returnID)
+                sum += 1
+        for k in range(len(deleteID)):
+            self.deleteadjID(deleteID[k])
+        if(sum == 0): self.treeFlag[0] = 1
+        while (self.treeFlag[0] == 0): {time.sleep(0.01)}
+        self.sendUDP("通信树建立完成")
+        sdata = {
+            "key": "startsystem",
+            "GUIinfo": self.GUIinfo
+        }
+        sjdata = json.dumps(sdata)
+        for ele in reversed(self.TASKIPLIST[0]):
+            if ele != []:
+                if ele[4] in self.sonID[0]:
+                    self.send(ele[4], data=sjdata)
+
+        self.taskBeginFlag[0] = 1
+        self.sendUDPflag(2,0)
+
+        waitend = threading.Thread(target=self.waitforend,args=())
+        waitend.start()
+        self.waitflag = 1
 
     def newtask(): 
         pass
@@ -281,14 +286,14 @@ class CommServer(BaseServer):
         self.port = port
 
     def run(self):
-        cont = """HTTP/1.1 200 OK\r\n"""
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((self.host, self.port))
-        s.listen(100)
+        head = """HTTP/1.1 200 OK\r\n"""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((self.host, self.port))
+        sock.listen(100)
         print ("Server on " + self.host + ":" + str(self.port))
 
         while 1:
-            conn, addr = s.accept()
+            conn, addr = sock.accept()
             request = self.recv_length(conn)
             method = request.split(' ')[0]
             if method == 'POST':
@@ -326,7 +331,7 @@ class CommServer(BaseServer):
                                 "tasknum": num
                             }
                             ndata = json.dumps(data)
-                            self.sendall_length(conn, cont, ndata)
+                            self.sendall_length(conn, head, ndata)
                             
                             deleteID = []
                             for ele in self.TASKIPLIST[num]:
@@ -359,7 +364,7 @@ class CommServer(BaseServer):
                                 "tasknum": num
                             }
                             mdata = json.dumps(data)
-                            self.sendall_length(conn, cont, mdata)
+                            self.sendall_length(conn, head, mdata)
 
                     elif jdata["key"] == "OK":
                         num = int(jdata["tasknum"])
@@ -389,8 +394,8 @@ class CommServer(BaseServer):
                             for i in range(len(self.sonFlagCreate[num])):
                                 self.sonFlagCreate[num][i] = 0
 
-                    # Task Distribution
-                    elif jdata["key"] == "task":
+                    # startsystem Distribution
+                    elif jdata["key"] == "startsystem":
                         if self.sonID[0] != 0:
                             for ele in reversed(self.TASKIPLIST[0]):
                                 if ele != []:
@@ -419,7 +424,7 @@ class CommServer(BaseServer):
                                     if ele[4] in self.sonID[num]:
                                         sjdata = json.dumps(jdata)
                                         self.send(ele[4], data=sjdata)
-                        self.taskthreads[num].start()
+                        self.taskthreads[num].startsystem()
                         self.taskBeginFlag[num] = 1
                         # self.sendUDP("并行任务"+str(num+1)+"开始执行")
 
@@ -501,10 +506,15 @@ class CommServer(BaseServer):
                                 self.adjData[m].append([])
                                 self.adjFeedback[m].append([])
                         else:
-                            conn.send(str.encode(cont + "节点"+str(self.sensorID)+"方向"+str(jdata["applydirection"])+"已被占用，请选择其他方向！"))
+                            conn.send(str.encode(head + "节点"+str(self.sensorID)+"方向"+str(jdata["applydirection"])+"已被占用，请选择其他方向！"))
 
                     else:
-                        conn.send(str.encode(cont+"请不要直接访问通信服务器"))
+                        conn.send(str.encode(head+"请不要直接访问通信服务器"))
             else:
-                conn.send(str.encode(cont + "请不要直接访问通信服务器"))
+                conn.send(str.encode(head + "请不要直接访问通信服务器"))
             conn.close()
+
+
+if __name__ == '__main__':
+    IP = "localhost"
+    PORT = 10000

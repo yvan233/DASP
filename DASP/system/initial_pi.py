@@ -11,7 +11,6 @@ import time
 if __name__ == '__main__':
     time.sleep(2)
     # path = os.getcwd() + "\\DASP\binding.csv"
-    else if
     path = "/home/pi/zhongdy/DASP/binding.csv"
     with open(path,'r')as f:
         data = csv.reader(f)

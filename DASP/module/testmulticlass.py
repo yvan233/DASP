@@ -1,3 +1,5 @@
+# 测试多线程对类的兼容性
+
 import threading
 class FbPageRollback:
     def __init__(self):

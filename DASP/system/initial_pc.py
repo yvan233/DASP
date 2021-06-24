@@ -1,4 +1,4 @@
-import system
+import nodesystem
 import sys
 import codecs
 import json
@@ -53,5 +53,5 @@ if __name__ == '__main__':
                 break
     print(selfIPList)
 
-    server = system.Server(selfID, selfAdjID, selfAdjDirection, selfAdjOtherSideDirection, selfIPList, selfIP, selfPORT, selfDatalist)
-    server.run()
+    sensor = nodesystem.Sensor(selfID, selfAdjID, selfAdjDirection, selfAdjOtherSideDirection, selfIPList, selfIP, selfPORT, selfDatalist)
+    sensor.run()
