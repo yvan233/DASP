@@ -4,6 +4,10 @@ import sys
 import time
 import threading
 import traceback
+import importlib
+import os
+import codecs
+sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 
 class Task():
     """任务类
@@ -12,6 +16,7 @@ class Task():
     
     属性:
         nodeID: 节点ID
+        adjID：邻居ID
         sonID: 子节点ID
         parentID：父节点ID,根节点与nodeID相同
         parentDirection 父节点方向,根节点为0
@@ -22,27 +27,36 @@ class Task():
         sonData: 子节点数据
 
         tasknum: 任务编号
+        taskname: 任务名称
         GUIinfo: UI界面IP及端口
         taskfunc: 从算法文件中加载的算法程序
-        TaskAdjDirection: 当前任务邻居方向
+        TaskadjDirection: 当前任务邻居方向
         TaskDatalist: 当前任务初始数据
+        TaskadjID:当前任务邻居ID
+        TaskID: 当前任务参与的节点ID
         resultinfo: 运行结果数据
         resultinfoQue: 运行结果数据队列
+        taskthreads :多线程
 
+        commTreeFlag: 通信树建立标志
         treeFlag: 生成树标志
         taskBeginFlag: 任务启动标志
         taskEndFlag: 任务结束标志
         dataEndFlag: 根节点数据收集结束标志
         CreateTreeSonFlag: 创建通信树子节点标志
-        SonDataEndFlag: 子节点数据收集结束标志
+        SonDataEndFlag: 子节点数据收集结束标志   
 
-    """
+        SyncTurnFlag: 同步函数轮训标志
+        SyncTurnFlag2: 同步通信函数轮训标志
+        adjSyncStatus: 同步函数邻居状态
+        adjSyncStatus2: 同步函数邻居状态2(轮训)     
+        """
     parentID = [0]
     sonID = [[]]
     parentDirection = [0]
     sonDirection = [[]]
     CreateTreeSonFlag = [[]]
-    flag = [0]
+    commTreeFlag = [0]
     treeFlag = [0]
 
     resultinfoQue = []
@@ -61,8 +75,8 @@ class Task():
     taskcounter = 1
     sonData = []
     sonDataEndFlag = []
-    tk = []
-    tk2 = []
+    SyncTurnFlag2 = []
+    SyncTurnFlag = []
     adjData = []
     adjData_another = []
     adjSyncStatus = []
@@ -70,82 +84,99 @@ class Task():
     adjSyncStatus2 = []
     adjSyncFlag2 = []
 
-    TASKID = []
-    TaskIPlist = []
+    TaskID = []
     TaskDatalist = []
-    TaskAdjDirection = []
+    TaskadjDirection = []
     TASKadjID = []
     
-    ###
+    ### 类变量，直接通过Task.维护
+    GUIinfo = ["localhost",0]
+    adjID = []
+    TaskIPlist = []
 
-    tasknum = 0
-
-    def __init__(self, nodeID, GUIinfo, TaskIPlist, tasknum):
+    def __init__(self, nodeID, tasknum):
         self.nodeID = nodeID
-        self.GUIinfo = GUIinfo
-        self.TaskIPlist = TaskIPlist
         self.tasknum = tasknum
-        self.taskBeginFlag = 0
-        self.taskEndFlag = 1
+        self.taskname = "default"
+
         
     def load(self):
         """
         加载任务运行所需信息
         """
-        num = tasknum
-        # question
-        while len(self.taskFuncList) <= tasknum:
-            self.taskFuncList.append([])
-        while len(self.TASKID) <= tasknum:
-            self.TaskDatalist.append([])
-            self.TASKadjID.append([])
-            self.TaskAdjDirection.append([])
-            self.TASKID.append([])
-            self.TaskIPlist.append([])
-
-        question = importlib.import_module("task.question"+str(num))
+        # 加载question文件
+        question = importlib.import_module("DASP.task_info.question"+str(self.tasknum))
         question = importlib.reload(question)
-        self.taskFuncList = question.taskFunction
-        # topology
+        self.taskfunc = question.taskFunction
+
+        # 加载topology文件
         ID = []
-        adjID = []
-        datalist = []
-        adjDirection = []
-        path = os.getcwd() + "\\DASP\\task\\topology"+str(num)+".txt"
-        # path = "/home/pi/zhongdy/DASP/task/topology"+str(num)+".txt"
+        selfadjID = []
+        selfdatalist = []
+        selfadjDirection = []
+        path = os.getcwd() + "/DASP/task/topology"+str(self.tasknum)+".txt"
+        path = path.replace('\\', '/') 
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
         for ele in js:
             if "ID" in ele:
                 ID.append(ele["ID"])
-                adjID.append(ele["adjID"])
-                adjDirection.append(ele["adjDirection"])
-                datalist.append(ele["datalist"])
-        self.TASKID = ID
-        # 如果在任务中
-        if self.sensorID in self.TASKID:
-            order = ID.index(self.sensorID)
-            selfID = ID[order]
-            selfAdjID = adjID[order]
-            selfAdjDirection = adjDirection[order]
-            selfDatalist = datalist[order]
-            selfIPList = []
+                selfadjID.append(ele["adjID"])
+                selfadjDirection.append(ele["adjDirection"])
+                selfdatalist.append(ele["datalist"])
+        self.TaskID = ID
 
+        ## 如果当前节点在任务中
+        if self.nodeID in self.TaskID:
+            order = ID.index(self.nodeID)
+            selfAdjID = selfadjID[order]
+            selfAdjDirection = selfadjDirection[order]
+            selfDatalist = selfdatalist[order]
+            ### 如果节点已经掉线了，那初始化的任务节点ID不包含这个节点
             for i in range(len(selfAdjID)-1,-1,-1):
                 if selfAdjID[i] not in self.adjID:
                     selfAdjID.remove(selfAdjID[i])
                     selfAdjDirection.remove(selfAdjDirection[i])
-
-            for i in range(len(selfAdjID)):
-                selfIPList.append([])
-                for ele in self.IPlist:
-                    if ele[4] == selfAdjID[i]:
-                        selfIPList[i] = ele
-                        break
-            self.TaskAdjDirection = selfAdjDirection
+            self.TaskadjDirection = selfAdjDirection
             self.TASKadjID = selfAdjID
             self.TaskDatalist = selfDatalist
-            self.TaskIPlist = selfIPList
+
+        # 初始化各属性
+        self.taskBeginFlag = 0
+        self.taskEndFlag = 0
+        self.dataEndFlag = 0
+        self.resultinfo = {}
+        self.resultinfoQue = []
+        self.sonData = []
+        self.sonDataEndFlag = 0
+        self.commTreeFlag = 0
+        self.treeFlag = 0
+        self.parentID = self.nodeID
+        self.parentDirection = 0
+
+        self.sonID= []
+        self.sonDirection = []
+        self.CreateTreeSonFlag = []
+        self.adjData = []
+        self.adjData_another= []
+
+        self.SyncTurnFlag = 0
+        self.SyncTurnFlag2 = 0
+        self.adjSyncStatus = []
+        self.adjSyncStatus2 = []
+
+        while len(self.adjData) < len(self.TaskadjDirection):
+            self.adjData.append([])
+            self.adjData_another.append([])
+            self.adjSyncStatus.append(0)
+            self.adjSyncStatus2.append(0)
+
+        # 给其他节点开线程的时间，防止换数据的时候其他节点线程还没开
+        # time.sleep(1)
+        if self.nodeID in self.TaskID:
+            self.taskthreads = threading.Thread(target=self.run, args=())
+        else:
+            self.taskthreads = threading.Thread(target=self.dataFunction, args=())
 
     def run(self):
         """
@@ -157,7 +188,7 @@ class Task():
                 if self.taskBeginFlag == 1:
                     try:
                         self.sendtoGUI("任务"+ str(self.tasknum) +" 开始执行")
-                        value = self.taskfunc(self, self.nodeID, self.TaskAdjDirection, self.TaskDatalist)
+                        value = self.taskfunc(self, self.nodeID, self.TaskadjDirection, self.TaskDatalist)
                         self.resultinfo["value"] = value
                         self.sendtoGUI("任务"+ str(self.tasknum) +" 执行完毕")
                         # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错
@@ -326,11 +357,11 @@ class Task():
         所有节点同步一次
         """
         num = tasknum
-        if self.tk2[num] == 0:   
-            self.tk2[num] = 1 - self.tk2[num]
+        if self.SyncTurnFlag[num] == 0:   
+            self.SyncTurnFlag[num] = 1 - self.SyncTurnFlag[num]
             data = {
                 "key": "sync",
-                "id": self.sensorID,
+                "id": self.nodeID,
                 "tasknum": tasknum
             }
             ndata = json.dumps(data)      
@@ -348,11 +379,11 @@ class Task():
             self.adjSyncFlag[num] = 0
             for i in range(len(self.adjSyncStatus[num])):
                 self.adjSyncStatus[num][i] = 0
-        elif self.tk2[num] == 1:
-            self.tk2[num] = 1 - self.tk2[num]
+        elif self.SyncTurnFlag[num] == 1:
+            self.SyncTurnFlag[num] = 1 - self.SyncTurnFlag[num]
             data = {
                 "key": "sync2",
-                "id": self.sensorID,
+                "id": self.nodeID,
                 "tasknum": tasknum
             }
             ndata = json.dumps(data)
@@ -453,3 +484,25 @@ class DataFunction():
             self.resetadjData(num)
         except SystemExit:
             self.sendtoGUI("任务"+ str(self.tasknum) +" 停止执行",self.tasknum)
+
+
+if __name__ == '__main__':
+    path = os.getcwd() + "/DASP/task_info/topology"+str(1)+".txt"
+    path = path.replace('\\', '/')
+    # path = "/home/pi/zhongdy/DASP/task/topology"+str(num)+".txt"
+    text = codecs.open(path, 'r', 'utf-8').read()
+    js = json.loads(text)
+    print (js)
+
+    # nodeID = "room1"
+    # Task.GUIinfo = ["localhost", 10000]
+    # TaskDict = {}
+    # task = Task(nodeID, 0)
+    # TaskDict[0] = task
+
+    # # TaskDict[0].load()
+
+    # task2 = Task(nodeID, 1)
+    # TaskDict.update({1:task2})
+
+    # print (task.GUIinfo,TaskDict[1].GUIinfo)
