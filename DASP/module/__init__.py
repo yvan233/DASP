@@ -2,4 +2,4 @@
 # __all__ = ['TaskServer']
 
 
-from .DaspServer import TaskServer,CommServer
+from .DaspServer import DaspFuncMixin,TaskServer,CommServer
