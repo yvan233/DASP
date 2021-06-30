@@ -10,7 +10,7 @@ def sendall_length(s, head, data):
 localIP = socket.gethostbyname(socket.gethostname())
 GUIinfo = [localIP, 50000]
 data = {
-    "key": "task",
+    "key": "startsystem",
     "GUIinfo": GUIinfo
 }
 data = json.dumps(data)

@@ -24,7 +24,6 @@ class Server(object):
         DaspCommon.adjDirectionOtherSide = adjDirectionOtherSide
         DaspCommon.IPlist = IPlist
 
-       
 
     def run(self):
         #创建接口服务器
@@ -44,3 +43,4 @@ class Server(object):
             self.CommServerThread[i].start()
         self.TaskServerThread.start()
         # self.taskthreads[0].start()
+

@@ -11,5 +11,11 @@ D = dict(zip(keylist,valuelist))
 print (sorted(D.keys()))
 json_list = json.dumps(D, indent=2);
 print(json_list)
+
+if 2 not in D :
+    print (1)
+if D.setdefault(2) or D.setdefault(2).p:
+    pass
+
 # for ele in D:
 #     print(D[ele])

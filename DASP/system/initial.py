@@ -51,7 +51,8 @@ if __name__ == '__main__':
                         break
                 selfIPList[i].append(ID[j])
                 break
-    print(selfIPList)
+    
+    print(json.dumps(selfIPList, indent=2))
 
     server = system.Server(selfID, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
     server.run()

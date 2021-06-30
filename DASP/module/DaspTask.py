@@ -54,7 +54,7 @@ class Task(DaspCommon):
         """
     def __init__(self, DAPPname):
         self.DAPPname = DAPPname
-
+        self.commTreeFlag = 1
         
     def load(self):
         """
@@ -114,7 +114,6 @@ class Task(DaspCommon):
         self.resultinfoQue = []
         self.sonData = []
         self.sonDataEndFlag = 0
-        self.commTreeFlag = 0
         self.treeFlag = 0
         self.parentID = DaspCommon.nodeID
         self.parentDirection = 0
@@ -169,7 +168,7 @@ class Task(DaspCommon):
                     # print("resultinfo：", self.resultinfo)
                     
                     self.reset()
-                    self.resetadjData()
+                    # self.resetadjData()
                     return 0
         except SystemExit:
             self.sendDatatoGUI("停止执行")
@@ -260,18 +259,9 @@ class Task(DaspCommon):
 
     def reset(self):
         """
-        清空运行数据
+        重置当前节点
         """
-        self.taskBeginFlag = 0
-        self.treeFlag = 0
-        self.parentID = DaspCommon.nodeID
-        self.parentDirection = 0
-        self.sonID = []
-        self.sonDirection = []
-        self.CreateTreeSonFlag = []
-        self.resultinfoQue = []
-        self.sonDataEndFlag = 0
-        self.sonData = []
+        self.commTreeFlag = 0
     
     def resetadjData(self):
         """
@@ -299,10 +289,9 @@ class Task(DaspCommon):
                         sock.close()
                     except Exception as e:
                         print ("与邻居节点"+id+"连接失败")
-                        self.sendDatatoGUI("与邻居节点"+id+"连接失败")
-                        DaspCommon.deleteadjID(id)
+                        self.deleteadjID(id)
                         self.deleteTaskadjID(id)
-                        self.sendDatatoGUI("已删除和邻居节点"+id+"的连接") 
+                        self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
                     break
 
     def sendData(self, data):
@@ -331,7 +320,7 @@ class Task(DaspCommon):
             "data": data
         }
         ndata = json.dumps(data)
-        for ele in self.TaskIPlist[0]:
+        for ele in self.TaskIPlist:
             if ele != []:
                 if ele[4] == id:
                     self.send(ele[4], ndata)
@@ -350,7 +339,7 @@ class Task(DaspCommon):
         ndata = json.dumps(data)
         for i in range(len(self.TaskadjID)):
             if self.TaskadjDirection[i] ==  direction:
-                for ele in self.TaskIPlist[0]:
+                for ele in self.TaskIPlist:
                     if ele != []:
                         if ele[4] == self.TaskadjID[i]:
                             self.send(ele[4], ndata)
@@ -369,7 +358,7 @@ class Task(DaspCommon):
         ndata = json.dumps(data)
         for i in range(len(self.TaskadjID)):
             if self.TaskadjDirection[i] ==  direction:
-                for ele in self.TaskIPlist[0]:
+                for ele in self.TaskIPlist:
                     if ele != []:
                         if ele[4] == self.TaskadjID[i]:
                             self.send(ele[4], ndata)

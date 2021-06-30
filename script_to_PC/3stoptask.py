@@ -8,14 +8,15 @@ def sendall_length(s, head, data):
     s.sendall(str.encode(message))
 
 
+
 localIP = socket.gethostbyname(socket.gethostname())
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((localIP, 10006))
 data = {
     "key": "shutdowntask",
-    "tasknum": 2,
+    "DAPPname": "CreatBFStree",
 }
 data = json.dumps(data)
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("192.168.1.105", 10006))
 head = "POST / HTTP/1.1\r\n"
 sendall_length(s, head, data)
 s.close()

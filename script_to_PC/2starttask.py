@@ -7,19 +7,15 @@ def sendall_length(s, head, data):
     message = head + length + data
     s.sendall(str.encode(message))
 
-tasknumlist = [2]
-delaylist = [0]
+DAPPnamelist = ["CreatBFStree"]
 
-for i in range(len(tasknumlist)):
+for ele in DAPPnamelist:
     localIP = socket.gethostbyname(socket.gethostname())
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((localIP, 10006))
-    GUIinfo = [localIP, 50000]
     data = {
         "key": "newtask",
-        "GUIinfo": GUIinfo,
-        "tasknum": tasknumlist[i],
-        "delay": delaylist[i]
+        "DAPPname": ele,
     }
     data = json.dumps(data)
     head = "POST / HTTP/1.1\r\n"

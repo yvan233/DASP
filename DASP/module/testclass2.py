@@ -29,6 +29,6 @@ print(Student.base)
 li.test()
 A.C = 3
 # zhang = Student("张三", 23)
-print(A.C)
+print(A.__dict__)
 # print(Student.classroom)
 # print(zhang.classroom)
