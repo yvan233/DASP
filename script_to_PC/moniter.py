@@ -26,11 +26,11 @@ while 1:
     except Exception:
         print ("接收数据出错")
     else:
-        if jdata["key"] == "runData":
-            print("task"+str(jdata["tasknum"]) + "-Node " + str(jdata["id"]) + ": " + jdata["info"])
-        elif jdata["key"] == "endData":
-            print(jdata["info"])
-        elif jdata["key"] == "runFlag":
+        if jdata["key"] == "RunData":
+            print("[{}]{}: {}".format(jdata["id"], jdata["DAPPname"], jdata["info"]))
+        elif jdata["key"] == "EndData":
+            print("[{}]{}运行结束，运行结果:\n{}".format(jdata["id"], jdata["DAPPname"], jdata["info"]))
+        elif jdata["key"] == "RunFlag":
             # print(str(jdata["tasknum"]) +str(jdata["info"]))
             pass
         else:

@@ -9,9 +9,9 @@ import os
 import codecs
 import copy
 sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-from DASP.module import DaspFuncMixin
+from DASP.module import DaspCommon
 
-class Task(DaspFuncMixin):
+class Task(DaspCommon):
     """任务类
     
     用于任务具体计算
@@ -28,8 +28,7 @@ class Task(DaspFuncMixin):
         adjData_another: 同步通信函数中另一个邻居数据变量
         sonData: 子节点数据
 
-        tasknum: 任务编号
-        taskname: 任务名称
+        DAPPname: 任务名称
         GUIinfo: UI界面IP及端口
         taskfunc: 从算法文件中加载的算法程序
         TaskadjDirection: 当前任务邻居方向
@@ -40,8 +39,8 @@ class Task(DaspFuncMixin):
         resultinfoQue: 运行结果数据队列
         taskthreads :多线程
 
-        commTreeFlag: 通信树建立标志
-        treeFlag: 生成树标志
+        commTreeFlag: 当前节点是否被加进通信树标志
+        treeFlag: 通信树建立完成标志
         taskBeginFlag: 任务启动标志
         taskEndFlag: 任务结束标志
         dataEndFlag: 根节点数据收集结束标志
@@ -53,25 +52,16 @@ class Task(DaspFuncMixin):
         adjSyncStatus: 同步函数邻居状态
         adjSyncStatus2: 同步函数邻居状态2(轮训)     
         """
-
-    ### 类变量，直接通过Task.维护
-    GUIinfo = ["localhost",0]
-    adjID = []
-    adjDirection = []
-    IPlist = []
-
-    def __init__(self, nodeID, tasknum, taskname = "default"):
-        self.nodeID = nodeID
-        self.tasknum = tasknum
-        self.taskname = taskname
+    def __init__(self, DAPPname):
+        self.DAPPname = DAPPname
 
         
     def load(self):
         """
-        加载任务运行所需信息
+        加载任务运行所需信息,启动run线程,等待任务启动标志
         """
         # 加载question文件
-        question = importlib.import_module("DASP.task_info.{}.question".format(str(self.tasknum)))
+        question = importlib.import_module("DASP.task_info.{}.question".format(self.DAPPname))
         question = importlib.reload(question)
         self.taskfunc = question.taskFunction
 
@@ -80,7 +70,7 @@ class Task(DaspFuncMixin):
         AllAdjID = []
         AllDatalist = []
         AllAdjDirection = []
-        path = os.getcwd() + "/DASP/task_info/{}/topology.txt".format(str(self.tasknum))
+        path = os.getcwd() + "/DASP/task_info/{}/topology.txt".format(self.DAPPname)
         path = path.replace('\\', '/') 
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
@@ -93,8 +83,8 @@ class Task(DaspFuncMixin):
         self.TaskID = ID
 
         ## 如果当前节点在任务中
-        if self.nodeID in self.TaskID:
-            order = ID.index(self.nodeID)
+        if DaspCommon.nodeID in self.TaskID:
+            order = ID.index(DaspCommon.nodeID)
             selfAdjID = AllAdjID[order]
             selfAdjDirection = AllAdjDirection[order]
             selfDatalist = AllDatalist[order]
@@ -102,12 +92,12 @@ class Task(DaspFuncMixin):
 
             ### 如果节点已经掉线了，那初始化的任务节点ID不包含这个节点
             for i in range(len(selfAdjID)-1,-1,-1):
-                if selfAdjID[i] not in Task.adjID:
+                if selfAdjID[i] not in DaspCommon.adjID:
                     selfAdjID.remove(selfAdjID[i])
                     selfAdjDirection.remove(selfAdjDirection[i])
             for i in range(len(selfAdjID)):
                 selfIPlist.append([])
-                for ele in Task.IPlist:
+                for ele in DaspCommon.IPlist:
                     if ele[4] == selfAdjID[i]:
                         selfIPlist[i] = ele
                         break
@@ -126,7 +116,7 @@ class Task(DaspFuncMixin):
         self.sonDataEndFlag = 0
         self.commTreeFlag = 0
         self.treeFlag = 0
-        self.parentID = self.nodeID
+        self.parentID = DaspCommon.nodeID
         self.parentDirection = 0
 
         self.sonID= []
@@ -147,28 +137,30 @@ class Task(DaspFuncMixin):
             self.adjSyncStatus2.append(0)
 
         self.taskthreads = threading.Thread(target=self.run, args=())
+        self.taskthreads.start()
 
     def run(self):
         """
-        任务服务器开始运行
+        任务服务器开始运行,等待任务启动标志
         """
         try:
             while 1:
                 time.sleep(0.01)
                 if self.taskBeginFlag == 1:
-                    if self.nodeID in self.TaskID: #如果在任务列表中
+                    if DaspCommon.nodeID in self.TaskID: #如果在任务列表中
                         try:
-                            self.sendtoGUI("任务"+ str(self.tasknum) +" 开始执行")
-                            value = self.taskfunc(self, self.nodeID, self.TaskadjDirection, self.TaskDatalist)
+                            self.sendDatatoGUI("开始执行")
+                            print("DAPP:{}开始执行".format(self.DAPPname))
+                            value = self.taskfunc(self, DaspCommon.nodeID, self.TaskadjDirection, self.TaskDatalist)
                             self.resultinfo["value"] = value
-                            self.sendtoGUI("任务"+ str(self.tasknum) +" 执行完毕")
+                            self.sendDatatoGUI("执行完毕")
                             # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错
                             print ("value:", value)
                         except Exception as e:
                             self.resultinfo["value"] = ""
-                            self.sendtoGUI("任务"+ str(self.tasknum) +" 执行出错")
+                            self.sendDatatoGUI("执行出错")
                             print(traceback.format_exc())
-                            self.sendtoGUI(traceback.format_exc())
+                            self.sendDatatoGUI(traceback.format_exc())
                     else:
                         self.resultinfo["value"] = ""
                     self.taskBeginFlag = 0 
@@ -180,7 +172,13 @@ class Task(DaspFuncMixin):
                     self.resetadjData()
                     return 0
         except SystemExit:
-            self.sendtoGUI("任务"+ str(self.tasknum) +" 停止执行")
+            self.sendDatatoGUI("停止执行")
+
+    def shutdown(self):
+        """
+        终止运行任务服务器
+        """
+        self.stop_thread(self.taskthreads)
 
     def data_collec(self):
         """
@@ -190,9 +188,9 @@ class Task(DaspFuncMixin):
         # 叶子结点
         if self.sonID == []:
             # 根节点
-            if self.parentID == self.nodeID:
+            if self.parentID == DaspCommon.nodeID:
                 sdata = {
-                    "id": self.nodeID,
+                    "id": DaspCommon.nodeID,
                     "info": self.resultinfo
                 }
                 self.resultinfoQue.append(sdata)
@@ -200,14 +198,14 @@ class Task(DaspFuncMixin):
                 print ("The whole data has been transmitted!")
             else:
                 sdata = {
-                    "id": self.nodeID,
+                    "id": DaspCommon.nodeID,
                     "info": self.resultinfo
                 }
                 self.resultinfoQue.append(sdata)
                 data = {
                     "key": "data",
-                    "tasknum": self.tasknum,
-                    "id": self.nodeID,
+                    "DAPPname": self.DAPPname,
+                    "id": DaspCommon.nodeID,
                     "data": self.resultinfoQue
                 }
                 ndata = json.dumps(data)
@@ -224,7 +222,7 @@ class Task(DaspFuncMixin):
             if ii == 100:
                 print ("timeout!")
                 sdata = {
-                    "id": self.nodeID,
+                    "id": DaspCommon.nodeID,
                     "info": {"value" : "Child node data loss"}
                 }
                 # deleteID = []
@@ -232,25 +230,25 @@ class Task(DaspFuncMixin):
                 #     if not self.sonData[k]:
                 #         deleteID.append(self.sonID[k])
                 # for k in range(len(deleteID)):   
-                #     self.sendtoGUI("邻居节点"+deleteID[k]+"连接不上")
+                #     self.sendDatatoGUI("邻居节点"+deleteID[k]+"连接不上")
                 #     print ("与邻居节点"+deleteID[k]+"连接失败")
                 #     self.deleteadjID(deleteID[k])  
-                #     self.sendtoGUI("已删除和邻居节点"+(deleteID[k])+"的连接") 
+                #     self.sendDatatoGUI("已删除和邻居节点"+(deleteID[k])+"的连接") 
             else:
                 print ("sonDataEndFlag complete")
                 sdata = {
-                    "id": self.nodeID,
+                    "id": DaspCommon.nodeID,
                     "info": self.resultinfo
                 }
             self.resultinfoQue.append(sdata)
             for ele in self.sonData:
                 for ele2 in ele:
                     self.resultinfoQue.append(ele2)
-            if self.parentID != self.nodeID:
+            if self.parentID != DaspCommon.nodeID:
                 data = {
                     "key": "data",
-                    "tasknum": self.tasknum,
-                    "id": self.nodeID,
+                    "DAPPname": self.DAPPname,
+                    "id": DaspCommon.nodeID,
                     "data": self.resultinfoQue
                 }
                 ndata = json.dumps(data)
@@ -266,7 +264,7 @@ class Task(DaspFuncMixin):
         """
         self.taskBeginFlag = 0
         self.treeFlag = 0
-        self.parentID = self.nodeID
+        self.parentID = DaspCommon.nodeID
         self.parentDirection = 0
         self.sonID = []
         self.sonDirection = []
@@ -301,8 +299,10 @@ class Task(DaspFuncMixin):
                         sock.close()
                     except Exception as e:
                         print ("与邻居节点"+id+"连接失败")
-                        self.sendtoGUI("与邻居节点"+id+"连接失败")
-                        self.deleteadjID(id)
+                        self.sendDatatoGUI("与邻居节点"+id+"连接失败")
+                        DaspCommon.deleteadjID(id)
+                        self.deleteTaskadjID(id)
+                        self.sendDatatoGUI("已删除和邻居节点"+id+"的连接") 
                     break
 
     def sendData(self, data):
@@ -313,23 +313,11 @@ class Task(DaspFuncMixin):
             if ele != []:
                 self.send(ele[4], data)
 
-    def sendtoGUI(self, info):
+    def sendDatatoGUI(self, info):
         """
-        通过UDP的形式将信息发送至GUI
+        通过UDP的形式将运行信息发送至GUI
         """
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            addr = (Task.GUIinfo[0], Task.GUIinfo[1])
-            data = {
-                "key": "runData",
-                "id": self.nodeID,
-                "tasknum":self.tasknum,
-                "info": info
-            }
-            sock.sendto(json.dumps(data).encode('utf-8'), addr)
-            sock.close()
-        except Exception as e:
-            print (info + "发送失败")
+        self.sendtoGUIbase(info, "RunData", self.DAPPname)
 
     def sendDataToID(self, id, data):
         """
@@ -338,8 +326,8 @@ class Task(DaspFuncMixin):
         data = {
             "key": "questionData",
             "type": "value",
-            "tasknum": self.tasknum,
-            "id": self.nodeID,
+            "DAPPname": self.DAPPname,
+            "id": DaspCommon.nodeID,
             "data": data
         }
         ndata = json.dumps(data)
@@ -355,8 +343,8 @@ class Task(DaspFuncMixin):
         data = {
             "key": "questionData",
             "type": "value",
-            "tasknum": self.tasknum,
-            "id": self.nodeID,
+            "DAPPname": self.DAPPname,
+            "id": DaspCommon.nodeID,
             "data": data
         }
         ndata = json.dumps(data)
@@ -374,8 +362,8 @@ class Task(DaspFuncMixin):
         data = {
             "key": "questionData",
             "type": "value2",
-            "tasknum": self.tasknum,
-            "id": self.nodeID,
+            "DAPPname": self.DAPPname,
+            "id": DaspCommon.nodeID,
             "data": data
         }
         ndata = json.dumps(data)
@@ -386,15 +374,10 @@ class Task(DaspFuncMixin):
                         if ele[4] == self.TaskadjID[i]:
                             self.send(ele[4], ndata)
 
-    def deleteadjID(self, id):  
+    def deleteTaskadjID(self, id):  
         """
         删除本节点和指定id邻居节点的所有连接
         """
-        if id in Task.adjID:
-            index = Task.adjID.index(id)      
-            del Task.adjID[index]
-            del Task.adjDirection[index]
-
         for ele in self.TaskIPlist:
             if ele != []:
                 if ele[4] == id:
@@ -410,7 +393,7 @@ class Task(DaspFuncMixin):
             del self.adjData_another[index]
 
         if self.parentID == id:
-            self.parentID = self.nodeID
+            self.parentID = DaspCommon.nodeID
             self.parentDirection = 0
         else:
             if id in self.sonID:
@@ -419,7 +402,6 @@ class Task(DaspFuncMixin):
                 del self.sonDirection[index]
                 del self.sonData[index]
 
-        self.sendtoGUI("已删除和邻居节点"+str(id)+"的连接") 
                     
     def transmitData(self,direclist,datalist):
         """
@@ -451,8 +433,8 @@ class Task(DaspFuncMixin):
             self.SyncTurnFlag = 1 - self.SyncTurnFlag
             data = {
                 "key": "sync",
-                "id": self.nodeID,
-                "tasknum": self.tasknum
+                "id": DaspCommon.nodeID,
+                "DAPPname": self.DAPPname
             }
             ndata = json.dumps(data)      
             self.sendData(ndata)
@@ -466,8 +448,8 @@ class Task(DaspFuncMixin):
             self.SyncTurnFlag = 1 - self.SyncTurnFlag
             data = {
                 "key": "sync2",
-                "id": self.nodeID,
-                "tasknum": self.tasknum
+                "id": DaspCommon.nodeID,
+                "DAPPname": self.DAPPname
             }
             ndata = json.dumps(data)
             self.sendData(ndata)
@@ -476,18 +458,21 @@ class Task(DaspFuncMixin):
             for i in range(len(self.adjSyncStatus2)):
                 self.adjSyncStatus2[i] = 0
 
+
 if __name__ == '__main__':
 
-    nodeID = "room_1"
-    Task.GUIinfo = ["localhost", 10000]
+    DaspCommon.GUIinfo = ["172.23.96.1", 50000]
+    DaspCommon.nodeID = "room_1"
 
-    task=Task(nodeID, 8)
+    task = Task("debugDAPP")
     task.load()
 
+    task2 = Task("debugDAPP")
+    task2.load()
 
-    task.taskthreads.start()
     task.taskBeginFlag = 1
-    t = 1
+    task2.taskBeginFlag = 1
+
     # TaskDict = {}
     # task = Task(nodeID, 8)
     # TaskDict[0] = task

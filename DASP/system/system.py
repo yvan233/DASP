@@ -10,97 +10,37 @@ import sys
 import threading
 import time
 import traceback
+sys.path.insert(1,".")  # 把上一级目录加入搜索路径
+from DASP.module import DaspCommon, Task, BaseServer, TaskServer, CommServer
 
 class Server(object):
-    taskFuncList = []
-    sensorID = 0
-    IP = ""
-    PORT = []
-    IPlist = []
-    sensorInfo = []
-    adjID = []
-    adjDirection = []
-    AdjOtherSideDirection = []
-    datalist = []
-    GUIinfo = [0,0]
+    def __init__(self, ID, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
 
-    parentID = [0]
-    sonID = [[]]
-    parentDirection = [0]
-    sonDirection = [[]]
-    sonFlagCreate = [[]]
-    flag = [0]
-    treeFlag = [0]
+        DaspCommon.nodeID = ID
+        DaspCommon.IP = socket.gethostbyname(IP)
+        DaspCommon.PORT = PORT
+        DaspCommon.adjID = adjID
+        DaspCommon.adjDirection = adjDirection
+        DaspCommon.adjDirectionOtherSide = adjDirectionOtherSide
+        DaspCommon.IPlist = IPlist
 
-    mesQue = []
-    threads = []
-    taskthreads = []
-
-    dataFlag = []
-    taskFlag = []
-    taskBeginFlag = []
-
-    adjDataList = []
-
-    waitflag = 0
-
-    # parallel
-    taskcounter = 1
-    sonFlag = []
-    sonData = []
-    sonFlag2 = []
-    tk = []
-    tk2 = []
-    adjData = []
-    adjFeedback = []
-    adjSyncStatus = []
-    adjSyncFlag = []
-    adjSyncStatus2 = []
-    adjSyncFlag2 = []
-
-    TASKID = []
-    TASKIPLIST = []
-    TASKDATALIST = []
-    TASKadjDirection = []
-    TASKadjID = []
-
-    def __init__(self, ID, adjID, adjDirection, AdjOtherSideDirection, IPlist,IP,PORT,datalist):
-
-        self.taskFuncList = []
-        question = importlib.import_module("task.question0")
-        question = importlib.reload(question)
-        self.taskFuncList.append(question.taskFunction)
-
-        self.sensorID = ID
-        self.parentID[0] = ID
-        self.parentDirection[0] = 0
-        self.IP = IP
-        self.PORT = PORT
-        self.adjID = adjID
-        self.adjDirection = adjDirection
-        self.AdjOtherSideDirection = AdjOtherSideDirection
-        self.IPlist = IPlist
-        self.datalist = datalist
-        self.IP = socket.gethostbyname(self.IP)
-
-        self.TASKDATALIST.append(datalist)
-        self.TASKadjDirection.append(adjDirection)
-        self.TASKadjID.append(adjID)
-        self.TASKID.append([])
-        self.TASKIPLIST.append(IPlist)
-
+       
 
     def run(self):
         #创建接口服务器
+        self.CommServerThread = []
         for i in range(6):
-            t = threading.Thread(target=self.createServer,args=(self.IP,self.PORT[i],))
-            self.threads.append(t)
+            commserver = CommServer(DaspCommon.IP,DaspCommon.PORT[i])
+            t = threading.Thread(target=commserver.run,args=())
+            self.CommServerThread.append(t)
 
-        taskServerthread = threading.Thread(target=self.taskServer,args=(self.IP,self.PORT[6],))
-        t = threading.Thread(target=self.taskFunction, args=(0,))
-        self.taskthreads.append(t)
+        taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[6])
+        self.TaskServerThread = threading.Thread(target=taskserver.run,args=())
+        
+        # t = threading.Thread(target=self.taskFunction, args=(0,))
+        # self.taskthreads.append(t)
 
         for i in range(6):
-            self.threads[i].start()
-        taskServerthread.start()
-        self.taskthreads[0].start()
+            self.CommServerThread[i].start()
+        self.TaskServerThread.start()
+        # self.taskthreads[0].start()

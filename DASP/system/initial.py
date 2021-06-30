@@ -13,7 +13,7 @@ if __name__ == '__main__':
     datalist = []
     adjDirection = []
     localIP = socket.gethostbyname(socket.gethostname())
-    path = os.getcwd() + "\\DASP\\system\\topology.txt"
+    path = os.getcwd() + "\\DASP\\task_info\\system\\topology.txt"
     path = path.replace('\\', '/')  
     text = codecs.open(path, 'r', 'utf-8').read()
     js = json.loads(text)
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     selfPORT = PORT[order]
     selfDatalist = datalist[order]
     selfIPList = []
-    selfAdjOtherSideDirection = []
+    selfAdjDirectionOtherSide = []
     n = len(IP)
     for i in range(len(selfAdjID)):
         selfIPList.append([])
@@ -47,11 +47,11 @@ if __name__ == '__main__':
                 for k in range(len(adjID[j])):
                     if adjID[j][k] == selfID:
                         selfIPList[i].append(PORT[j][adjDirection[j][k]-1])
-                        selfAdjOtherSideDirection.append(adjDirection[j][k])
+                        selfAdjDirectionOtherSide.append(adjDirection[j][k])
                         break
                 selfIPList[i].append(ID[j])
                 break
     print(selfIPList)
 
-    server = system.Server(selfID, selfAdjID, selfAdjDirection, selfAdjOtherSideDirection, selfIPList, selfIP, selfPORT, selfDatalist)
+    server = system.Server(selfID, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
     server.run()

@@ -224,6 +224,7 @@ def taskFunction(self,id,adjDirection,datalist,tasknum):
             step_min += 1
             if T_delta + start_time - time.time() > 0:
                 time.sleep(T_delta + start_time - time.time())
+                
     else:
         T_delta = 10
         T_inter_Q = 30

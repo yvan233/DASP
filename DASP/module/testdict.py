@@ -4,8 +4,12 @@
 # print(list(D.keys()))
 
 
-
+import json
 keylist = [1,5,99,13,1401]
 valuelist = ['a','b','c','d','e']
 D = dict(zip(keylist,valuelist))
 print (sorted(D.keys()))
+json_list = json.dumps(D, indent=2);
+print(json_list)
+# for ele in D:
+#     print(D[ele])
