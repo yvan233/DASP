@@ -11,11 +11,10 @@ import threading
 import time
 import traceback
 sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-from DASP.module import DaspCommon, Task, BaseServer, TaskServer, CommServer
+from DASP.module import DaspCommon, TaskServer, CommServer
 
 class Server(object):
     def __init__(self, ID, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
-
         DaspCommon.nodeID = ID
         DaspCommon.IP = socket.gethostbyname(IP)
         DaspCommon.PORT = PORT
@@ -23,7 +22,6 @@ class Server(object):
         DaspCommon.adjDirection = adjDirection
         DaspCommon.adjDirectionOtherSide = adjDirectionOtherSide
         DaspCommon.IPlist = IPlist
-
 
     def run(self):
         #创建接口服务器

@@ -1,6 +1,4 @@
 import socket
-import ctypes
-import inspect
 import json
 import sys
 import time
@@ -54,7 +52,7 @@ class BaseServer(DaspCommon):
             return 0
         except Exception as e:
             self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败", DAPPname) 
-            print ("与邻居节点"+adjID+"连接失败")
+            print ("Failed to connect with neighbor node "+adjID)
             return adjID
                    
             
@@ -76,9 +74,9 @@ class BaseServer(DaspCommon):
             self.sendall_length(sock, cont, jsondata)
             sock.close()
         except Exception as e:
-            self.sendRunDatatoGUI("邻居节点"+adjID+"连接失败")
+            self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败")
             # print(traceback.format_exc())
-            print ("与邻居节点"+adjID+"连接失败")
+            print ("Failed to connect with neighbor node "+adjID)
             return adjID
 
 
@@ -99,12 +97,22 @@ class BaseServer(DaspCommon):
                         self.sendall_length(sock, cont, data)
                         sock.close()
                     except Exception as e:
-                        print ("与邻居节点"+id+"连接失败")
-                        self.sendDatatoGUI("与邻居节点"+id+"连接失败")
+                        print ("Failed to connect with neighbor node "+id)
                         self.deleteadjID(id)
                         self.deleteTaskDictadjID(id)
-                        self.sendDatatoGUI("已删除和邻居节点"+id+"的连接") 
+                        self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
                     break
+    
+    def Forward2sonID(self, jdata, DAPPname):
+        """
+        将json消息转发给子节点
+        """
+        if BaseServer.TaskDict[DAPPname].sonID:
+            sjdata = json.dumps(jdata)
+            for ele in reversed(BaseServer.TaskDict[DAPPname].TaskIPlist):
+                if ele:
+                    if ele[4] in BaseServer.TaskDict[DAPPname].sonID:
+                        self.send(ele[4], data=sjdata)
 
     def deleteTaskDictadjID(self, id):  
         """
@@ -129,10 +137,12 @@ class BaseServer(DaspCommon):
         """
         通过UDP的形式将运行状态发送至GUI  
         #0 未启动
-        #1 运行中
+        #1 暂停中
+        #2 运行中
         """
         self.sendtoGUIbase(info, "RunFlag", DAPPname)
-            
+
+     
 
 class TaskServer(BaseServer):
     """外部交互服务器
@@ -176,12 +186,18 @@ class TaskServer(BaseServer):
                             DaspCommon.GUIinfo = jdata["GUIinfo"]
                             self.sendRunDatatoGUI("接收任务请求")
                         except KeyError:
-                            print ("非来自GUI的任务请求")
+                            print ("Task requests not from the GUI")
                         self.startsystem()
 
                     elif jdata["key"] == "newtask":
                         self.newtask(jdata)
 
+                    elif jdata["key"] == "pausetask":
+                        self.pausetask(jdata)
+
+                    elif jdata["key"] == "resumetask":
+                        self.resumetask(jdata)
+                        
                     elif jdata["key"] == "shutdowntask":
                         self.shutdowntask(jdata)
 
@@ -190,7 +206,7 @@ class TaskServer(BaseServer):
                     #         DaspCommon.GUIinfo = jdata["GUIinfo"]
                     #         self.sendRunDatatoGUI("接收任务请求")
                     #     except KeyError:
-                    #         print ("非来自GUI的任务请求")
+                    #         print ("Task requests not from the GUI")
                     #     BaseServer.TaskDict["system"].commTreeFlag[0] = 1
                     #     deleteID = []
                     #     for ele in self.TASKIPLIST[0]:
@@ -243,12 +259,12 @@ class TaskServer(BaseServer):
         }
         sjdata = json.dumps(sdata)
         for ele in reversed(DaspCommon.IPlist):
-            if ele != []:
+            if ele:
                 if ele[4] in BaseServer.TaskDict["system"].sonID:
                     self.send(ele[4], data=sjdata)
         
         BaseServer.TaskDict["system"].taskBeginFlag = 1
-        self.sendFlagtoGUI(1)
+        self.sendFlagtoGUI(2)
 
         #启动计算结果转发线程
         self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
@@ -260,7 +276,7 @@ class TaskServer(BaseServer):
         根节点等待所有任务的数据收集结束标志，随后将计算结果转发到GUI界面
         """
         while 1:
-            time.sleep(0.01)
+            time.sleep(0.1)
             for key in BaseServer.TaskDict:
                 if BaseServer.TaskDict[key].dataEndFlag == 1:
                     # time.sleep(1)   # 防止结果显示超前其他节点
@@ -313,35 +329,44 @@ class TaskServer(BaseServer):
             "key": "newtask",
             "DAPPname": name
         }
-        sjdata = json.dumps(sdata)
-        for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
-            if ele != []:
-                if ele[4] in BaseServer.TaskDict[name].sonID:
-                    self.send(ele[4], data=sjdata)
+        self.Forward2sonID(sdata,name)
 
         BaseServer.TaskDict[name].taskBeginFlag = 1
-        self.sendFlagtoGUI(1,name)
+        self.sendFlagtoGUI(2,name)
 
         if self.ResultThreadsFlag == 0:
             self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
             self.ResultThreads.start()
             self.ResultThreadsFlag = 1
 
+
+    def pausetask(self, jdata):
+        """
+        暂停DAPP
+        """
+        name = (jdata["DAPPname"])
+        self.Forward2sonID(jdata, name)
+        BaseServer.TaskDict[name].pause()
+        self.sendFlagtoGUI(1,name)
+
+    def resumetask(self, jdata):
+        """
+        恢复DAPP
+        """
+        name = (jdata["DAPPname"])
+        self.Forward2sonID(jdata, name)
+        BaseServer.TaskDict[name].resume()
+        self.sendFlagtoGUI(2,name)
+
     def shutdowntask(self, jdata):
         """
         停止DAPP
         """
         name = jdata["DAPPname"]
-        if BaseServer.TaskDict[name].sonID:
-            for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
-                if ele:
-                    if ele[4] in BaseServer.TaskDict[name].sonID:
-                        sjdata = json.dumps(jdata)
-                        self.send(ele[4], data=sjdata)
-
-        self.stop_thread(BaseServer.TaskDict[name].taskthreads)
-        BaseServer.TaskDict[name].reset()
+        self.Forward2sonID(jdata,name)
+        BaseServer.TaskDict[name].shutdown()
         self.sendFlagtoGUI(0,name)
+
 
     def restart():
         pass
@@ -394,7 +419,13 @@ class CommServer(BaseServer):
 
                     elif jdata["key"] == "shutdowntask":
                         self.RespondShutDownTask(jdata)
+
+                    elif jdata["key"] == "pausetask":
+                        self.RespondPauseTask(jdata)
                     
+                    elif jdata["key"] == "resumetask":
+                        self.RespondResumeTask(jdata)
+
                     elif jdata["key"] == "data":
                         self.RespondData(jdata)
 
@@ -532,12 +563,7 @@ class CommServer(BaseServer):
         """
         回应启动系统信号，广播子节点启动系统信号，启动系统DAPP
         """
-        if BaseServer.TaskDict["system"].sonID:
-            for ele in reversed(BaseServer.TaskDict["system"].TaskIPlist):
-                if ele != []:
-                    if ele[4] in BaseServer.TaskDict["system"].sonID:
-                        sjdata = json.dumps(jdata)
-                        self.send(ele[4], data=sjdata)
+        self.Forward2sonID(jdata, "system")
         BaseServer.TaskDict["system"].taskBeginFlag = 1
 
     def RespondNewTask(self, jdata):
@@ -545,28 +571,32 @@ class CommServer(BaseServer):
         回应新任务信号，广播子节点启动任务信号，启动任务DAPP
         """
         name = (jdata["DAPPname"])
-        if BaseServer.TaskDict[name].sonID:
-            for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
-                if ele:
-                    if ele[4] in BaseServer.TaskDict[name].sonID:
-                        sjdata = json.dumps(jdata)
-                        self.send(ele[4], data=sjdata)
+        self.Forward2sonID(jdata, name)
         BaseServer.TaskDict[name].taskBeginFlag = 1
+
+    def RespondPauseTask(self, jdata):
+        """
+        回应暂停任务信号，广播子节点暂停任务信号，暂停任务DAPP
+        """
+        name = (jdata["DAPPname"])
+        self.Forward2sonID(jdata, name)
+        BaseServer.TaskDict[name].pause()
+
+    def RespondResumeTask(self, jdata):
+        """
+        回应恢复任务信号，广播子节点恢复任务信号，恢复任务DAPP
+        """
+        name = (jdata["DAPPname"])
+        self.Forward2sonID(jdata, name)
+        BaseServer.TaskDict[name].resume()
 
     def RespondShutDownTask(self, jdata):
         """
-        回应结束任务信号，广播子节点结束任务信号，启动结束任务DAPP
+        回应结束任务信号，广播子节点结束任务信号，结束任务DAPP
         """
-        name = jdata["DAPPname"]
-        if BaseServer.TaskDict[name].sonID:
-            for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
-                if ele:
-                    if ele[4] in BaseServer.TaskDict[name].sonID:
-                        sjdata = json.dumps(jdata)
-                        self.send(ele[4], data=sjdata)
-
-        self.stop_thread(BaseServer.TaskDict[name].taskthreads)
-        BaseServer.TaskDict[name].reset()
+        name = (jdata["DAPPname"])
+        self.Forward2sonID(jdata, name)
+        BaseServer.TaskDict[name].shutdown()
 
     def RespondData(self, jdata):
         """

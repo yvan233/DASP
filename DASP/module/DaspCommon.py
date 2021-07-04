@@ -1,6 +1,4 @@
 import socket
-import ctypes
-import inspect
 import json
 
 class DaspCommon():
@@ -19,12 +17,6 @@ class DaspCommon():
         GUIinfo: UI界面IP及端口
         (包括读取拓扑文件的信息，以及所有类共有的信息)
     '''
-    """
-        sonID: 子节点ID
-        parentID: 父节点ID,根节点与nodeID相同
-        parentDirection: 父节点方向,根节点为0
-        sonDirection:  子节点方向
-    """
     ### 类变量，直接通过DaspCommon.维护
     nodeID = ""
     IP = ""
@@ -33,12 +25,7 @@ class DaspCommon():
     adjDirection = []
     adjDirectionOtherSide = []
     IPlist = []
-    GUIinfo = ["localhost",0]
-    # parentID = ""
-    # parentDirection = 0
-    # sonID = []
-    # sonDirection = []
-    
+    GUIinfo = ["localhost",0]    
 
     def __init__(self):
         pass
@@ -68,28 +55,6 @@ class DaspCommon():
                 break
         return message
 
-    def _async_raise(self, tid, exctype):
-        '''
-        主动抛出异常
-        '''
-        tid = ctypes.c_long(tid)
-        if not inspect.isclass(exctype):
-            exctype = type(exctype)
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
-        if res == 0:
-            raise ValueError("invalid thread id")
-        elif res != 1:
-            # """if it returns a number greater than one, you're in trouble,
-            # and you should call it again with exc=NULL to revert the effect"""
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
-            raise SystemError("PyThreadState_SetAsyncExc failed")
-
-    def stop_thread(self, thread):
-        '''
-        强制停止某个线程
-        '''
-        self._async_raise(thread.ident, SystemExit)
-
     def sendtoGUIbase(self, info, key, DAPPname):
         """
         通过UDP的形式将信息发送至GUI
@@ -106,7 +71,7 @@ class DaspCommon():
             sock.sendto(json.dumps(data).encode('utf-8'), addr)
             sock.close()
         except Exception as e:
-            print (info + "发送失败")
+            print ("Failed to send" + info)
 
     def deleteadjID(self, id):  
         """

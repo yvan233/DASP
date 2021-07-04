@@ -5,6 +5,8 @@ import time
 import threading
 import traceback
 import importlib
+import ctypes
+import inspect
 import os
 import codecs
 import copy
@@ -46,6 +48,10 @@ class Task(DaspCommon):
         dataEndFlag: 根节点数据收集结束标志
         CreateTreeSonFlag: 创建通信树子节点标志
         SonDataEndFlag: 子节点数据收集结束标志   
+        runFlag: 用于暂停的标志，threading.Event()
+            .set()设置为True
+            .clear()设置为False
+            .wait()  当为True时pass，当为False时阻塞等到到为True时pass
 
         SyncTurnFlag: 同步函数轮训标志
         SyncTurnFlag2: 同步通信函数轮训标志
@@ -55,6 +61,8 @@ class Task(DaspCommon):
     def __init__(self, DAPPname):
         self.DAPPname = DAPPname
         self.commTreeFlag = 1
+        self.runFlag = threading.Event()
+        self.runFlag.set()
         
     def load(self):
         """
@@ -149,12 +157,12 @@ class Task(DaspCommon):
                     if DaspCommon.nodeID in self.TaskID: #如果在任务列表中
                         try:
                             self.sendDatatoGUI("开始执行")
-                            print("DAPP:{}开始执行".format(self.DAPPname))
+                            print("DAPP:{} start".format(self.DAPPname))
                             value = self.taskfunc(self, DaspCommon.nodeID, self.TaskadjDirection, self.TaskDatalist)
                             self.resultinfo["value"] = value
                             self.sendDatatoGUI("执行完毕")
                             # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错
-                            print ("value:", value)
+                            print ("Calculation complete")
                         except Exception as e:
                             self.resultinfo["value"] = ""
                             self.sendDatatoGUI("执行出错")
@@ -172,12 +180,52 @@ class Task(DaspCommon):
                     return 0
         except SystemExit:
             self.sendDatatoGUI("停止执行")
+            print("DAPP:{} stop".format(self.DAPPname))
+
+    def pause(self):
+        """
+        暂停运行任务服务器
+        """
+        self.runFlag.clear()     # 设置为False, 阻塞
+        self.sendtoGUIbase("开始暂停", "RunData", self.DAPPname) # 防止阻塞，不用sendDatatoGUI
+        print("DAPP:{} pause".format(self.DAPPname))
+
+    def resume(self):
+        """
+        恢复运行任务服务器
+        """
+        self.runFlag.set()    # 设置为True, 停止阻塞
+        self.sendtoGUIbase("开始恢复", "RunData", self.DAPPname) # 防止阻塞，不用sendDatatoGUI
+        print("DAPP:{} resume".format(self.DAPPname))
+
+    def _async_raise(self, tid, exctype):
+        '''
+        主动抛出异常
+        '''
+        tid = ctypes.c_long(tid)
+        if not inspect.isclass(exctype):
+            exctype = type(exctype)
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+        if res == 0:
+            raise ValueError("invalid thread id")
+        elif res != 1:
+            # """if it returns a number greater than one, you're in trouble,
+            # and you should call it again with exc=NULL to revert the effect"""
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+
+    def stop_thread(self, thread):
+        '''
+        强制停止某个线程
+        '''
+        self._async_raise(thread.ident, SystemExit)
 
     def shutdown(self):
         """
         终止运行任务服务器
         """
         self.stop_thread(self.taskthreads)
+        self.reset()
 
     def data_collec(self):
         """
@@ -275,6 +323,7 @@ class Task(DaspCommon):
         """
         通过TCP的形式将信息发送至指定ID的节点
         """
+        self.runFlag.wait()  #系统运行标志
         for ele in self.TaskIPlist:
             if ele!=[]:
                 if ele[4] == id:
@@ -288,7 +337,7 @@ class Task(DaspCommon):
                         self.sendall_length(sock, cont, data)
                         sock.close()
                     except Exception as e:
-                        print ("与邻居节点"+id+"连接失败")
+                        print ("Failed to connect with neighbor node "+id)
                         self.deleteadjID(id)
                         self.deleteTaskadjID(id)
                         self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
@@ -306,6 +355,7 @@ class Task(DaspCommon):
         """
         通过UDP的形式将运行信息发送至GUI
         """
+        self.runFlag.wait()  #系统运行标志
         self.sendtoGUIbase(info, "RunData", self.DAPPname)
 
     def sendDataToID(self, id, data):
@@ -390,12 +440,12 @@ class Task(DaspCommon):
                 del self.sonID[index]     
                 del self.sonDirection[index]
                 del self.sonData[index]
-
                     
     def transmitData(self,direclist,datalist):
         """
         同步通信函数，将datalist中的数据分别发到direclist的邻居方向
         """
+        self.runFlag.wait()  #系统运行标志
         if (self.SyncTurnFlag2 == 0):
             self.SyncTurnFlag2 = 1 - self.SyncTurnFlag2
             for i in reversed(range(len(direclist))):
@@ -418,6 +468,7 @@ class Task(DaspCommon):
         """
         同步函数，所有节点同步一次
         """
+        self.runFlag.wait()  #系统运行标志
         if self.SyncTurnFlag == 0:   
             self.SyncTurnFlag = 1 - self.SyncTurnFlag
             data = {
