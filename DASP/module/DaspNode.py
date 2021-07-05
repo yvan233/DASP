@@ -61,6 +61,7 @@ if __name__ == '__main__':
     for i in range(11):
         node = Node(i+2, False, [])
         nodelist.append(node)
+        
     # time.sleep(10)
     # 杀死重启进程测试，测试结果：通过
     # nodelist[1].kill()

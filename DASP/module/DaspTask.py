@@ -22,7 +22,7 @@ class Task(DaspCommon):
         nodeID: 节点ID
         adjID：邻居ID
         sonID: 子节点ID
-        parentID：父节点ID,根节点与nodeID相同
+        parentID: 父节点ID,根节点与nodeID相同
         parentDirection 父节点方向,根节点为0
         sonDirection  子节点方向
         TaskIPlist: 邻居IP及端口列表
@@ -261,32 +261,13 @@ class Task(DaspCommon):
         # 非叶子结点
         else:
             print ("wait sonDataEndFlag")
-            ii = 0
-            # 父节点结束程序后等待子节点10s
-            while self.sonDataEndFlag == 0 and ii < 100:
+            while self.sonDataEndFlag == 0:
                 time.sleep(0.01)
-                ii = ii + 1
-            if ii == 100:
-                print ("timeout!")
-                sdata = {
-                    "id": DaspCommon.nodeID,
-                    "info": {"value" : "Child node data loss"}
-                }
-                # deleteID = []
-                # for k in range(len(self.sonData)):
-                #     if not self.sonData[k]:
-                #         deleteID.append(self.sonID[k])
-                # for k in range(len(deleteID)):   
-                #     self.sendDatatoGUI("邻居节点"+deleteID[k]+"连接不上")
-                #     print ("与邻居节点"+deleteID[k]+"连接失败")
-                #     self.deleteadjID(deleteID[k])  
-                #     self.sendDatatoGUI("已删除和邻居节点"+(deleteID[k])+"的连接") 
-            else:
-                print ("sonDataEndFlag complete")
-                sdata = {
-                    "id": DaspCommon.nodeID,
-                    "info": self.resultinfo
-                }
+            print ("sonDataEndFlag complete")
+            sdata = {
+                "id": DaspCommon.nodeID,
+                "info": self.resultinfo
+            }
             self.resultinfoQue.append(sdata)
             for ele in self.sonData:
                 for ele2 in ele:
@@ -518,5 +499,4 @@ if __name__ == '__main__':
     # TaskDict[0] = task
     # task2 = Task(nodeID, 1)
     # TaskDict.update({1:task2})
-
     # print (task.GUIinfo,TaskDict[1].GUIinfo)

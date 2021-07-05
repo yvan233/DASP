@@ -33,7 +33,7 @@ def taskFunction(self,id,adjDirection,datalist):
 
     # 循环次数为网络规模的2倍，5  *2 = 10
     for m in range(12):
-        time.sleep(0.1)                                        # 异步通信函数前sleep一段时间防止通信数据覆盖写入
+        time.sleep(0.1)                                # 异步通信函数前sleep一段时间防止通信数据覆盖写入
         for i in range(len(data)):
             self.sendDataToDirection(data[i][0],data[i][1:])   # 只传给邻居BFS和END信号
         self.syncNode()                                        # 同步异步通信函数

@@ -54,18 +54,20 @@ class BaseServer(DaspCommon):
             self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败", DAPPname) 
             print ("Failed to connect with neighbor node "+adjID)
             return adjID
-                   
-            
+                    
     def reconnect(self,host1,port1,host2,port2,adjID,direction):
+        """
+        发送重新连接请求
+        """
         data = {
-            "key": "newNode",
+            "key": "reconnect",
             "host": host1,
             "port": port1,
             "id": DaspCommon.nodeID,
             "applydirection": direction
         }
         try:
-            print (host1 + ":" + str(port1) + " connecting to " + host2 + ":" + str(port2))
+            print ("{}:{} reconnecting to {}:{}".format(host1,str(port1),host2,str(port2)))
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             remote_ip = socket.gethostbyname(host2)
             sock.connect((remote_ip, port2))
@@ -74,11 +76,9 @@ class BaseServer(DaspCommon):
             self.sendall_length(sock, cont, jsondata)
             sock.close()
         except Exception as e:
-            self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败")
-            # print(traceback.format_exc())
+            self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败") 
             print ("Failed to connect with neighbor node "+adjID)
             return adjID
-
 
     def send(self,id,data):
         """
@@ -100,7 +100,7 @@ class BaseServer(DaspCommon):
                         print ("Failed to connect with neighbor node "+id)
                         self.deleteadjID(id)
                         self.deleteTaskDictadjID(id)
-                        self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
+                        self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
                     break
     
     def Forward2sonID(self, jdata, DAPPname):
@@ -182,12 +182,7 @@ class TaskServer(BaseServer):
                     conn.send(str.encode(head + "请输入JSON格式的数据！"))
                 else:
                     if jdata["key"] == "startsystem":
-                        try:
-                            DaspCommon.GUIinfo = jdata["GUIinfo"]
-                            self.sendRunDatatoGUI("接收任务请求")
-                        except KeyError:
-                            print ("Task requests not from the GUI")
-                        self.startsystem()
+                        self.startsystem(jdata)
 
                     elif jdata["key"] == "newtask":
                         self.newtask(jdata)
@@ -201,28 +196,8 @@ class TaskServer(BaseServer):
                     elif jdata["key"] == "shutdowntask":
                         self.shutdowntask(jdata)
 
-                    # elif jdata["key"] == "restart":
-                    #     try:
-                    #         DaspCommon.GUIinfo = jdata["GUIinfo"]
-                    #         self.sendRunDatatoGUI("接收任务请求")
-                    #     except KeyError:
-                    #         print ("Task requests not from the GUI")
-                    #     BaseServer.TaskDict["system"].commTreeFlag[0] = 1
-                    #     deleteID = []
-                    #     for ele in self.TASKIPLIST[0]:
-                    #         if ele != []:
-                    #             index = self.adjID.index(ele[4])
-                    #             returnID = self.reconnect(ele[0], ele[1], ele[2], ele[3], ele[4], self.AdjOtherSideDirection[index])
-                    #             if returnID:
-                    #                 deleteID.append(returnID)
-                    #     for k in range(len(deleteID)):
-                    #         self.deleteadjID(deleteID[k])                        
-                    #     self.taskBeginFlag[0] = 1
-                    #     self.sendRunDatatoGUIflag(2,0)
-
-                    #     ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
-                    #     ResultThreads.startsystem()
-                    #     self.ResultThreadsFlag = 1
+                    elif jdata["key"] == "restart":
+                        self.restart(jdata)
 
                     else:
                         conn.send(str.encode(head + "您输入的任务信息有误！"))
@@ -230,46 +205,68 @@ class TaskServer(BaseServer):
                 conn.send(str.encode(head + "暂未提供POST以外的接口"))
             conn.close()
 
-    def startsystem(self):
+    def startsystem(self, jdata):
         """
         启动系统
         """
-        #启动系统任务线程
-        BaseServer.TaskDict["system"] = Task("system")
-        BaseServer.TaskDict["system"].load()
+        try:
+            DaspCommon.GUIinfo = jdata["GUIinfo"]
+            self.sendRunDatatoGUI("接收任务请求")
+        except KeyError:
+            print ("Task requests not from the GUI")
+
+        name = "system"
+        sdata = {
+            "key": "startsystem",
+            "GUIinfo": DaspCommon.GUIinfo
+        }
+        self.newtaskbase(name, sdata)
+
+    def newtask(self, jdata): 
+        """
+        启动DAPP
+        """
+        name = jdata["DAPPname"]
+        sdata = {
+            "key": "newtask",
+            "DAPPname": name
+        }
+        self.sendRunDatatoGUI("接收任务请求",name)
+        self.newtaskbase(name, sdata)
+
+    def newtaskbase(self, name, jdata): 
+        """
+        启动DAPP基本操作：加载任务、建立通信树、启动任务、启动数据转发线程
+        """
+        BaseServer.TaskDict[name] = Task(name)
+        BaseServer.TaskDict[name].load()
+
+        # 建立通信树
         sum = 0
         deleteID = []
-        for ele in DaspCommon.IPlist:
-            if ele != []:
-                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], "system")
+        for ele in BaseServer.TaskDict[name].TaskIPlist:
+            if ele:
+                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], name)
                 if returnID:
                     deleteID.append(returnID)
                 sum += 1
         for ele in deleteID:
             self.deleteadjID(ele)
             self.deleteTaskDictadjID(ele)
-        if(sum == 0): BaseServer.TaskDict["system"].treeFlag = 1   #只有一个节点的情况
-        while (BaseServer.TaskDict["system"].treeFlag == 0): {time.sleep(0.01)}
+        if(sum == 0): BaseServer.TaskDict[name].treeFlag = 1   #只有一个节点的情况
+        while (BaseServer.TaskDict[name].treeFlag == 0): {time.sleep(0.01)}
         self.sendRunDatatoGUI("通信树建立完成")
 
-        # 启动系统任务
-        sdata = {
-            "key": "startsystem",
-            "GUIinfo": DaspCommon.GUIinfo
-        }
-        sjdata = json.dumps(sdata)
-        for ele in reversed(DaspCommon.IPlist):
-            if ele:
-                if ele[4] in BaseServer.TaskDict["system"].sonID:
-                    self.send(ele[4], data=sjdata)
-        
-        BaseServer.TaskDict["system"].taskBeginFlag = 1
-        self.sendFlagtoGUI(2)
+        #启动任务
+        self.Forward2sonID(jdata,name)
 
-        #启动计算结果转发线程
-        self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
-        self.ResultThreads.start()
-        self.ResultThreadsFlag = 1
+        BaseServer.TaskDict[name].taskBeginFlag = 1
+        self.sendFlagtoGUI(2,name)
+
+        if self.ResultThreadsFlag == 0: #启动计算结果转发线程
+            self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
+            self.ResultThreads.start()
+            self.ResultThreadsFlag = 1
 
     def ResultForwarding(self):
         """
@@ -299,47 +296,6 @@ class TaskServer(BaseServer):
                     BaseServer.TaskDict[key].resultinfoQue = []
                     BaseServer.TaskDict[key].resultinfo = {}
 
-    def newtask(self, jdata): 
-        """
-        启动DAPP
-        """
-        name = jdata["DAPPname"]
-        self.sendRunDatatoGUI("接收任务请求",name)
-        BaseServer.TaskDict[name] = Task(name)
-        BaseServer.TaskDict[name].load()
-
-        # 建立通信树
-        sum = 0
-        deleteID = []
-        for ele in BaseServer.TaskDict[name].TaskIPlist:
-            if ele != []:
-                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], name)
-                if returnID:
-                    deleteID.append(returnID)
-                sum += 1
-        for ele in deleteID:
-            self.deleteadjID(ele)
-            self.deleteTaskDictadjID(ele)
-        if(sum == 0): BaseServer.TaskDict[name].treeFlag = 1   #只有一个节点的情况
-        while (BaseServer.TaskDict[name].treeFlag == 0): {time.sleep(0.01)}
-        self.sendRunDatatoGUI("通信树建立完成")
-
-        #启动任务
-        sdata = {
-            "key": "newtask",
-            "DAPPname": name
-        }
-        self.Forward2sonID(sdata,name)
-
-        BaseServer.TaskDict[name].taskBeginFlag = 1
-        self.sendFlagtoGUI(2,name)
-
-        if self.ResultThreadsFlag == 0:
-            self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
-            self.ResultThreads.start()
-            self.ResultThreadsFlag = 1
-
-
     def pausetask(self, jdata):
         """
         暂停DAPP
@@ -367,10 +323,38 @@ class TaskServer(BaseServer):
         BaseServer.TaskDict[name].shutdown()
         self.sendFlagtoGUI(0,name)
 
+    def restart(self, jdata):
+        """
+        将节点重连进分布式网络
+        """
+        try:
+            DaspCommon.GUIinfo = jdata["GUIinfo"]
+            self.sendRunDatatoGUI("重新连入系统")
+        except KeyError:
+            print ("Task requests not from the GUI")
 
-    def restart():
-        pass
+        name = "system"
+        BaseServer.TaskDict[name] = Task(name)
+        BaseServer.TaskDict[name].load()
 
+        deleteID = []
+        for ele in BaseServer.TaskDict[name].TaskIPlist:
+            if ele:
+                index = DaspCommon.adjID.index(ele[4])
+                returnID = self.reconnect(ele[0], ele[1], ele[2], ele[3], ele[4], DaspCommon.adjDirectionOtherSide[index])
+                if returnID:
+                    deleteID.append(returnID)
+        for ele in deleteID:
+            self.deleteadjID(ele)
+            self.deleteTaskDictadjID(ele)
+
+        BaseServer.TaskDict[name].taskBeginFlag = 1
+        self.sendFlagtoGUI(2,name)
+
+        if self.ResultThreadsFlag == 0: #启动计算结果转发线程
+            self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
+            self.ResultThreads.start()
+            self.ResultThreadsFlag = 1
 
 class CommServer(BaseServer):
     """
@@ -439,29 +423,8 @@ class CommServer(BaseServer):
                         self.RespondSync(jdata,2)
 
 
-                    elif jdata["key"] == "newNode":
-                        if jdata["applydirection"] not in self.adjDirection:
-                            self.adjID.append(jdata["id"])
-                            self.adjDirection.append(jdata["applydirection"])
-                            direction = jdata["applydirection"] - 1
-                            self.sonDirection[0].append(jdata["applydirection"])
-                            DaspCommon.sonID[0].append(jdata["id"])
-                            tempiplist = []
-                            tempiplist.append(self.IP)
-                            tempiplist.append(self.PORT[direction])
-                            tempiplist.append(jdata["host"])
-                            tempiplist.append(jdata["port"])
-                            tempiplist.append(jdata["id"])
-                            for m in range(len(self.TASKIPLIST)):
-                                self.TASKIPLIST[m].append(tempiplist)
-                                self.TASKadjID[m].append(jdata["id"])
-                                self.TASKadjDirection[m].append(jdata["applydirection"])
-                                self.adjSyncStatus[m].append([])   #同步标志位  
-                                self.adjSyncStatus2[m].append([])    
-                                self.adjData[m].append([])
-                                self.adjFeedback[m].append([])
-                        else:
-                            conn.send(str.encode(head + "节点"+str(DaspCommon.nodeID)+"方向"+str(jdata["applydirection"])+"已被占用，请选择其他方向！"))
+                    elif jdata["key"] == "reconnect":
+                        self.RespondReconnect(conn, head, jdata)
 
                     else:
                         conn.send(str.encode(head+"请不要直接访问通信服务器"))
@@ -491,6 +454,7 @@ class CommServer(BaseServer):
                 mdata = json.dumps(data)
                 self.sendall_length(conn, head, mdata)
                 return 0
+
         # 如果当前节点不在通信树中，则加入通信树
         BaseServer.TaskDict[name] = Task(name)
         BaseServer.TaskDict[name].load()
@@ -533,6 +497,41 @@ class CommServer(BaseServer):
             self.send(BaseServer.TaskDict[name].parentID, data=ndata)
             for i in range(len(BaseServer.TaskDict[name].CreateTreeSonFlag)):
                 BaseServer.TaskDict[name].CreateTreeSonFlag[i] = 0
+
+    def RespondReconnect(self, conn, head, jdata):
+        """
+        回应节点重新连接请求
+        如果申请方向未被占用，则将该节点加入子节点中
+        """
+        if jdata["applydirection"] not in DaspCommon.adjDirection:
+
+            direction = jdata["applydirection"] - 1
+
+            tempiplist = []
+            tempiplist.append(self.IP)
+            tempiplist.append(self.PORT[direction])
+            tempiplist.append(jdata["host"])
+            tempiplist.append(jdata["port"])
+            tempiplist.append(jdata["id"])
+
+            DaspCommon.IPlist.append(tempiplist)
+            DaspCommon.adjID.append(jdata["id"])
+            DaspCommon.adjDirection.append(jdata["applydirection"])
+
+            BaseServer.TaskDict["system"].sonDirection.append(jdata["applydirection"])
+            BaseServer.TaskDict["system"].sonID.append(jdata["id"])
+            BaseServer.TaskDict["system"].CreateTreeSonFlag.append(0)
+            BaseServer.TaskDict["system"].sonData.append([])
+            BaseServer.TaskDict["system"].TaskIPlist.append(tempiplist)
+            BaseServer.TaskDict["system"].TaskadjID.append(jdata["id"])
+            BaseServer.TaskDict["system"].TaskadjDirection.append(jdata["applydirection"])
+            BaseServer.TaskDict["system"].adjSyncStatus.append([]) 
+            BaseServer.TaskDict["system"].adjSyncStatus2.append([]) 
+            BaseServer.TaskDict["system"].adjData.append([]) 
+            BaseServer.TaskDict["system"].adjData_another.append([]) 
+            self.sendRunDatatoGUI("与邻居节点{0}重连成功，已添加和{0}的连接".format(jdata["id"])) 
+        else:
+            conn.send(str.encode(head + "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["applydirection"]))))
 
     def RespondOK(self, jdata):
         """

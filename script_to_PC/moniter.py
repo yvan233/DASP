@@ -29,7 +29,7 @@ while 1:
         if jdata["key"] == "RunData":
             print("[{}]{}: {}".format(jdata["id"], jdata["DAPPname"], jdata["info"]))
         elif jdata["key"] == "EndData":
-            print("[{}]{}运行结束，运行结果:\n{}".format(jdata["id"], jdata["DAPPname"], jdata["info"]))
+            print("[{}]{}运行结 束，运行结果:\n{}".format(jdata["id"], jdata["DAPPname"], jdata["info"]))
         elif jdata["key"] == "RunFlag":
             # print(str(jdata["tasknum"]) +str(jdata["info"]))
             pass
