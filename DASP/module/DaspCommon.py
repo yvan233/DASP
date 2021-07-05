@@ -1,5 +1,7 @@
 import socket
 import json
+import ctypes
+import inspect
 
 class DaspCommon():
     '''
@@ -86,3 +88,25 @@ class DaspCommon():
             if ele != []:
                 if ele[4] == id:
                     DaspCommon.IPlist.remove(ele)
+
+    def _async_raise(self, tid, exctype):
+        '''
+        主动抛出异常
+        '''
+        tid = ctypes.c_long(tid)
+        if not inspect.isclass(exctype):
+            exctype = type(exctype)
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+        if res == 0:
+            raise ValueError("invalid thread id")
+        elif res != 1:
+            # """if it returns a number greater than one, you're in trouble,
+            # and you should call it again with exc=NULL to revert the effect"""
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+
+    def stop_thread(self, thread):
+        '''
+        强制停止某个线程
+        '''
+        self._async_raise(thread.ident, SystemExit)

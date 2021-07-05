@@ -5,8 +5,6 @@ import time
 import threading
 import traceback
 import importlib
-import ctypes
-import inspect
 import os
 import codecs
 import copy
@@ -197,28 +195,6 @@ class Task(DaspCommon):
         self.runFlag.set()    # 设置为True, 停止阻塞
         self.sendtoGUIbase("开始恢复", "RunData", self.DAPPname) # 防止阻塞，不用sendDatatoGUI
         print("DAPP:{} resume".format(self.DAPPname))
-
-    def _async_raise(self, tid, exctype):
-        '''
-        主动抛出异常
-        '''
-        tid = ctypes.c_long(tid)
-        if not inspect.isclass(exctype):
-            exctype = type(exctype)
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
-        if res == 0:
-            raise ValueError("invalid thread id")
-        elif res != 1:
-            # """if it returns a number greater than one, you're in trouble,
-            # and you should call it again with exc=NULL to revert the effect"""
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
-            raise SystemError("PyThreadState_SetAsyncExc failed")
-
-    def stop_thread(self, thread):
-        '''
-        强制停止某个线程
-        '''
-        self._async_raise(thread.ident, SystemExit)
 
     def shutdown(self):
         """

@@ -52,7 +52,7 @@ class BaseServer(DaspCommon):
             return 0
         except Exception as e:
             self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败", DAPPname) 
-            print ("Failed to connect with neighbor node "+adjID)
+            print ("与邻居节点"+adjID+"连接失败")
             return adjID
                     
     def reconnect(self,host1,port1,host2,port2,adjID,direction):
@@ -77,7 +77,7 @@ class BaseServer(DaspCommon):
             sock.close()
         except Exception as e:
             self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败") 
-            print ("Failed to connect with neighbor node "+adjID)
+            print ("与邻居节点"+adjID+"连接失败")
             return adjID
 
     def send(self,id,data):
@@ -97,7 +97,7 @@ class BaseServer(DaspCommon):
                         self.sendall_length(sock, cont, data)
                         sock.close()
                     except Exception as e:
-                        print ("Failed to connect with neighbor node "+id)
+                        print ("与邻居节点{}连接失败".format(id))
                         self.deleteadjID(id)
                         self.deleteTaskDictadjID(id)
                         self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
@@ -213,7 +213,7 @@ class TaskServer(BaseServer):
             DaspCommon.GUIinfo = jdata["GUIinfo"]
             self.sendRunDatatoGUI("接收任务请求")
         except KeyError:
-            print ("Task requests not from the GUI")
+            print ("非来自GUI的任务请求")
 
         name = "system"
         sdata = {
@@ -249,7 +249,8 @@ class TaskServer(BaseServer):
                 returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], name)
                 if returnID:
                     deleteID.append(returnID)
-                sum += 1
+                else:
+                    sum += 1
         for ele in deleteID:
             self.deleteadjID(ele)
             self.deleteTaskDictadjID(ele)
@@ -331,7 +332,7 @@ class TaskServer(BaseServer):
             DaspCommon.GUIinfo = jdata["GUIinfo"]
             self.sendRunDatatoGUI("重新连入系统")
         except KeyError:
-            print ("Task requests not from the GUI")
+            print ("非来自GUI的任务请求")
 
         name = "system"
         BaseServer.TaskDict[name] = Task(name)

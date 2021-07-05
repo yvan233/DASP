@@ -32,12 +32,12 @@
       "PORT": [10028, 10029, 10030, 10031, 10032, 10033, 10034], 
       "adjID": ["room_2", "room_4", "room_6"], 
       "adjDirection": [3, 1, 5],
-      "datalist": []
+      "datalist": [] 
    }, 
    {
       "ID": "room_6",
       "PORT": [10035, 10036, 10037, 10038, 10039, 10040, 10041], 
-      "adjID": ["room_3", "room_5" , "room_7"], 
+      "adjID": ["room_3", "room_5", "room_7"], 
       "adjDirection": [3, 1, 5],
       "datalist": []
    }, 

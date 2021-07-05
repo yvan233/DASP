@@ -1,4 +1,8 @@
-import os
+# 测试任务的暂停和恢复功能
+# 另外需要运行.\script_to_PC\moniter.py   
+# .\DASP\start.bat 12
+# .\script_to_PC\1run.py
+
 import json
 import socket
 import time 
