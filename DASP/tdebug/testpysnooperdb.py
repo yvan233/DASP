@@ -1,4 +1,13 @@
-DatabaseInfo = ["root", "08191920.yh", "TESTDB", "Tables"]
+import sys
+sys.path.insert(1,".")
+from DASP.pysnooperdb.tracer import Tracer as snoop
+DatabaseInfo = {
+    'host': "127.0.0.1",
+    'port': 3306,
+    'user': 'root',
+    'password': 'DSPadmin',
+ }
+
 ObservedVariable = ["x", "m"]
 data = {
     "key": "newtask",
@@ -8,32 +17,15 @@ data = {
     "ObservedVariable": ObservedVariable
 }
 
-import pysnooperDB
 
-path2 = os.getcwd() + "\\IoT\\task\\debug"+str(num)+".txt"
-debuglist = []
-debugmode_flag = 0
-with open( path2, 'r' ) as f:
-    for line in f.readlines():  
-        line=line.strip('\n')  
-        debuglist.append(line)
-print (debuglist)
-if "start in debug mode" in debuglist:
-    debugmode_flag = 1
-if debugmode_flag:
-    debuglist.pop()
-user = debuglist.pop(0)
-passwd = debuglist.pop(0)
-databasename = debuglist.pop(0)
-tablenamePrefix = debuglist.pop(0)
+database = 'Daspdb'
+tablenamePrefix = 'DAPPname'
+observelist = ['i','n','sum']
+def A():
+    sum = 0
+    for i in range(5):
+        for n in range(2):
+            sum += i*10+n
 
-debuglist[0] = debuglist[0].strip(" ")
-observelist = []
-if len(debuglist) and debuglist != [""]:
-    observelist = debuglist
-
-if debugmode_flag:
-    tablename = tablenamePrefix + "_task" + str(num) + "_node" + str(self.sensorID)
-    filename = "./log/" + tablename + '.log'                          
-    taskfunc = pysnooperDB.snoop(tablename = tablename,observelist = observelist,\
-        user= user, passwd= passwd,databasename = databasename)(self.taskFuncList[num])
+B = snoop(config = DatabaseInfo, db = database, tablename = 'test111', observelist = observelist)(A)
+B()

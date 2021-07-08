@@ -12,13 +12,21 @@ import datetime as datetime_module
 import itertools
 import threading
 import traceback
-from .DataBaseFunc import MyDB
+
 from .variables import CommonVariable, Exploding, BaseVariable
 from . import utils, pycompat
 if pycompat.PY2:
     from io import open
 
-# from yvan 
+# from yvan
+from .DataBaseFunc import DaspMysqlServer
+Default_Config= {
+    'host': "127.0.0.1",
+    'port': 3306,
+    'user': 'root',
+    'password': 'DSPadmin',
+    }
+
 ipython_filename_pattern = re.compile('^<ipython-input-([0-9]+)-.*>$')
 
 
@@ -158,70 +166,18 @@ class Tracer:
     or wrap a block of code in `with pysnooper.snoop():`, you'll get a log of
     every line that ran in the function and a play-by-play of every local
     variable that changed.
-
-    If stderr is not easily accessible for you, you can redirect the output to
-    a file::
-
-        @pysnooper.snoop('/my/log/file.log')
-
-    See values of some expressions that aren't local variables::
-
-        @pysnooper.snoop(watch=('foo.bar', 'self.x["whatever"]'))
-
-    Expand values to see all their attributes or items of lists/dictionaries:
-
-        @pysnooper.snoop(watch_explode=('foo', 'self'))
-
-    (see Advanced Usage in the README for more control)
-
-    Show snoop lines for functions that your function calls::
-
-        @pysnooper.snoop(depth=2)
-
-    Start all snoop lines with a prefix, to grep for them easily::
-
-        @pysnooper.snoop(prefix='ZZZ ')
-
-    On multi-threaded apps identify which thread are snooped in output::
-
-        @pysnooper.snoop(thread_info=True)
-
-    Customize how values are represented as strings::
-
-        @pysnooper.snoop(custom_repr=((type1, custom_repr_func1),
-                         (condition2, custom_repr_func2), ...))
-
-    Variables and exceptions get truncated to 100 characters by default. You
-    can customize that:
-
-        @pysnooper.snoop(max_variable_length=200)
-
-    You can also use `max_variable_length=None` to never truncate them.
-
     '''
-    __line_no_past = 0
-    __tablename = "test"
-    __user=''
-    __passwd=''
-    __databasename = ''
 
     def __init__(self, output=None, watch=(), watch_explode=(), depth=1,
                  prefix='', overwrite=False, thread_info=False, custom_repr=(),
-                 max_variable_length=100, normalize=False, tablename = "test", observelist = [],
-                 user='root', passwd='08191920.yh',databasename = 'TESTDB'):
-        
-        self.__tablename = tablename 
-        self.__observelist = observelist 
-        self.__user = user
-        self.__passwd = passwd
-        self.__databasename = databasename
-        self.db = MyDB(user = user, passwd = passwd, database= databasename)
-
-        self.db.create_table(tablename)
+                 max_variable_length=100, normalize=False, relative_time=False,
+                 config = Default_Config, db = 'Daspdb', tablename = 'default', observelist = []):
+        self.db = DaspMysqlServer(config,db,tablename,observelist)
+        self.db.create_debug_table()
+        self.line_no_past = 0
 
         self._write = get_write_function(output, overwrite)
   
-
         self.watch = [
             v if isinstance(v, BaseVariable) else CommonVariable(v)
             for v in utils.ensure_tuple(watch)
@@ -230,6 +186,7 @@ class Tracer:
              for v in utils.ensure_tuple(watch_explode)
         ]
         self.frame_to_local_reprs = {}
+        self.start_times = {}
         self.depth = depth
         self.prefix = prefix
         self.thread_info = thread_info
@@ -245,6 +202,7 @@ class Tracer:
         self.last_source_path = None
         self.max_variable_length = max_variable_length
         self.normalize = normalize
+        self.relative_time = relative_time
 
     def __call__(self, function_or_class):
         if DISABLED:
@@ -305,6 +263,7 @@ class Tracer:
     def __enter__(self):
         if DISABLED:
             return
+        thread_global.__dict__.setdefault('depth', -1)
         calling_frame = inspect.currentframe().f_back
         if not self._is_internal_frame(calling_frame):
             calling_frame.f_trace = self.trace
@@ -314,6 +273,7 @@ class Tracer:
             'original_trace_functions', []
         )
         stack.append(sys.gettrace())
+        self.start_times[calling_frame] = datetime_module.datetime.now()
         sys.settrace(self.trace)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -324,6 +284,18 @@ class Tracer:
         calling_frame = inspect.currentframe().f_back
         self.target_frames.discard(calling_frame)
         self.frame_to_local_reprs.pop(calling_frame, None)
+
+        ### Writing elapsed time: #############################################
+        #                                                                     #
+        start_time = self.start_times.pop(calling_frame)
+        duration = datetime_module.datetime.now() - start_time
+        elapsed_time_string = pycompat.timedelta_format(duration)
+        indent = ' ' * 4 * (thread_global.depth + 1)
+        # self.write(
+        #     '{indent}Elapsed time: {elapsed_time_string}'.format(**locals())
+        # )
+        #                                                                     #
+        ### Finished writing elapsed time. ####################################
 
     def _is_internal_frame(self, frame):
         return frame.f_code.co_filename == Tracer.__enter__.__code__.co_filename
@@ -361,7 +333,6 @@ class Tracer:
                 else:
                     return None
 
-        thread_global.__dict__.setdefault('depth', -1)
         if event == 'call':
             thread_global.depth += 1
         indent = ' ' * 4 * thread_global.depth
@@ -369,8 +340,25 @@ class Tracer:
         #                                                                     #
         ### Finished checking whether we should trace this line. ##############
 
-        now = datetime_module.datetime.now().time()
-        now_string = pycompat.time_isoformat(now, timespec='microseconds') if not self.normalize else ' ' * 15
+        ### Making timestamp: #################################################
+        #                                                                     #
+        if self.normalize:
+            timestamp = ' ' * 15
+        elif self.relative_time:
+            try:
+                start_time = self.start_times[frame]
+            except KeyError:
+                start_time = self.start_times[frame] = \
+                                                 datetime_module.datetime.now()
+            duration = datetime_module.datetime.now() - start_time
+            timestamp = pycompat.timedelta_format(duration)
+        else:
+            timestamp = pycompat.time_isoformat(
+                datetime_module.datetime.now().time(),
+                timespec='microseconds'
+            )
+        #                                                                     #
+        ### Finished making timestamp. ########################################
         
         line_no = frame.f_lineno
         source_path, source = get_path_and_source_from_frame(frame)
@@ -400,19 +388,15 @@ class Tracer:
                                                        normalize=self.normalize,
                                                        )
 
-
-
         newish_string = ('Starting var:.. ' if event == 'call' else
                                                             'New var:....... ')
 
         for name, value_repr in local_reprs.items():         
             if name not in old_local_reprs:
-                self.db.insert_table(self.__tablename, self.__observelist, name, value_repr, source[Tracer.__line_no_past],\
-                    Tracer.__line_no_past)
+                self.db.insert_debug_table(timestamp, self.line_no_past+1,  source[self.line_no_past], name,  value_repr)
                 # self.write('{indent}{newish_string}{name} = {value_repr}'.format(**locals()))
             elif old_local_reprs[name] != value_repr:
-                self.db.insert_table(self.__tablename, self.__observelist, name, value_repr, source[Tracer.__line_no_past],\
-                    Tracer.__line_no_past)
+                self.db.insert_debug_table(timestamp, self.line_no_past+1,  source[self.line_no_past], name,  value_repr)
                 # self.write('{indent}Modified var:.. {name} = {value_repr}'.format(**locals()))
 
         #                                                                     #
@@ -454,14 +438,15 @@ class Tracer:
         )
 
         # if ended_by_exception:
-            # self.write('{indent}Call ended by exception'.
-            #            format(**locals()))
+        #     self.write('{indent}Call ended by exception'.
+        #                format(**locals()))
         # else:
-            # self.write(u'{indent}{now_string} {thread_info}{event:9} '
-            #            u'{line_no:4} {source_line}'.format(**locals()))
+        #     self.write(u'{indent}{timestamp} {thread_info}{event:9} '
+        #                u'{line_no:4} {source_line}'.format(**locals()))
 
         if event == 'return':
-            del self.frame_to_local_reprs[frame]
+            self.frame_to_local_reprs.pop(frame, None)
+            self.start_times.pop(frame, None)
             thread_global.depth -= 1
 
             if not ended_by_exception:
@@ -477,9 +462,8 @@ class Tracer:
             exception = '\n'.join(traceback.format_exception_only(*arg[:2])).strip()
             if self.max_variable_length:
                 exception = utils.truncate(exception, self.max_variable_length)
-            # self.write('{indent}{exception}'.
+            # self.write('{indent}Exception:..... {exception}'.
             #            format(**locals()))
 
-
-        Tracer.__line_no_past = line_no - 1
+        self.line_no_past = line_no - 1
         return self.trace

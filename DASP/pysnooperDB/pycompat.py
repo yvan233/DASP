@@ -57,9 +57,11 @@ except AttributeError:
 if PY3:
     string_types = (str,)
     text_type = str
+    binary_type = bytes
 else:
     string_types = (basestring,)
     text_type = unicode
+    binary_type = str
 
 try:
     from collections import abc as collections_abc
@@ -79,4 +81,15 @@ else:
         assert len(result) == 15
         return result
 
+def timedelta_format(timedelta):
+    time = (datetime_module.datetime.min + timedelta).time()
+    return time_isoformat(time, timespec='microseconds')
 
+def timedelta_parse(s):
+    hours, minutes, seconds, microseconds = map(
+        int,
+        s.replace('.', ':').split(':')
+    )
+    return datetime_module.timedelta(hours=hours, minutes=minutes,
+                                     seconds=seconds,
+                                     microseconds=microseconds)
