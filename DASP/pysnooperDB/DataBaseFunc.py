@@ -179,6 +179,5 @@ if __name__ == '__main__':
     # print(db.show_tables())
     # table = db.show_table('default_node_1')
     # print(table)  
-
     db2 = DaspMysqlClient(Default_Config,'Daspdb')
     print (db2.show_table('test123'))

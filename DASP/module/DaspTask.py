@@ -294,7 +294,7 @@ class Task(DaspCommon):
                         self.sendall_length(sock, cont, data)
                         sock.close()
                     except Exception as e:
-                        print ("Failed to connect with neighbor node "+id)
+                        print ("与邻居节点{0}连接失败".format(id))
                         self.deleteadjID(id)
                         self.deleteTaskadjID(id)
                         self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 

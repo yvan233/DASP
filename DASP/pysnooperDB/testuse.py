@@ -13,8 +13,6 @@ data = {
     "ObserveList": ObserveList
 }
 
-import pysnooperDB
-
 path2 = os.getcwd() + "\\IoT\\task\\debug"+str(num)+".txt"
 debuglist = []
 debugmode_flag = 0
