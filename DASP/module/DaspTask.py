@@ -282,19 +282,33 @@ class Task(DaspCommon):
         """
         self.runFlag.wait()  #系统运行标志
         for ele in self.TaskIPlist:
-            if ele!=[]:
+            if ele:
                 if ele[4] == id:
                     try:
                         host = ele[2]
                         port = ele[3]
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  #关闭后立刻释放
                         remote_ip = socket.gethostbyname(host)
+                        # flag = 0
+                        # # 失败后不断重试， 后面可以添加重试次数
+                        # while not flag:
+                        #     try:
+                        #         sock.connect((remote_ip, port))
+                        #         flag = 1
+                        #     except Exception as e:
+                        #         print("重试中")
+                        #         time.sleep(0.5)
+                        # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         sock.connect((remote_ip, port))
                         cont = "POST / HTTP/1.1\r\n"
                         self.sendall_length(sock, cont, data)
+                        # sock.shutdown(2)   #真正关闭端口，不是假关闭
                         sock.close()
                     except Exception as e:
+                        print(traceback.format_exc())
                         print ("与邻居节点{0}连接失败".format(id))
+                        print (remote_ip, port)
                         self.deleteadjID(id)
                         self.deleteTaskadjID(id)
                         self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 

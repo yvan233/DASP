@@ -19,6 +19,7 @@ def recv_length(conn):
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 localIP = socket.gethostbyname(socket.gethostname())
 s.bind((localIP, 50000))
+print ("moniter: {}:{}".format(localIP,50000))
 while 1:
     try:
         data, addr = s.recvfrom(100000000)
