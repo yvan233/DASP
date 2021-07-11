@@ -1,3 +1,6 @@
+# 长连接测试收数
+
+
 import socket
 import json
 import struct
@@ -19,20 +22,27 @@ def sendall_length(socket, jsondata, methods = 1):
 
 
 def dataHandle(headPack, body):
+    """
+    数据处理函数
+    """
     if headPack[0] == 1:
-        print(headPack)
+        print(body)
         pass
     else:
         print("非POST方法")
 
 
-def recv_func(conn):
-    '''
+
+def recv_long_conn(host, port):
+    """
+    长连接循环接收数据框架
+    """
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host, port))
+    server.listen(1) #接收的连接数
+    conn, addr = server.accept()
     print('Connected by', addr)
-    循环接收数据框架
-    '''
     # FIFO消息队列
-    i = 0
     dataBuffer = bytes()
     with conn:
         while True:
@@ -57,16 +67,10 @@ def recv_func(conn):
                     
                     # 数据处理
                     dataHandle(headPack, body)
-                    i = i+1
-                    print (i)
+
                     # 数据出列
                     dataBuffer = dataBuffer[headerSize+bodySize:] # 获取下一个数据包，类似于把数据pop出
     
 host = 'localhost'
 port = 8084
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((host, port))
-server.listen(1) #接收的连接数
-client, address = server.accept() #因为设置了接收连接数为1，所以不需要放在循环中接收
-print('Connected by', address)
-recv_func(client)
+recv_long_conn(host, port)
