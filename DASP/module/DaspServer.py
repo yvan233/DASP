@@ -240,7 +240,9 @@ class TaskServer(BaseServer):
         """
         数据处理函数,子类可重构该函数
         """
-        jdata = body
+        jdata = json.loads(body)
+        print(type(jdata))
+        print(jdata["key"])
         if headPack[0] == 1:
             if jdata["key"] == "startsystem":
                 self.startsystem(jdata)
@@ -439,7 +441,7 @@ class CommServer(BaseServer):
         """
         数据处理函数
         """
-        jdata = body
+        jdata = json.loads(body)
         if headPack[0] == 1:
             #建立通信树
             if jdata["key"] == "connect":
