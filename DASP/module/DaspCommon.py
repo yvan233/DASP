@@ -2,6 +2,7 @@ import socket
 import json
 import ctypes
 import inspect
+import struct
 
 class DaspCommon():
     '''
@@ -15,8 +16,12 @@ class DaspCommon():
         adjID: 邻居ID
         adjDirection: 邻居方向
         adjDirectionOtherSide: 节点在邻居的方向
+        adjsocket: 邻居通信套接字
+        adjConnectFlag: 是否和邻居连接标志
         IPlist: 邻居IP及端口列表
         GUIinfo: UI界面IP及端口
+        self.headformat: 自定义消息头格式，methods+length，2个无符号整形变量
+        self.headerSize：自定义消息头长度，8个字节
         (包括读取拓扑文件的信息，以及所有类共有的信息)
     '''
     ### 类变量，直接通过DaspCommon.维护
@@ -26,36 +31,50 @@ class DaspCommon():
     adjID = []
     adjDirection = []
     adjDirectionOtherSide = []
+    adjSocket = {}
+    adjConnectFlag = []
     IPlist = []
     GUIinfo = ["localhost",0]    
+    headformat = "!2I"
+    headerSize = 8
 
     def __init__(self):
         pass
 
-    def sendall_length(self, socket, head, data):
+    def sendall_length(self, socket, jsondata, methods = 1):
         '''
-        为发送数据添加length报头
+        为发送的json数据添加methods和length报头
+            POST：methods = 1: 
         '''
-        length = "content-length:"+str(len(data)) + "\r\n\r\n"
-        message = head + length + data
-        socket.sendall(str.encode(message))
+        body = json.dumps(jsondata)
+        header = [methods, body.__len__()]
+        headPack = struct.pack(self.headformat , *header)
+        socket.sendall(headPack+body.encode())
 
     def recv_length(self, conn):
         '''
         循环接收数据，直到收完报头中length长度的数据
+            return headPack,body
         '''
-        request = conn.recv(1024)
-        message = bytes.decode(request)
-        message_split = message.split('\r\n')
-        content_length = message_split[1][15:]
-        message_length =  len(message_split[0]) + len(message_split[1]) + 2*(len(message_split)-1) + int(content_length)
+        dataBuffer = bytes()
         while True:
-            if len(message) < message_length:
-                request = conn.recv(1024)
-                message += bytes.decode(request)
-            else:
-                break
-        return message
+            data = conn.recv(1024)
+            # if data == b"":
+            #     break
+            if data:
+                dataBuffer += data
+                while True:
+                    if len(dataBuffer) < self.headerSize:
+                        break  #数据包小于消息头部长度，跳出小循环
+                    # 读取包头
+                    headPack = struct.unpack(self.headformat, dataBuffer[:self.headerSize])
+                    bodySize = headPack[1]
+                    if len(dataBuffer) < self.headerSize+bodySize :
+                        break  #数据包不完整，跳出小循环
+                    body = dataBuffer[self.headerSize:self.headerSize+bodySize]
+                    body = body.decode()
+                    return headPack,body
+
 
     def sendtoGUIbase(self, info, key, DAPPname):
         """
@@ -83,7 +102,8 @@ class DaspCommon():
             index = DaspCommon.adjID.index(id)      
             del DaspCommon.adjID[index]
             del DaspCommon.adjDirection[index]
-
+            DaspCommon.adjConnectFlag[index] = 0
+            del DaspCommon.adjSocket[id]
         for ele in DaspCommon.IPlist:
             if ele != []:
                 if ele[4] == id:

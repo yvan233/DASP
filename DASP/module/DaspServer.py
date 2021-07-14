@@ -3,6 +3,7 @@ import json
 import sys
 import time
 import threading
+import struct
 sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 from DASP.module import DaspCommon, Task
 
@@ -19,6 +20,79 @@ class BaseServer(DaspCommon):
     def __init__(self):
         pass
 
+    def recv_short_conn(self, host, port):
+        '''
+        短连接循环接收数据框架
+        '''   
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind((host, port))
+        server.listen(100) #接收的连接数
+        while True:
+            conn, addr = server.accept()
+            # print('Connected by', addr)
+            headPack,body = self.recv_length(conn)
+            self.MessageHandle(headPack,body,conn)
+            conn.close()
+               
+
+    def recv_long_conn(self, host, port, adjID = ""):
+        """
+        长连接循环接收数据框架
+        """
+        while True:
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.bind((host, port))
+            server.listen(1) #接收的连接数
+            conn, addr = server.accept()
+            print('Connected by', addr)
+            # FIFO消息队列
+            dataBuffer = bytes()
+            with conn:
+                while True:
+                    try:
+                        data = conn.recv(1024)
+                    except Exception as e:
+                        # 发送端进程被杀掉
+                        self.DisconnectHandle(adjID)
+                        break
+                    if data == b"":
+                        # 发送端close()
+                        self.DisconnectHandle(adjID)
+                        break
+                    if data:
+                        # 把数据存入缓冲区，类似于push数据
+                        dataBuffer += data
+                        while True:
+                            if len(dataBuffer) < self.headerSize:
+                                break  #数据包小于消息头部长度，跳出小循环
+                            # 读取包头
+                            headPack = struct.unpack(self.headformat, dataBuffer[:self.headerSize])
+                            bodySize = headPack[1]
+                            if len(dataBuffer) < self.headerSize+bodySize :
+                                break  #数据包不完整，跳出小循环
+                            # 读取消息正文的内容
+                            body = dataBuffer[self.headerSize:self.headerSize+bodySize]
+                            body = body.decode()
+                            # 数据处理
+                            self.MessageHandle(headPack, body, conn)
+                            # 数据出列
+                            dataBuffer = dataBuffer[self.headerSize+bodySize:] # 获取下一个数据包，类似于把数据pop出
+
+    def MessageHandle(self, headPack, body, conn):
+        """
+        数据处理函数,子类可重构该函数
+        """
+        if headPack[0] == 1:
+            print(body)
+        else:
+            print("非POST方法")
+
+    def DisconnectHandle(self, adjID):
+        """
+        对邻居断开连接的操作函数               
+        """
+        print (adjID , "已断开")      
+
     def connect(self,host1,port1,host2,port2,adjID,DAPPname):
         """
         发送连接请求
@@ -33,16 +107,20 @@ class BaseServer(DaspCommon):
             "DAPPname": DAPPname
         }
         try:
-            print ("{}:{} connecting to {}:{}".format(host1,str(port1),host2,str(port2)))
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            remote_ip = socket.gethostbyname(host2)
-            sock.connect((remote_ip, port2))
-            cont = "POST / HTTP/1.1\r\n"
-            jsondata = json.dumps(data)
-            self.sendall_length(sock, cont, jsondata)
-            reply = self.recv_length(sock)
-            res = reply.split('\r\n')[-1]
-            jres = json.loads(res)
+            print ("connecting to {}:{}".format(host2,str(port2)))
+            if DaspCommon.adjConnectFlag[DaspCommon.adjID.index(adjID)] == 0:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) #在客户端开启心跳维护
+                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000)) #开始保活机制，60s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
+                remote_ip = socket.gethostbyname(host2)
+                sock.connect((remote_ip, port2))
+
+                DaspCommon.adjConnectFlag[DaspCommon.adjID.index(adjID)] = 1
+                DaspCommon.adjSocket[adjID] = sock
+            
+            self.sendall_length(DaspCommon.adjSocket[adjID], data)
+            headPack,body = self.recv_length(DaspCommon.adjSocket[adjID])
+            jres = json.loads(body)
             if jres['key'] == 'connect':
                 BaseServer.TaskDict[DAPPname].sonID.append(jres["id"])
                 indext = DaspCommon.adjID.index(jres["id"])
@@ -84,24 +162,13 @@ class BaseServer(DaspCommon):
         """
         通过TCP的形式将信息发送至指定ID的节点
         """
-        for ele in DaspCommon.IPlist:
-            if ele!=[]:
-                if ele[4] == id:
-                    try:
-                        host = ele[2]
-                        port = ele[3]
-                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        remote_ip = socket.gethostbyname(host)
-                        sock.connect((remote_ip, port))
-                        cont = "POST / HTTP/1.1\r\n"
-                        self.sendall_length(sock, cont, data)
-                        sock.close()
-                    except Exception as e:
-                        print ("与邻居节点{}连接失败".format(id))
-                        self.deleteadjID(id)
-                        self.deleteTaskDictadjID(id)
-                        self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
-                    break
+        try:
+            self.sendall_length(DaspCommon.adjSocket[id], data)
+        except Exception as e:
+            print ("与邻居节点{}连接失败".format(id))
+            self.deleteadjID(id)
+            self.deleteTaskDictadjID(id)
+            self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
     
     def Forward2sonID(self, jdata, DAPPname):
         """
@@ -160,50 +227,43 @@ class TaskServer(BaseServer):
         self.port = port
         self.ResultThreadsFlag = 0
 
+
+
     def run(self):
         """
         服务器开始运行
         """
-        head = """HTTP/1.1 200 OK\r\n"""
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((self.host, self.port))
-        sock.listen(100)
         print ("TaskServer on: {}:{}".format(self.host,str(self.port)))
+        self.recv_short_conn(self.host, self.port)
 
-        while 1:
-            conn, addr = sock.accept()
-            request = self.recv_length(conn)
-            method = request.split(' ')[0]
-            if method == "POST":
-                data = request.split('\r\n')[-1]
-                try:
-                    jdata = json.loads(data)
-                except (ValueError, KeyError, TypeError):
-                    conn.send(str.encode(head + "请输入JSON格式的数据！"))
-                else:
-                    if jdata["key"] == "startsystem":
-                        self.startsystem(jdata)
+    def MessageHandle(self, headPack, body, conn):
+        """
+        数据处理函数,子类可重构该函数
+        """
+        jdata = body
+        if headPack[0] == 1:
+            if jdata["key"] == "startsystem":
+                self.startsystem(jdata)
 
-                    elif jdata["key"] == "newtask":
-                        self.newtask(jdata)
+            elif jdata["key"] == "newtask":
+                self.newtask(jdata)
 
-                    elif jdata["key"] == "pausetask":
-                        self.pausetask(jdata)
+            elif jdata["key"] == "pausetask":
+                self.pausetask(jdata)
 
-                    elif jdata["key"] == "resumetask":
-                        self.resumetask(jdata)
-                        
-                    elif jdata["key"] == "shutdowntask":
-                        self.shutdowntask(jdata)
+            elif jdata["key"] == "resumetask":
+                self.resumetask(jdata)
+                
+            elif jdata["key"] == "shutdowntask":
+                self.shutdowntask(jdata)
 
-                    elif jdata["key"] == "restart":
-                        self.restart(jdata)
-
-                    else:
-                        conn.send(str.encode(head + "您输入的任务信息有误！"))
+            elif jdata["key"] == "restart":
+                self.restart(jdata)
             else:
-                conn.send(str.encode(head + "暂未提供POST以外的接口"))
-            conn.close()
+                conn.send(str.encode("您输入的任务信息有误！"))
+        else:
+            conn.send(str.encode("暂未提供POST以外的接口"))
+
 
     def startsystem(self, jdata):
         """
@@ -372,69 +432,60 @@ class CommServer(BaseServer):
         """
         服务器开始运行
         """
-        head = """HTTP/1.1 200 OK\r\n"""
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((self.host, self.port))
-        sock.listen(100)
         print ("CommServer on: {}:{}".format(self.host,str(self.port)))
+        self.recv_long_conn(self.host, self.port)
 
-        while 1:
-            conn, addr = sock.accept()
-            request = self.recv_length(conn)
-            method = request.split(' ')[0]
-            if method == 'POST':
-                data = request.split('\r\n')[-1]
-                try:
-                    jdata = json.loads(data)
-                except (ValueError, KeyError, TypeError):
-                    self.sendRunDatatoGUI("通信JSON数据格式错误")
-                else:
-                    #建立通信树
-                    if jdata["key"] == "connect":
-                        self.RespondConnect(conn, head, jdata)
+    def MessageHandle(self, headPack, body, conn):
+        """
+        数据处理函数
+        """
+        jdata = body
+        if headPack[0] == 1:
+            #建立通信树
+            if jdata["key"] == "connect":
+                self.RespondConnect(conn, jdata)
 
-                    elif jdata["key"] == "OK":
-                        self.RespondOK(jdata)
+            elif jdata["key"] == "OK":
+                self.RespondOK(jdata)
 
-                    elif jdata["key"] == "startsystem":
-                        self.RespondStartSystem(jdata)
+            elif jdata["key"] == "startsystem":
+                self.RespondStartSystem(jdata)
 
-                    elif jdata["key"] == "newtask":
-                        self.RespondNewTask(jdata)
+            elif jdata["key"] == "newtask":
+                self.RespondNewTask(jdata)
 
-                    elif jdata["key"] == "shutdowntask":
-                        self.RespondShutDownTask(jdata)
+            elif jdata["key"] == "shutdowntask":
+                self.RespondShutDownTask(jdata)
 
-                    elif jdata["key"] == "pausetask":
-                        self.RespondPauseTask(jdata)
-                    
-                    elif jdata["key"] == "resumetask":
-                        self.RespondResumeTask(jdata)
+            elif jdata["key"] == "pausetask":
+                self.RespondPauseTask(jdata)
+            
+            elif jdata["key"] == "resumetask":
+                self.RespondResumeTask(jdata)
 
-                    elif jdata["key"] == "data":
-                        self.RespondData(jdata)
+            elif jdata["key"] == "data":
+                self.RespondData(jdata)
 
-                    elif jdata["key"] == "questionData":
-                        self.RespondQuestionData(jdata)
-                        
-                    elif jdata["key"] == "sync":
-                        self.RespondSync(jdata,1)
+            elif jdata["key"] == "questionData":
+                self.RespondQuestionData(jdata)
+                
+            elif jdata["key"] == "sync":
+                self.RespondSync(jdata,1)
 
-                    elif jdata["key"] == "sync2":
-                        self.RespondSync(jdata,2)
+            elif jdata["key"] == "sync2":
+                self.RespondSync(jdata,2)
 
+            elif jdata["key"] == "reconnect":
+                self.RespondReconnect(conn, jdata)
 
-                    elif jdata["key"] == "reconnect":
-                        self.RespondReconnect(conn, head, jdata)
-
-                    else:
-                        conn.send(str.encode(head+"请不要直接访问通信服务器"))
             else:
-                conn.send(str.encode(head + "请不要直接访问通信服务器"))
-            conn.close()
+                conn.send(str.encode("请不要直接访问通信服务器"))
+        else:
+            print("非POST方法")
+            conn.send(str.encode("请不要直接访问通信服务器"))
 
 
-    def RespondConnect(self, conn, head, jdata):
+    def RespondConnect(self, conn, jdata):
         """
         回应连接请求
         如果在通信树中则发送回已连接消息
@@ -452,17 +503,16 @@ class CommServer(BaseServer):
                     "id": DaspCommon.nodeID,
                     "DAPPname": name
                 }
-                mdata = json.dumps(data)
-                self.sendall_length(conn, head, mdata)
+                self.sendall_length(conn, data)
                 return 0
 
         # 如果当前节点不在通信树中，则加入通信树
         BaseServer.TaskDict[name] = Task(name)
         BaseServer.TaskDict[name].load()
         BaseServer.TaskDict[name].parentID = jdata["id"]
-        indext = DaspCommon.adjID.index(jdata["id"])
+        indext = DaspCommon.adjID .index(jdata["id"])
         BaseServer.TaskDict[name].parentDirection = DaspCommon.adjDirection[indext]
-        print ("{}:{} connected to {}:{} ".format(self.host,self.port,jdata["host"],jdata["port"]))
+        print ("connected to {}:{} ".format(jdata["host"],jdata["port"]))
         DaspCommon.GUIinfo = jdata["GUIinfo"]
         data = {
             "key": "connect",
@@ -472,16 +522,15 @@ class CommServer(BaseServer):
             "GUIinfo": DaspCommon.GUIinfo,
             "DAPPname": name
         }
-        ndata = json.dumps(data)
-        self.sendall_length(conn, head, ndata)
+        self.sendall_length(conn, data)
         
         deleteID = []
         for ele in BaseServer.TaskDict[name].TaskIPlist:
             if ele != []:
-                if ele[4] != BaseServer.TaskDict[name].parentID:
-                    returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], name)
-                    if returnID:
-                        deleteID.append(returnID)
+                # if ele[4] != BaseServer.TaskDict[name].parentID:
+                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], name)
+                if returnID:
+                    deleteID.append(returnID)
 
         for ele in deleteID:
             self.deleteadjID(ele)
@@ -499,7 +548,7 @@ class CommServer(BaseServer):
             for i in range(len(BaseServer.TaskDict[name].CreateTreeSonFlag)):
                 BaseServer.TaskDict[name].CreateTreeSonFlag[i] = 0
 
-    def RespondReconnect(self, conn, head, jdata):
+    def RespondReconnect(self, conn, jdata):
         """
         回应节点重新连接请求
         如果申请方向未被占用，则将该节点加入子节点中

@@ -1,20 +1,5 @@
 import socket
 import json
-
-def recv_length(conn):
-    request = conn.recv(1024)
-    message = bytes.decode(request)
-    message_split = message.split('\r\n')
-    content_length = message_split[1][15:]
-    message_length =  len(message_split[0]) + len(message_split[1]) \
-        + 2*(len(message_split)-1) + int(content_length)
-    while True:
-        if len(message) < message_length:
-            request = conn.recv(1024)
-            message += bytes.decode(request)
-        else:
-            break
-    return message
     
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 localIP = socket.gethostbyname(socket.gethostname())

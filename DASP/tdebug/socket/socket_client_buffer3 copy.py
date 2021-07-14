@@ -1,32 +1,25 @@
-# 短连接测试收数
-
+# 长连接断开检测
 
 import socket
-import json
 import struct
+import time
+import threading
+import json
+# 自定义消息头的形式，两个无符号整形，共8字节
 headformat = "!2I"
 # 自定义消息头的长度
 headerSize = 8
 
 
-
 def sendall_length(socket, jsondata, methods = 1):
-    '''
+    """
     为发送数据添加methods和length报头
     methods: 1:POST
-    '''
+    """
     body = json.dumps(jsondata)
     header = [methods, body.__len__()]
     headPack = struct.pack(headformat , *header)
     socket.sendall(headPack+body.encode())
-
-
-def dataHandle(headPack, body):
-
-    if headPack[0] == 1:
-        print(body)
-    else:
-        print("非POST方法")
 
 def recv_length(conn):
     '''
@@ -51,23 +44,25 @@ def recv_length(conn):
                 body = body.decode()
                 return headPack,body
 
+def sendone(sock, i):
+    data = [str(i)]*2000
+    data = "".join(data)
+    data = {"data":data}
+    print('{}'.format(i))
+    sendall_length(sock,data)
+    # client.close()
 
-def recv_short_conn(host, port):
-    '''
-    短连接循环接收数据框架
-    '''   
-
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((host, port))
-    server.listen(100) #接收的连接数
-    while 1:
-        conn, addr = server.accept()
-        print('Connected by', addr)
-        headPack,body = recv_length(conn)
-        conn.close()
-        dataHandle(headPack,body)
-                        
-
+print ("非心跳机制")
 host = 'localhost'
-port = 8084
-recv_short_conn(host,port)
+port = 8085
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) #在客户端开启心跳维护
+# client.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000)) #开始保活机制，60s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
+client.connect((host, port))
+threads = []
+print("connect")
+sendone(client,1)
+headPack,body = recv_length(client)
+print(body)
+time.sleep(10)
+# sendone(client,2)
