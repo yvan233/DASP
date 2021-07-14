@@ -28,7 +28,10 @@ def dataHandle(headPack, body):
     数据处理函数
     """
     if headPack[0] == 1:
+        jdata = json.loads(body)
         print(body)
+        print(jdata)
+        print(type(body),type(jdata))
         pass
     else:
         print("非POST方法")

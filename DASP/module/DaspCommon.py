@@ -32,7 +32,7 @@ class DaspCommon():
     adjDirection = []
     adjDirectionOtherSide = []
     adjSocket = {}
-    adjConnectFlag = []
+    adjConnectFlag = [0]*6
     IPlist = []
     GUIinfo = ["localhost",0]    
     headformat = "!2I"
