@@ -19,6 +19,7 @@ class Node:
         thread: 节点获取输出数据线程
         
         """
+        
     def __init__(self, num, mode, printdata):
         """
         num: 节点ID编号 从1开始

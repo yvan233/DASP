@@ -150,8 +150,7 @@ class BaseServer(DaspCommon):
             remote_ip = socket.gethostbyname(host2)
             sock.connect((remote_ip, port2))
             cont = "POST / HTTP/1.1\r\n"
-            jsondata = json.dumps(data)
-            self.sendall_length(sock, cont, jsondata)
+            self.sendall_length(sock, cont, data)
             sock.close()
         except Exception as e:
             self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败") 
@@ -175,11 +174,10 @@ class BaseServer(DaspCommon):
         将json消息转发给子节点
         """
         if BaseServer.TaskDict[DAPPname].sonID:
-            sjdata = json.dumps(jdata)
             for ele in reversed(BaseServer.TaskDict[DAPPname].TaskIPlist):
                 if ele:
                     if ele[4] in BaseServer.TaskDict[DAPPname].sonID:
-                        self.send(ele[4], data=sjdata)
+                        self.send(ele[4], data=jdata)
 
     def deleteTaskDictadjID(self, id):  
         """

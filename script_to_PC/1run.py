@@ -20,7 +20,6 @@ data = {
     "key": "startsystem",
     "GUIinfo": GUIinfo
 }
-data = json.dumps(data)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((localIP, 10006))
 sendall_length(s, data)
