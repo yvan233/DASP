@@ -54,11 +54,11 @@ class BaseServer(DaspCommon):
                         data = conn.recv(1024)
                     except Exception as e:
                         # 发送端进程被杀掉
-                        self.DisconnectHandle(addr, adjID)
+                        self.RecvDisconnectHandle(addr, adjID)
                         break
                     if data == b"":
                         # 发送端close()
-                        self.DisconnectHandle(addr, adjID)
+                        self.RecvDisconnectHandle(addr, adjID)
                         break
                     if data:
                         # 把数据存入缓冲区，类似于push数据
@@ -89,9 +89,9 @@ class BaseServer(DaspCommon):
         else:
             print("非POST方法")
 
-    def DisconnectHandle(self, addr, adjID):
+    def RecvDisconnectHandle(self, addr, adjID):
         """
-        对邻居断开连接的操作函数               
+        对接收数据时邻居断开连接的操作函数               
         """
         print ("{}:{} 已断开".format(addr[0],addr[1]))      
 
@@ -163,12 +163,44 @@ class BaseServer(DaspCommon):
             self.sendall_length(DaspCommon.adjSocket[id], data)
             return "Communication Succeeded"
         except Exception as e:
-            print ("与邻居节点{}连接失败".format(id))
-            self.deleteadjID(id)
-            self.deleteTaskDictadjID(id)
-            self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
-            return id
+            return self.SendDisconnectHandle(id, data)
     
+    def SendDisconnectHandle(self, id, data):
+        """
+        对发送数据时邻居断开连接的操作函数               
+        """
+        times = 0
+        
+        for ele in DaspCommon.IPlist:
+            if ele[4] == id:
+                host = ele[2]
+                port = ele[3]
+                break
+        # 失败后每隔30s共重连10次
+        while times < 10:
+            times += 1
+            if id in DaspCommon.adjSocket:
+                del DaspCommon.adjSocket[id]
+            try:
+                print ("reconnecting to {}:{}, times:{}".format(host,str(port),times))
+                self.sendDatatoGUI("与邻居节点{}连接失败，第{}次重连中...".format(id,times))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000))
+                remote_ip = socket.gethostbyname(host)
+                sock.connect((remote_ip, port))
+                DaspCommon.adjSocket[id] = sock
+                self.sendall_length(DaspCommon.adjSocket[id], data)
+                return "Communication Succeeded"
+            except Exception as e:
+                time.sleep(30)
+        print ("与邻居节点{0}连接失败".format(id))
+        self.deleteadjID(id)
+        self.deleteTaskadjID(id)
+        self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
+        return id
+
+
     def Forward2sonID(self, jdata, DAPPname):
         """
         将json消息转发给子节点

@@ -330,21 +330,42 @@ class Task(DaspCommon):
         # 向相应的套接字发送消息
         try:
             self.sendall_length(DaspCommon.adjSocket[id], data)
-            # flag = 0
-            # # 失败后不断重试， 后面可以添加重试次数
-            # while not flag:
-            #     try:
-            #         sock.connect((remote_ip, port))
-            #         flag = 1
-            #     except Exception as e:
-            #         print("重试中")
-            #         time.sleep(0.5)
+            return "Communication Succeeded"
         except Exception as e:
-            #print(traceback.format_exc())
-            print ("与邻居节点{0}连接失败".format(id))
-            self.deleteadjID(id)
-            self.deleteTaskadjID(id)
-            self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
+            return self.SendDisconnectHandle(id, data)
+
+    def SendDisconnectHandle(self, id, data):
+        """
+        对发送数据时邻居断开连接的操作函数               
+        """
+        times = 0
+        
+        for ele in DaspCommon.IPlist:
+            if ele[4] == id:
+                host = ele[2]
+                port = ele[3]
+                break
+        # 失败后每隔30s共重连10次
+        while times < 10:
+            times += 1
+            try:
+                print ("reconnecting to {}:{}, times:{}".format(host,str(port),times))
+                self.sendDatatoGUI("与邻居节点{}连接失败，第{}次重连中...".format(id,times))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000))
+                remote_ip = socket.gethostbyname(host)
+                sock.connect((remote_ip, port))
+                DaspCommon.adjSocket[id] = sock
+                self.sendall_length(DaspCommon.adjSocket[id], data)
+                return "Communication Succeeded"
+            except Exception as e:
+                time.sleep(30)
+        print ("与邻居节点{0}连接失败".format(id))
+        self.deleteadjID(id)
+        self.deleteTaskadjID(id)
+        self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
+        return id
 
 
     def sendData(self, data):
