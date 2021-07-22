@@ -1,10 +1,17 @@
 import json
 import socket
-
-def sendall_length(s, head, data):
-    length = "content-length:"+str(len(data)) + "\r\n\r\n"
-    message = head + length + data
-    s.sendall(str.encode(message))
+import struct
+headformat = "!2I"
+headerSize = 8
+def sendall_length(socket, jsondata, methods = 1):
+    '''
+    为发送的json数据添加methods和length报头
+        POST：methods = 1: 
+    '''
+    body = json.dumps(jsondata)
+    header = [methods, body.__len__()]
+    headPack = struct.pack(headformat , *header)
+    socket.sendall(headPack+body.encode())
     
 localIP = socket.gethostbyname(socket.gethostname())
 GUIinfo = [localIP, 50000]
@@ -12,9 +19,8 @@ data = {
     "key": "restart",
     "GUIinfo": GUIinfo
 }
-data = json.dumps(data)
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((localIP, 10006))
-head = "POST / HTTP/1.1\r\n"
-sendall_length(s, head, data)
+s.connect((localIP, 10013))
+sendall_length(s, data)
 s.close()

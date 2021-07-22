@@ -17,7 +17,6 @@ class DaspCommon():
         adjDirection: 邻居方向
         adjDirectionOtherSide: 节点在邻居的方向
         adjsocket: 邻居通信套接字
-        adjConnectFlag: 是否和邻居连接标志
         IPlist: 邻居IP及端口列表
         GUIinfo: UI界面IP及端口
         self.headformat: 自定义消息头格式，methods+length，2个无符号整形变量
@@ -32,7 +31,6 @@ class DaspCommon():
     adjDirection = []
     adjDirectionOtherSide = []
     adjSocket = {}
-    adjConnectFlag = [0]*6
     IPlist = []
     GUIinfo = ["localhost",0]    
     headformat = "!2I"
@@ -44,7 +42,8 @@ class DaspCommon():
     def sendall_length(self, socket, jsondata, methods = 1):
         '''
         为发送的json数据添加methods和length报头
-            POST：methods = 1: 
+            POST: methods = 1
+            REFUSE: methods = 9
         '''
         body = json.dumps(jsondata)
         header = [methods, body.__len__()]
@@ -73,6 +72,7 @@ class DaspCommon():
                         break  #数据包不完整，跳出小循环
                     body = dataBuffer[self.headerSize:self.headerSize+bodySize]
                     body = body.decode()
+                    body = json.loads(body)
                     return headPack,body
 
 
@@ -98,11 +98,12 @@ class DaspCommon():
         """
         删除本节点和指定id邻居节点的所有连接(DaspCommon类变量)
         """
+        
         if id in DaspCommon.adjID:
             index = DaspCommon.adjID.index(id)      
             del DaspCommon.adjID[index]
             del DaspCommon.adjDirection[index]
-            DaspCommon.adjConnectFlag[index] = 0
+        if id in DaspCommon.adjSocket:
             del DaspCommon.adjSocket[id]
         for ele in DaspCommon.IPlist:
             if ele != []:

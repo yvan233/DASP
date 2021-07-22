@@ -174,7 +174,6 @@ class Task(DaspCommon):
                     # print("resultinfo：", self.resultinfo)
                     
                     self.reset()
-                    # self.resetadjData()
                     return 0
         except SystemExit:
             self.sendDatatoGUI("停止执行")
@@ -279,6 +278,29 @@ class Task(DaspCommon):
         通过TCP的形式将信息发送至指定ID的节点
         """
         self.runFlag.wait()  #系统运行标志
+        # 如果之前没建立连接，则建立长连接
+        if id not in DaspCommon.adjSocket: 
+            try:
+                for ele in DaspCommon.IPlist:
+                    if ele[4] == id:
+                        host = ele[2]
+                        port = ele[3]
+                        break
+                print ("connecting to {}:{}".format(host,str(port)))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) #在客户端开启心跳维护
+                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000)) #开始保活机制，60s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
+                remote_ip = socket.gethostbyname(host)
+                sock.connect((remote_ip, port))
+                DaspCommon.adjSocket[id] = sock
+            except Exception as e:
+                print ("与邻居节点{}连接失败".format(id))
+                self.deleteadjID(id)
+                self.deleteTaskadjID(id)
+                self.sendDatatoGUI("与邻居节点{0}连接失败".format(id)) 
+                return id
+
+        # 向相应的套接字发送消息
         try:
             self.sendall_length(DaspCommon.adjSocket[id], data)
             # flag = 0
@@ -291,7 +313,7 @@ class Task(DaspCommon):
             #         print("重试中")
             #         time.sleep(0.5)
         except Exception as e:
-            print(traceback.format_exc())
+            #print(traceback.format_exc())
             print ("与邻居节点{0}连接失败".format(id))
             self.deleteadjID(id)
             self.deleteTaskadjID(id)
