@@ -35,7 +35,7 @@ class DaspMysqlCommon:
                                             port=self.port,
                                             user=self.user,
                                             password=self.password,
-                                             charset='utf8mb4'
+                                            charset='utf8mb4'
                                             )
             self.cursor = self.connection.cursor()
             self.use_database()

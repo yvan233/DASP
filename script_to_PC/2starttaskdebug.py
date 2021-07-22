@@ -3,6 +3,14 @@ import socket
 import struct
 headformat = "!2I"
 headerSize = 8
+DatabaseInfo = {
+    'host': "127.0.0.1",
+    'port': 3306,
+    'user': 'root',
+    'password': 'DSPadmin',
+ }
+ObservedVariable = ["m","adjData_fb","data"]
+
 def sendall_length(socket, jsondata, methods = 1):
     '''
     为发送的json数据添加methods和length报头
@@ -12,7 +20,8 @@ def sendall_length(socket, jsondata, methods = 1):
     header = [methods, body.__len__()]
     headPack = struct.pack(headformat , *header)
     socket.sendall(headPack+body.encode())
-DAPPnamelist = ["宽度优先生成树"]
+
+DAPPnamelist = ["CreatBFStree"]
 
 for ele in DAPPnamelist:
     localIP = socket.gethostbyname(socket.gethostname())
@@ -21,9 +30,9 @@ for ele in DAPPnamelist:
     data = {
         "key": "newtask",
         "DAPPname": ele,
-        "DebugMode": False, 
-        "DatabaseInfo": [],
-        "ObservedVariable": []
+        "DebugMode": True, 
+        "DatabaseInfo": DatabaseInfo,
+        "ObservedVariable": ObservedVariable
     }
     sendall_length(s, data)
     s.close()

@@ -29,7 +29,10 @@ localIP = socket.gethostbyname(socket.gethostname())
 GUIinfo = [localIP, 50000]
 data = {
     "key": "startsystem",
-    "GUIinfo": GUIinfo
+    "GUIinfo": GUIinfo,
+    "DebugMode": False, 
+    "DatabaseInfo": [],
+    "ObservedVariable": []
 }
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((localIP, 10006))
@@ -43,7 +46,10 @@ nodelist.append(node)
 print("发送连接room_2信号")
 data = {
     "key": "restart",
-    "GUIinfo": GUIinfo
+    "GUIinfo": GUIinfo,
+    "DebugMode": False, 
+    "DatabaseInfo": [],
+    "ObservedVariable": []
 }
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((localIP, 10013))
@@ -57,7 +63,10 @@ nodelist.append(node)
 print("发送连接room_3信号")
 data = {
     "key": "restart",
-    "GUIinfo": GUIinfo
+    "GUIinfo": GUIinfo,
+    "DebugMode": False, 
+    "DatabaseInfo": [],
+    "ObservedVariable": []
 }
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((localIP, 10020))

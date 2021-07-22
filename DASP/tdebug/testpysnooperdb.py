@@ -27,5 +27,5 @@ def A():
         for n in range(2):
             sum += i*10+n
 
-B = snoop(config = DatabaseInfo, db = database, tablename = 'test111', observelist = observelist)(A)
+B = snoop(config = DatabaseInfo, db = database, tablename = 'test124', observelist = observelist)(A)
 B()

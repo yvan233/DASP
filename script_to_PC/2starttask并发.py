@@ -22,6 +22,9 @@ for ele in DAPPnamelist:
     data = {
         "key": "newtask",
         "DAPPname": ele,
+        "DebugMode": False, 
+        "DatabaseInfo": [],
+        "ObservedVariable": []
     }
     sendall_length(s, data)
     s.close()

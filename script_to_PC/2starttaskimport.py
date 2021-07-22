@@ -12,7 +12,8 @@ def sendall_length(socket, jsondata, methods = 1):
     header = [methods, body.__len__()]
     headPack = struct.pack(headformat , *header)
     socket.sendall(headPack+body.encode())
-DAPPnamelist = ["宽度优先生成树"]
+
+DAPPnamelist = ["testimport"]
 
 for ele in DAPPnamelist:
     localIP = socket.gethostbyname(socket.gethostname())

@@ -8,9 +8,10 @@ import importlib
 import os
 import codecs
 import copy
-sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-from DASP.module import DaspCommon
-
+# sys.path.insert(1,".")  # 把上一级目录加入搜索路径
+# from DASP.module import DaspCommon
+from . import DaspCommon
+from ..pysnooperdb.tracer import Tracer as snoop
 class Task(DaspCommon):
     """任务类
     
@@ -54,7 +55,12 @@ class Task(DaspCommon):
         SyncTurnFlag: 同步函数轮训标志
         SyncTurnFlag2: 同步通信函数轮训标志
         adjSyncStatus: 同步函数邻居状态
-        adjSyncStatus2: 同步函数邻居状态2(轮训)     
+        adjSyncStatus2: 同步函数邻居状态2(轮训)    
+
+        DebugMode: 调试模式是否启用标志
+        DatabaseInfo: 数据库连接信息
+        DBname: 调试数据库名称（默认Daspdb）
+        ObservedVariable: 观察变量列表
         """
     def __init__(self, DAPPname):
         self.DAPPname = DAPPname
@@ -67,9 +73,14 @@ class Task(DaspCommon):
         加载任务运行所需信息,启动run线程,等待任务启动标志
         """
         # 加载question文件
-        question = importlib.import_module("DASP.task_info.{}.question".format(self.DAPPname))
-        question = importlib.reload(question)
-        self.taskfunc = question.taskFunction
+        try:
+            question = importlib.import_module("DASP.task_info.{}.question".format(self.DAPPname))
+            question = importlib.reload(question)
+            self.taskfunc = question.taskFunction
+        except Exception as e:
+            self.sendDatatoGUI("导入出错")
+            print(traceback.format_exc())
+            self.sendDatatoGUI(traceback.format_exc())
 
         # 加载topology文件
         ID = []
@@ -144,6 +155,15 @@ class Task(DaspCommon):
         self.taskthreads = threading.Thread(target=self.run, args=())
         self.taskthreads.start()
 
+    def load_debuginfo(self, DebugMode = False, DatabaseInfo = [], DBname = 'Daspdb', ObservedVariable = []):
+        """
+        加载调试模式信息
+        """
+        self.DebugMode = DebugMode
+        self.DatabaseInfo = DatabaseInfo
+        self.DBname = DBname
+        self.ObservedVariable = ObservedVariable
+
     def run(self):
         """
         任务服务器开始运行,等待任务启动标志
@@ -154,9 +174,16 @@ class Task(DaspCommon):
                 if self.taskBeginFlag == 1:
                     if DaspCommon.nodeID in self.TaskID: #如果在任务列表中
                         try:
-                            self.sendDatatoGUI("开始执行")
+                            if self.DebugMode:
+                                tablename = "{}_{}".format(self.DAPPname, self.nodeID)
+                                taskfunc = snoop(config = self.DatabaseInfo, db = self.DBname, tablename = tablename, \
+                                    observelist = self.ObservedVariable)(self.taskfunc)
+                                self.sendDatatoGUI("启动调试模式，开始执行")
+                            else:
+                                taskfunc = self.taskfunc
+                                self.sendDatatoGUI("开始执行")
                             print("DAPP:{} start".format(self.DAPPname))
-                            value = self.taskfunc(self, DaspCommon.nodeID, self.TaskadjDirection, self.TaskDatalist)
+                            value = taskfunc(self, DaspCommon.nodeID, self.TaskadjDirection, self.TaskDatalist)
                             self.resultinfo["value"] = value
                             self.sendDatatoGUI("执行完毕")
                             # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错

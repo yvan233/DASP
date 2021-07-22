@@ -27,6 +27,9 @@ s.connect((localIP, 10006))
 data = {
     "key": "newtask",
     "DAPPname": "testpause",
+    "DebugMode": False, 
+    "DatabaseInfo": [],
+    "ObservedVariable": []
 }
 sendall_length(s, data)
 s.close()

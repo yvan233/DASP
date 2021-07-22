@@ -17,7 +17,10 @@ localIP = socket.gethostbyname(socket.gethostname())
 GUIinfo = [localIP, 50000]
 data = {
     "key": "restart",
-    "GUIinfo": GUIinfo
+    "GUIinfo": GUIinfo,
+    "DebugMode": False, 
+    "DatabaseInfo": [],
+    "ObservedVariable": []
 }
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
