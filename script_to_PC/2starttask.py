@@ -1,11 +1,17 @@
-import os
 import json
 import socket
-
-def sendall_length(s, head, data):
-    length = "content-length:"+str(len(data)) + "\r\n\r\n"
-    message = head + length + data
-    s.sendall(str.encode(message))
+import struct
+headformat = "!2I"
+headerSize = 8
+def sendall_length(socket, jsondata, methods = 1):
+    '''
+    为发送的json数据添加methods和length报头
+        POST：methods = 1: 
+    '''
+    body = json.dumps(jsondata)
+    header = [methods, body.__len__()]
+    headPack = struct.pack(headformat , *header)
+    socket.sendall(headPack+body.encode())
 
 DAPPnamelist = ["CreatBFStree"]
 
@@ -17,7 +23,5 @@ for ele in DAPPnamelist:
         "key": "newtask",
         "DAPPname": ele,
     }
-    data = json.dumps(data)
-    head = "POST / HTTP/1.1\r\n"
-    sendall_length(s, head, data)
+    sendall_length(s, data)
     s.close()

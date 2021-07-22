@@ -3,9 +3,6 @@ import subprocess
 import threading
 import time
 
-# import sys
-# sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-
 class Node:
     """节点类
     

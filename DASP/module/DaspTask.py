@@ -231,8 +231,7 @@ class Task(DaspCommon):
                     "id": DaspCommon.nodeID,
                     "data": self.resultinfoQue
                 }
-                ndata = json.dumps(data)
-                self.send(self.parentID, ndata)
+                self.send(self.parentID, data)
 
         # 非叶子结点
         else:
@@ -255,8 +254,7 @@ class Task(DaspCommon):
                     "id": DaspCommon.nodeID,
                     "data": self.resultinfoQue
                 }
-                ndata = json.dumps(data)
-                self.send(self.parentID, data=ndata)
+                self.send(self.parentID, data=data)
                 self.resultinfoQue = []
             else:
                 self.dataEndFlag = 1
@@ -326,11 +324,10 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        ndata = json.dumps(data)
         for ele in self.TaskIPlist:
             if ele != []:
                 if ele[4] == id:
-                    self.send(ele[4], ndata)
+                    self.send(ele[4], data)
 
     def sendDataToDirection(self, direction, data):
         """
@@ -343,13 +340,12 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        ndata = json.dumps(data)
         for i in range(len(self.TaskadjID)):
             if self.TaskadjDirection[i] ==  direction:
                 for ele in self.TaskIPlist:
                     if ele != []:
                         if ele[4] == self.TaskadjID[i]:
-                            self.send(ele[4], ndata)
+                            self.send(ele[4], data)
 
     def sendDataToDirectionAnother(self, direction, data):
         """
@@ -362,13 +358,12 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        ndata = json.dumps(data)
         for i in range(len(self.TaskadjID)):
             if self.TaskadjDirection[i] ==  direction:
                 for ele in self.TaskIPlist:
                     if ele != []:
                         if ele[4] == self.TaskadjID[i]:
-                            self.send(ele[4], ndata)
+                            self.send(ele[4], data)
 
     def deleteTaskadjID(self, id):  
         """
@@ -432,9 +427,8 @@ class Task(DaspCommon):
                 "key": "sync",
                 "id": DaspCommon.nodeID,
                 "DAPPname": self.DAPPname
-            }
-            ndata = json.dumps(data)      
-            self.sendData(ndata)
+            }  
+            self.sendData(data)
             # 全部非空才能继续
             while (not all(self.adjSyncStatus)):   
                 time.sleep(0.01)
@@ -448,8 +442,7 @@ class Task(DaspCommon):
                 "id": DaspCommon.nodeID,
                 "DAPPname": self.DAPPname
             }
-            ndata = json.dumps(data)
-            self.sendData(ndata)
+            self.sendData(data)
             while (not all(self.adjSyncStatus2)):   
                 time.sleep(0.01)
             for i in range(len(self.adjSyncStatus2)):

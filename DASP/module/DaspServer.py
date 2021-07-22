@@ -44,7 +44,7 @@ class BaseServer(DaspCommon):
             server.bind((host, port))
             server.listen(1) #接收的连接数
             conn, addr = server.accept()
-            print('Connected by', addr)
+            print('Connected by {}:{}'.format(addr[0], addr[1]))
             # FIFO消息队列
             dataBuffer = bytes()
             with conn:
@@ -53,11 +53,11 @@ class BaseServer(DaspCommon):
                         data = conn.recv(1024)
                     except Exception as e:
                         # 发送端进程被杀掉
-                        self.DisconnectHandle(adjID)
+                        self.DisconnectHandle(addr, adjID)
                         break
                     if data == b"":
                         # 发送端close()
-                        self.DisconnectHandle(adjID)
+                        self.DisconnectHandle(addr, adjID)
                         break
                     if data:
                         # 把数据存入缓冲区，类似于push数据
@@ -87,87 +87,86 @@ class BaseServer(DaspCommon):
         else:
             print("非POST方法")
 
-    def DisconnectHandle(self, adjID):
+    def DisconnectHandle(self, addr, adjID):
         """
         对邻居断开连接的操作函数               
         """
-        print (adjID , "已断开")      
+        print ("{}:{} 已断开".format(addr[0],addr[1]))      
 
-    def connect(self,host1,port1,host2,port2,adjID,DAPPname):
+    def connect(self,adjID,DAPPname):
         """
         发送连接请求
         如果没连上则改邻居不在线；如果连接上并收到connect回应，则加入子节点中
         """
         data = {
             "key": "connect",
-            "host": host1,
-            "port": port1,
             "id": DaspCommon.nodeID,
             "GUIinfo": DaspCommon.GUIinfo,
             "DAPPname": DAPPname
         }
-        try:
-            print ("connecting to {}:{}".format(host2,str(port2)))
-            if DaspCommon.adjConnectFlag[DaspCommon.adjID.index(adjID)] == 0:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) #在客户端开启心跳维护
-                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000)) #开始保活机制，60s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
-                remote_ip = socket.gethostbyname(host2)
-                sock.connect((remote_ip, port2))
 
-                DaspCommon.adjConnectFlag[DaspCommon.adjID.index(adjID)] = 1
-                DaspCommon.adjSocket[adjID] = sock
-            
-            self.sendall_length(DaspCommon.adjSocket[adjID], data)
-            headPack,body = self.recv_length(DaspCommon.adjSocket[adjID])
-            jres = json.loads(body)
-            if jres['key'] == 'connect':
-                BaseServer.TaskDict[DAPPname].sonID.append(jres["id"])
-                indext = DaspCommon.adjID.index(jres["id"])
-                BaseServer.TaskDict[DAPPname].sonDirection.append(self.adjDirection[indext])
-                BaseServer.TaskDict[DAPPname].CreateTreeSonFlag.append(0)
-                BaseServer.TaskDict[DAPPname].sonData.append([])
-            return 0
-        except Exception as e:
-            self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败", DAPPname) 
-            print ("与邻居节点"+adjID+"连接失败")
-            return adjID
+        returnflag = self.send(adjID, data)
+        headPack,body = self.recv_length(DaspCommon.adjSocket[adjID])
+        jres = json.loads(body)
+        if jres['key'] == 'connect':
+            BaseServer.TaskDict[DAPPname].sonID.append(jres["id"])
+            indext = DaspCommon.adjID.index(jres["id"])
+            BaseServer.TaskDict[DAPPname].sonDirection.append(self.adjDirection[indext])
+            BaseServer.TaskDict[DAPPname].CreateTreeSonFlag.append(0)
+            BaseServer.TaskDict[DAPPname].sonData.append([])
+        return returnflag
                     
-    def reconnect(self,host1,port1,host2,port2,adjID,direction):
+    def reconnect(self,host, port, adjID,direction):
         """
         发送重新连接请求
         """
         data = {
             "key": "reconnect",
-            "host": host1,
-            "port": port1,
             "id": DaspCommon.nodeID,
+            "host": host,
+            "port": port,
             "applydirection": direction
         }
-        try:
-            print ("{}:{} reconnecting to {}:{}".format(host1,str(port1),host2,str(port2)))
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            remote_ip = socket.gethostbyname(host2)
-            sock.connect((remote_ip, port2))
-            cont = "POST / HTTP/1.1\r\n"
-            self.sendall_length(sock, cont, data)
-            sock.close()
-        except Exception as e:
-            self.sendRunDatatoGUI("与邻居节点"+adjID+"连接失败") 
-            print ("与邻居节点"+adjID+"连接失败")
-            return adjID
+        self.send(adjID, data)
+
 
     def send(self,id,data):
         """
         通过TCP的形式将信息发送至指定ID的节点
         """
+        # 如果之前没建立连接，则建立长连接
+        if DaspCommon.adjConnectFlag[DaspCommon.adjID.index(id)] == 0: 
+            try:
+                for ele in DaspCommon.IPlist:
+                    if ele[4] == id:
+                        host = ele[2]
+                        port = ele[3]
+                        break
+                print ("connecting to {}:{}".format(host,str(port)))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) #在客户端开启心跳维护
+                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000)) #开始保活机制，60s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
+                remote_ip = socket.gethostbyname(host)
+                sock.connect((remote_ip, port))
+                DaspCommon.adjConnectFlag[DaspCommon.adjID.index(id)] = 1
+                DaspCommon.adjSocket[id] = sock
+            except Exception as e:
+                print ("与邻居节点{}连接失败".format(id))
+                self.deleteadjID(id)
+                self.deleteTaskDictadjID(id)
+                self.sendRunDatatoGUI("与邻居节点{0}连接失败".format(id)) 
+                return id
+
+        # 向相应的套接字发送消息
         try:
             self.sendall_length(DaspCommon.adjSocket[id], data)
+            return "Communication Succeeded"
         except Exception as e:
             print ("与邻居节点{}连接失败".format(id))
             self.deleteadjID(id)
             self.deleteTaskDictadjID(id)
             self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
+            return id
     
     def Forward2sonID(self, jdata, DAPPname):
         """
@@ -225,8 +224,6 @@ class TaskServer(BaseServer):
         self.port = port
         self.ResultThreadsFlag = 0
 
-
-
     def run(self):
         """
         服务器开始运行
@@ -239,8 +236,6 @@ class TaskServer(BaseServer):
         数据处理函数,子类可重构该函数
         """
         jdata = json.loads(body)
-        if isinstance (jdata,str):
-            jdata = json.loads(jdata)
         if headPack[0] == 1:
             if jdata["key"] == "startsystem":
                 self.startsystem(jdata)
@@ -276,23 +271,23 @@ class TaskServer(BaseServer):
             print ("非来自GUI的任务请求")
 
         name = "system"
-        sdata = {
+        jdata = {
             "key": "startsystem",
             "GUIinfo": DaspCommon.GUIinfo
         }
-        self.newtaskbase(name, sdata)
+        self.newtaskbase(name, jdata)
 
     def newtask(self, jdata): 
         """
         启动DAPP
         """
         name = jdata["DAPPname"]
-        sdata = {
+        jdata = {
             "key": "newtask",
             "DAPPname": name
         }
         self.sendRunDatatoGUI("接收任务请求",name)
-        self.newtaskbase(name, sdata)
+        self.newtaskbase(name, jdata)
 
     def newtaskbase(self, name, jdata): 
         """
@@ -303,17 +298,11 @@ class TaskServer(BaseServer):
 
         # 建立通信树
         sum = 0
-        deleteID = []
-        for ele in BaseServer.TaskDict[name].TaskIPlist:
+        for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
             if ele:
-                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], name)
-                if returnID:
-                    deleteID.append(returnID)
-                else:
+                if self.connect(ele[4], name) == "Communication Succeeded":
                     sum += 1
-        for ele in deleteID:
-            self.deleteadjID(ele)
-            self.deleteTaskDictadjID(ele)
+                    
         if(sum == 0): BaseServer.TaskDict[name].treeFlag = 1   #只有一个节点的情况
         while (BaseServer.TaskDict[name].treeFlag == 0): {time.sleep(0.01)}
         self.sendRunDatatoGUI("通信树建立完成")
@@ -398,16 +387,10 @@ class TaskServer(BaseServer):
         BaseServer.TaskDict[name] = Task(name)
         BaseServer.TaskDict[name].load()
 
-        deleteID = []
-        for ele in BaseServer.TaskDict[name].TaskIPlist:
+        for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
             if ele:
                 index = DaspCommon.adjID.index(ele[4])
-                returnID = self.reconnect(ele[0], ele[1], ele[2], ele[3], ele[4], DaspCommon.adjDirectionOtherSide[index])
-                if returnID:
-                    deleteID.append(returnID)
-        for ele in deleteID:
-            self.deleteadjID(ele)
-            self.deleteTaskDictadjID(ele)
+                self.reconnect(ele[0], ele[1], ele[4], DaspCommon.adjDirectionOtherSide[index])
 
         BaseServer.TaskDict[name].taskBeginFlag = 1
         self.sendFlagtoGUI(2,name)
@@ -440,8 +423,6 @@ class CommServer(BaseServer):
         数据处理函数
         """
         jdata = json.loads(body)
-        if isinstance (jdata,str):
-            jdata = json.loads(jdata)
         if headPack[0] == 1:
             #建立通信树
             if jdata["key"] == "connect":
@@ -500,8 +481,6 @@ class CommServer(BaseServer):
             if BaseServer.TaskDict[name].commTreeFlag == 1:
                 data = {
                     "key": "connected",
-                    "host": self.host,
-                    "port": self.port,
                     "id": DaspCommon.nodeID,
                     "DAPPname": name
                 }
@@ -512,31 +491,21 @@ class CommServer(BaseServer):
         BaseServer.TaskDict[name] = Task(name)
         BaseServer.TaskDict[name].load()
         BaseServer.TaskDict[name].parentID = jdata["id"]
-        indext = DaspCommon.adjID .index(jdata["id"])
+        indext = DaspCommon.adjID.index(jdata["id"])
         BaseServer.TaskDict[name].parentDirection = DaspCommon.adjDirection[indext]
-        print ("connected to {}:{} ".format(jdata["host"],jdata["port"]))
         DaspCommon.GUIinfo = jdata["GUIinfo"]
         data = {
             "key": "connect",
-            "host": self.host,
-            "port": self.port,
             "id": DaspCommon.nodeID,
             "GUIinfo": DaspCommon.GUIinfo,
             "DAPPname": name
         }
         self.sendall_length(conn, data)
         
-        deleteID = []
-        for ele in BaseServer.TaskDict[name].TaskIPlist:
-            if ele != []:
-                # if ele[4] != BaseServer.TaskDict[name].parentID:
-                returnID = self.connect(ele[0], ele[1], ele[2], ele[3], ele[4], name)
-                if returnID:
-                    deleteID.append(returnID)
-
-        for ele in deleteID:
-            self.deleteadjID(ele)
-            self.deleteTaskDictadjID(ele)
+        for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
+            if ele:
+                if ele[4] != BaseServer.TaskDict[name].parentID:
+                    self.connect(ele[4], name)
 
         #如果是叶子结点
         if len(BaseServer.TaskDict[name].sonID) == 0:
@@ -545,8 +514,7 @@ class CommServer(BaseServer):
                 "id": DaspCommon.nodeID,
                 "DAPPname": name
             }
-            ndata = json.dumps(data)
-            self.send(BaseServer.TaskDict[name].parentID, data=ndata)
+            self.send(BaseServer.TaskDict[name].parentID, data=data)
             for i in range(len(BaseServer.TaskDict[name].CreateTreeSonFlag)):
                 BaseServer.TaskDict[name].CreateTreeSonFlag[i] = 0
 
@@ -583,7 +551,7 @@ class CommServer(BaseServer):
             BaseServer.TaskDict["system"].adjData_another.append([]) 
             self.sendRunDatatoGUI("与邻居节点{0}重连成功，已添加和{0}的连接".format(jdata["id"])) 
         else:
-            conn.send(str.encode(head + "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["applydirection"]))))
+            conn.send(str.encode("节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["applydirection"]))))
 
     def RespondOK(self, jdata):
         """
@@ -596,14 +564,13 @@ class CommServer(BaseServer):
             "id": DaspCommon.nodeID,
             "DAPPname": name
         }
-        ndata = json.dumps(data)
         for i in range(len(BaseServer.TaskDict[name].sonID)):
             if BaseServer.TaskDict[name].sonID[i] == jdata["id"]:
                 BaseServer.TaskDict[name].CreateTreeSonFlag[i] = 1
 
         if all(BaseServer.TaskDict[name].CreateTreeSonFlag):
             if BaseServer.TaskDict[name].parentID != DaspCommon.nodeID:
-                self.send(BaseServer.TaskDict[name].parentID, data=ndata)
+                self.send(BaseServer.TaskDict[name].parentID, data=data)
             else:
                 BaseServer.TaskDict[name].treeFlag = 1
                 print ("The communication tree has been constructed!")
