@@ -1,8 +1,9 @@
-import socket
 import json
 import ctypes
 import inspect
 import struct
+import platform
+import socket
 
 class DaspCommon():
     '''
@@ -75,6 +76,19 @@ class DaspCommon():
                     body = json.loads(body)
                     return headPack,body
 
+    def set_keep_alive(self, sock):
+        """
+        设置套接字保活机制
+        30s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
+        """
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        if platform.system() == "Windows":
+            sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,30*1000,30*1000))
+
+        if platform.system() == "Linux":
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 30)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 10)
 
     def sendtoGUIbase(self, info, key, DAPPname):
         """

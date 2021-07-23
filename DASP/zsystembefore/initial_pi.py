@@ -10,24 +10,19 @@ import time
 
 if __name__ == '__main__':
     time.sleep(2)
-    # path = os.getcwd() + "\\DASP\binding.csv"
-    path = "/home/pi/zhongdy/DASP/binding.csv"
+    path = "/home/pi/yanhu/DASP/binding.csv"
     with open(path,'r')as f:
         data = csv.reader(f)
         idiplist = []
         for i in data:
             idiplist.append(i)
+
     p = subprocess.Popen("hostname -I", shell=True, stdout=subprocess.PIPE)
-    data = p.stdout.read()
-    data = str(data,encoding = 'UTF-8')
-    # localIP = socket.gethostbyname(socket.gethostname())
-    data = data.split(' ')
-    if '\n' in data:
-        data.remove('\n')
-    localIP = data[0]
+    nodeIP = p.stdout.read()
+    nodeIP = str(nodeIP,encoding = 'UTF-8').strip(' \n')
     selfID = 0
     for ele in idiplist:
-        if ele[1] == localIP:
+        if ele[1] == nodeIP:
             selfID = ele[0]
             break
     if selfID:

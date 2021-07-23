@@ -1,10 +1,11 @@
-import system
 import sys
 import codecs
 import json
 import os
 import socket
-
+# 设置当前工作目录
+# os.chdir('D:/Yvan/OneDrive - office.ac.id/研一/0. 项目/8. DASP重构/DASP')
+import system
 if __name__ == '__main__':
     IP = []
     PORT = []
@@ -13,7 +14,7 @@ if __name__ == '__main__':
     datalist = []
     adjDirection = []
     localIP = socket.gethostbyname(socket.gethostname())
-    path = os.getcwd() + "\\DASP\\task_info\\system\\topology.txt"
+    path = os.getcwd() + "/DASP/task_info/system/topology.txt"
     path = path.replace('\\', '/')  
     text = codecs.open(path, 'r', 'utf-8').read()
     js = json.loads(text)

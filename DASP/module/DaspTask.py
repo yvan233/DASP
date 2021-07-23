@@ -315,8 +315,7 @@ class Task(DaspCommon):
                         break
                 print ("connecting to {}:{}".format(host,str(port)))
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) #在客户端开启心跳维护
-                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000)) #开始保活机制，60s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
+                self.set_keep_alive(sock)
                 remote_ip = socket.gethostbyname(host)
                 sock.connect((remote_ip, port))
                 DaspCommon.adjSocket[id] = sock
@@ -352,8 +351,7 @@ class Task(DaspCommon):
                 print ("reconnecting to {}:{}, times:{}".format(host,str(port),times))
                 self.sendDatatoGUI("与邻居节点{}连接失败，第{}次重连中...".format(id,times))
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,1*1000,1*1000))
+                self.set_keep_alive(sock)
                 remote_ip = socket.gethostbyname(host)
                 sock.connect((remote_ip, port))
                 DaspCommon.adjSocket[id] = sock
