@@ -29,4 +29,5 @@ def taskFunction(self, id, adjDirection, datalist):
             cwd=r'/home/pi/xt')
     thread = threading.Thread(target=getprintdata,args=(proc,self.sendDatatoGUI,))
     thread.start()
+    thread.join()
     return 0
