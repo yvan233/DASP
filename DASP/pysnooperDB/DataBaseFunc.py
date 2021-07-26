@@ -63,7 +63,6 @@ class DaspMysqlCommon:
         self.cursor.close()
         self.connection.close()
 
-
 class DaspMysqlServer(DaspMysqlCommon):
     """
     Dasp Mysql服务器端，包含创建、插入等操作
@@ -167,17 +166,40 @@ class DaspMysqlClient(DaspMysqlCommon):
         self.connection.commit()
         return result
 
+    def create_runtable(self, taskname):
+        """创建运行数据表
+        """
+        self.is_connected()
+        sql = """CREATE TABLE IF NOT EXISTS  RUNINFO_{} (
+                recordid INT NOT NULL AUTO_INCREMENT,
+                运行信息 VARCHAR(20000),
+                PRIMARY KEY ( recordid )  )character set = utf8""".format(taskname)
+        self.cursor.execute(sql)
+        self.connection.commit()
+
+
+    def insert_runtable(self, taskname, info):
+        """插入运行数据表
+        """
+        # info中的'会导致插入错误
+        info = info.replace("'","")
+        self.is_connected()
+        sql = "INSERT INTO RUNINFO_{} (运行信息) VALUES ('{}')".format(taskname, info)
+        self.cursor.execute(sql)
+        self.connection.commit()
 
 if __name__ == '__main__':
 
-    observelist = ["x", "m", "adjdata"]
+    # observelist = ["x", "m", "adjdata"]
 
-    db = DaspMysqlServer(Default_Config,'Daspdb','test123',observelist)
-    db.create_debug_table()
-    db.insert_debug_table('1','1','1','x','1')
+    # db = DaspMysqlServer(Default_Config,'Daspdb','test123',observelist)
+    # db.create_debug_table()
+    # db.insert_debug_table('1','1','1','x','1')
     # db.create_debug_table('test' , observelist)
     # print(db.show_tables())
     # table = db.show_table('default_node_1')
     # print(table)  
     db2 = DaspMysqlClient(Default_Config,'Daspdb')
-    print (db2.show_table('test123'))
+    # print (db2.show_table('test123'))
+    db2.create_runtable('test')
+    db2.insert_runtable('test','adsavsa')
