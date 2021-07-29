@@ -151,36 +151,37 @@ class SSH(object):
             print(traceback.format_exc())
 
 if __name__ == "__main__":
-    localpath = os.getcwd() + "\\debug\\binding.csv"
+    localpath = os.getcwd() + "/debug/binding.csv"
     # 读取节点信息
     with open(localpath,'r')as f:
         data = csv.reader(f)
-        idiplist = []
+        binding = []
         for i in data:
-            idiplist.append(i)
-    for ele in idiplist[1:]:
-        if ele[1] != "false":
-            try:
-                # 服务器连接信息
-                host_name = ele[1]
-                user_name = 'pi'
-                password = 'raspberry'
-                port = 22
-                print( ele[0] + '开始！') 
-                ssh = SSH(ip=host_name, username=user_name, password=password)  # 创建一个ssh类对象
-                ssh.connect()  # 连接远程服务器    
- 
-                # ## 下载文件夹
-                # remote_dir = '/home/pi/xingtian/device1.0-master/DB_Backup'
-                # local_dir = 'DB_Backup/' + ele[0]
-                # ssh.sftp_get_dir(remote_dir, local_dir)  
+            binding.append(i)
+    for ele in binding[1:]:
+        if ele[2] == "pi":
+            if ele[1] != "offline":
+                try:
+                    # 服务器连接信息
+                    host_name = ele[1]
+                    user_name = 'pi'
+                    password = 'raspberry'
+                    port = 22
+                    print( ele[0] + '开始！') 
+                    ssh = SSH(ip=host_name, username=user_name, password=password)  # 创建一个ssh类对象
+                    ssh.connect()  # 连接远程服务器    
+    
+                    # ## 下载文件夹
+                    # remote_dir = '/home/pi/xingtian/device1.0-master/DB_Backup'
+                    # local_dir = 'DB_Backup/' + ele[0]
+                    # ssh.sftp_get_dir(remote_dir, local_dir)  
 
-                ## 上传文件夹
-                remote_dir = '/home/pi/yanhu'
-                local_dir = 'IoT'
-                ssh.sftp_put_dir(local_dir, remote_dir)  
-                
-                ssh.close()
-                print( ele[0] + '成功！')  
-            except Exception as e:
-                print( ele[0] + '失败！') 
+                    ## 上传文件夹
+                    remote_dir = '/home/pi/yanhu/DASP'
+                    local_dir = 'D:/DASP/DASP'
+                    ssh.sftp_put_dir(local_dir, remote_dir)  
+                    
+                    ssh.close()
+                    print( ele[0] + '成功！')  
+                except Exception as e:
+                    print( ele[0] + '失败！') 

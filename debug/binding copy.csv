@@ -1,0 +1,13 @@
+ID,IP
+room_1,192.168.5.9
+room_2,192.168.5.4
+room_3,192.168.5.8
+room_4,192.168.5.7
+room_5,192.168.5.5
+room_6,192.168.5.19
+room_7,192.168.5.17
+room_8,false
+pump_1,192.168.5.15
+pump_2,false
+heatpump_1,192.168.5.16
+communication_node,false
