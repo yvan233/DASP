@@ -1,7 +1,0 @@
-root
-08191920.yh
-TESTDB
-Tables
-x
-m
-start in debug mode
