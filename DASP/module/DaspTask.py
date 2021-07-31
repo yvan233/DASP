@@ -1,6 +1,5 @@
 import json
 import socket
-import sys
 import time
 import threading
 import traceback
@@ -8,6 +7,8 @@ import importlib
 import os
 import codecs
 import copy
+import queue
+# import sys
 # sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 # from DASP.module import DaspCommon
 from . import DaspCommon
@@ -28,6 +29,8 @@ class Task(DaspCommon):
         adjData: 邻居数据
         adjData_another: 同步通信函数中另一个邻居数据变量
         sonData: 子节点数据
+        rootData: 根节点数据(队列)
+        descendantData: 后代节点数据(队列)
 
         DAPPname: 任务名称
         GUIinfo: UI界面IP及端口
@@ -140,6 +143,8 @@ class Task(DaspCommon):
         self.CreateTreeSonFlag = []
         self.adjData = []
         self.adjData_another= []
+        self.rootData = queue.Queue() 
+        self.descendantData = queue.Queue() 
 
         self.SyncTurnFlag = 0
         self.SyncTurnFlag2 = 0
@@ -365,7 +370,6 @@ class Task(DaspCommon):
         self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
         return id
 
-
     def sendData(self, data):
         """
         通过TCP的形式将信息发送至所有邻居
@@ -373,6 +377,39 @@ class Task(DaspCommon):
         for ele in reversed(self.TaskIPlist):
             if ele != []:
                 self.send(ele[4], data)
+
+    def deleteTaskadjID(self, id):  
+        """
+        删除本节点和指定id邻居节点的所有连接
+        """
+        for ele in self.TaskIPlist:
+            if ele != []:
+                if ele[4] == id:
+                    self.TaskIPlist.remove(ele)
+
+        if id in self.TaskadjID:
+            index = self.TaskadjID.index(id)      
+            del self.TaskadjID[index]
+            del self.TaskadjDirection[index]   
+            del self.adjSyncStatus[index] 
+            del self.adjSyncStatus2[index]     
+            del self.adjData[index]
+            del self.adjData_another[index]
+
+        if self.parentID == id:
+            self.parentID = DaspCommon.nodeID
+            self.parentDirection = 0
+        else:
+            if id in self.sonID:
+                index = self.sonID.index(id) 
+                del self.sonID[index]     
+                del self.sonDirection[index]
+                del self.sonData[index]
+
+ 
+    ##################################
+    ###   下面为提供给用户的接口函数   ###
+    ##################################
 
     def sendDatatoGUI(self, info):
         """
@@ -396,6 +433,52 @@ class Task(DaspCommon):
             if ele != []:
                 if ele[4] == id:
                     self.send(ele[4], data)
+
+    def sendDataToRoot(self, data):
+        """将消息发送至根节点
+
+        通过邻居不断转发，同时将自己的id和路径上的id加进path
+        """
+
+        if self.parentID == DaspCommon.nodeID:
+            err = "Error! This node is the root node!"
+            self.sendDatatoGUI(err)
+            return err
+        else:
+            data = {
+                "key": "RootData",
+                "DAPPname": self.DAPPname,
+                "path": [DaspCommon.nodeID],
+                "data": data
+            }
+            self.send(self.parentID, data)
+
+    def sendDataToDescendant(self, data, path = None):
+        """将消息发送至后代节点
+        
+        根据path将消息回馈到发送的节点，若path为空则进行广播
+        path中目标节点在第0位，所以用pop的方法从后取出元素
+        """
+        data = {
+            "key": "DescendantData",
+            "DAPPname": self.DAPPname,
+            "path": path,
+            "data": data
+        }
+        # 如果指定了路径
+        if path != None:  
+            if path:
+                nextnode = path.pop()
+                self.send(nextnode, data)
+            else:
+                err = "Error! Please enter a valid path."
+                self.sendDatatoGUI(err)
+                return err
+        # 否则进行广播
+        else:
+            for ele in self.sonID:
+                self.send(ele, data)
+
 
     def sendDataToDirection(self, direction, data):
         """
@@ -432,34 +515,6 @@ class Task(DaspCommon):
                     if ele != []:
                         if ele[4] == self.TaskadjID[i]:
                             self.send(ele[4], data)
-
-    def deleteTaskadjID(self, id):  
-        """
-        删除本节点和指定id邻居节点的所有连接
-        """
-        for ele in self.TaskIPlist:
-            if ele != []:
-                if ele[4] == id:
-                    self.TaskIPlist.remove(ele)
-
-        if id in self.TaskadjID:
-            index = self.TaskadjID.index(id)      
-            del self.TaskadjID[index]
-            del self.TaskadjDirection[index]   
-            del self.adjSyncStatus[index] 
-            del self.adjSyncStatus2[index]     
-            del self.adjData[index]
-            del self.adjData_another[index]
-
-        if self.parentID == id:
-            self.parentID = DaspCommon.nodeID
-            self.parentDirection = 0
-        else:
-            if id in self.sonID:
-                index = self.sonID.index(id) 
-                del self.sonID[index]     
-                del self.sonDirection[index]
-                del self.sonData[index]
                     
     def transmitData(self,direclist,datalist):
         """

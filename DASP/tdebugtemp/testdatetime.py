@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 date = datetime.now()
 
@@ -20,3 +19,7 @@ settime = real_time.strftime("%Y-%m-%d %H:%M:%S.%f")
 print (theta,settime)
 a = 1
 # 写法回头参考github，正式一些
+
+
+a = []
+print(a.pop())

@@ -35,7 +35,6 @@ class BaseServer(DaspCommon):
             self.MessageHandle(headPack,body,conn)
             conn.close()
                
-
     def recv_long_conn(self, host, port, adjID = ""):
         """
         长连接循环接收数据框架
@@ -131,7 +130,6 @@ class BaseServer(DaspCommon):
         }
         self.send(adjID, data)
         
-
     def send(self,id,data):
         """
         通过TCP的形式将信息发送至指定ID的节点
@@ -197,7 +195,6 @@ class BaseServer(DaspCommon):
         self.deleteTaskadjID(id)
         self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
         return id
-
 
     def Forward2sonID(self, jdata, DAPPname):
         """
@@ -291,7 +288,6 @@ class TaskServer(BaseServer):
         else:
             info = "暂未提供POST以外的接口"
             self.sendall_length(conn, info, methods = 9)
-
 
     def startsystem(self, jdata):
         """
@@ -454,6 +450,9 @@ class CommServer(BaseServer):
             if jdata["key"] == "connect":
                 self.RespondConnect(conn, jdata)
 
+            elif jdata["key"] == "reconnect":
+                self.RespondReconnect(conn, jdata)
+                
             elif jdata["key"] == "OK":
                 self.RespondOK(jdata)
 
@@ -477,15 +476,18 @@ class CommServer(BaseServer):
 
             elif jdata["key"] == "questionData":
                 self.RespondQuestionData(jdata)
-                
+
+            elif jdata["key"] == "RootData":
+                self.RespondRootData(jdata)
+
+            elif jdata["key"] == "DescendantData":
+                self.RespondDescendantData(jdata)
+
             elif jdata["key"] == "sync":
                 self.RespondSync(jdata,1)
 
             elif jdata["key"] == "sync2":
                 self.RespondSync(jdata,2)
-
-            elif jdata["key"] == "reconnect":
-                self.RespondReconnect(conn, jdata)
 
             else:
                 info = "请不要直接访问通信服务器"
@@ -667,6 +669,36 @@ class CommServer(BaseServer):
 
         elif jdata["type"] == "value2":
             BaseServer.TaskDict[name].adjData_another[index] = jdata["data"]
+
+    def RespondRootData(self, jdata):
+        """回应任务发送数据至根节点信号
+        """
+        task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
+        # 如果本节点是根节点则存储数据
+        if task_cur.parentID == DaspCommon.nodeID:
+            task_cur.descendantData.put([jdata["path"], jdata["data"]])
+        # 否则将数据转发给父节点
+        else:  
+            jdata["path"].append(DaspCommon.nodeID)
+            self.send(task_cur.parentID, jdata)
+
+    def RespondDescendantData(self, jdata):
+        """回应任务发送数据至后代节点信号
+        """
+        task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
+        # 如果指定了路径
+        if jdata["path"] != None: 
+            if jdata["path"]:
+                nextnode = jdata["path"].pop()
+                self.send(nextnode, jdata)
+            # 如果目标是本节点
+            else:
+                task_cur.rootData.put(jdata["data"])                
+        # 否则进行广播
+        else:
+            self.Forward2sonID(jdata, jdata["DAPPname"])
+            task_cur.rootData.put(jdata["data"])
+
 
     def RespondSync(self, jdata, type):
         """
