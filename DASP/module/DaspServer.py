@@ -4,6 +4,7 @@ import sys
 import time
 import threading
 import struct
+from datetime import datetime
 # sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 # from DASP.module import DaspCommon, Task
 from . import DaspCommon,Task
@@ -673,10 +674,12 @@ class CommServer(BaseServer):
     def RespondRootData(self, jdata):
         """回应任务发送数据至根节点信号
         """
+        TIMEFORMAT = "%Y-%m-%d %H:%M:%S.%f"
         task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
         # 如果本节点是根节点则存储数据
         if task_cur.parentID == DaspCommon.nodeID:
-            task_cur.descendantData.put([jdata["path"], jdata["data"]])
+            # 加入接收消息的时间，方便时间同步
+            task_cur.descendantData.put([jdata["path"], jdata["data"], datetime.now().strftime(TIMEFORMAT)])
         # 否则将数据转发给父节点
         else:  
             jdata["path"].append(DaspCommon.nodeID)
@@ -685,6 +688,7 @@ class CommServer(BaseServer):
     def RespondDescendantData(self, jdata):
         """回应任务发送数据至后代节点信号
         """
+        TIMEFORMAT = "%Y-%m-%d %H:%M:%S.%f"
         task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
         # 如果指定了路径
         if jdata["path"] != None: 
@@ -693,11 +697,11 @@ class CommServer(BaseServer):
                 self.send(nextnode, jdata)
             # 如果目标是本节点
             else:
-                task_cur.rootData.put(jdata["data"])                
+                task_cur.rootData.put([jdata["data"], datetime.now().strftime(TIMEFORMAT)])                
         # 否则进行广播
         else:
             self.Forward2sonID(jdata, jdata["DAPPname"])
-            task_cur.rootData.put(jdata["data"])
+            task_cur.rootData.put([jdata["data"], datetime.now().strftime(TIMEFORMAT)])
 
 
     def RespondSync(self, jdata, type):

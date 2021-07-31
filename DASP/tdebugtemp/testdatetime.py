@@ -1,6 +1,5 @@
 from datetime import datetime
 date = datetime.now()
-
 cur_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 print(date, cur_date)
 

@@ -202,6 +202,7 @@ class Task(DaspCommon):
                         self.resultinfo["value"] = ""
                     self.taskBeginFlag = 0 
                     self.taskEndFlag = 1
+                    self.syncNode() #收集数据前同步一次，防止父节点算法先计算结束，等待子节点超时
                     self.data_collec()
                     # print("resultinfo：", self.resultinfo)
                     
@@ -238,7 +239,6 @@ class Task(DaspCommon):
         """
         收集算法程序运行结果
         """
-        self.syncNode() #收集数据前同步一次，防止父节点算法先计算结束，等待子节点超时
         # 叶子结点
         if self.sonID == []:
             # 根节点

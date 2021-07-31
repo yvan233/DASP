@@ -13,12 +13,12 @@ def sendall_length(socket, jsondata, methods = 1):
     headPack = struct.pack(headformat , *header)
     socket.sendall(headPack+body.encode())
 
-DAPPnamelist = ["testRootdata"]
+DAPPnamelist = ["TimeSynch"]
 
 for ele in DAPPnamelist:
     localIP = socket.gethostbyname(socket.gethostname())
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((localIP, 10006))
+    s.connect((localIP, 10083))
     data = {
         "key": "newtask",
         "DAPPname": ele,

@@ -2,8 +2,8 @@
 import queue
 q=queue.Queue()    #如果不设置长度,默认为无限长
 print(q.maxsize)    #注意没有括号
-q.put({"date":"12.123.1.23.123.123"})
-q.put(123)
+q.put({"date":"12.123.1.23.123.123"},1)
+q.put(123,23,234)
 q.put(123)
 q.put(123)
 print(q.queue)
