@@ -3,6 +3,7 @@ import json
 import sys
 import time
 import threading
+import traceback
 import struct
 from datetime import datetime
 # sys.path.insert(1,".")  # 把上一级目录加入搜索路径
@@ -264,31 +265,36 @@ class TaskServer(BaseServer):
         """
         数据处理函数,子类可重构该函数
         """
-        jdata = body
-        if headPack[0] == 1:
-            if jdata["key"] == "startsystem":
-                self.startsystem(jdata)
+        try:
+            jdata = body
+            if headPack[0] == 1:
+                if jdata["key"] == "startsystem":
+                    self.startsystem(jdata)
 
-            elif jdata["key"] == "newtask":
-                self.newtask(jdata)
+                elif jdata["key"] == "newtask":
+                    self.newtask(jdata)
 
-            elif jdata["key"] == "pausetask":
-                self.pausetask(jdata)
+                elif jdata["key"] == "pausetask":
+                    self.pausetask(jdata)
 
-            elif jdata["key"] == "resumetask":
-                self.resumetask(jdata)
-                
-            elif jdata["key"] == "shutdowntask":
-                self.shutdowntask(jdata)
+                elif jdata["key"] == "resumetask":
+                    self.resumetask(jdata)
+                    
+                elif jdata["key"] == "shutdowntask":
+                    self.shutdowntask(jdata)
 
-            elif jdata["key"] == "restart":
-                self.restart(jdata)
+                elif jdata["key"] == "restart":
+                    self.restart(jdata)
+                else:
+                    info = "您输入的任务信息有误！"
+                    self.sendall_length(conn, info, methods = 9)
             else:
-                info = "您输入的任务信息有误！"
+                info = "暂未提供POST以外的接口"
                 self.sendall_length(conn, info, methods = 9)
-        else:
-            info = "暂未提供POST以外的接口"
-            self.sendall_length(conn, info, methods = 9)
+        except Exception as e:
+            self.sendRunDatatoGUI("任务服务器执行出错")
+            print(traceback.format_exc())
+            self.sendRunDatatoGUI(traceback.format_exc())
 
     def startsystem(self, jdata):
         """
@@ -445,58 +451,64 @@ class CommServer(BaseServer):
         """
         数据处理函数
         """
-        jdata = body
-        if headPack[0] == 1:
-            #建立通信树
-            if jdata["key"] == "connect":
-                self.RespondConnect(conn, jdata)
+        try:
+            jdata = body
+            if headPack[0] == 1:
+                #建立通信树
+                if jdata["key"] == "connect":
+                    self.RespondConnect(conn, jdata)
 
-            elif jdata["key"] == "reconnect":
-                self.RespondReconnect(conn, jdata)
+                elif jdata["key"] == "reconnect":
+                    self.RespondReconnect(conn, jdata)
+                    
+                elif jdata["key"] == "OK":
+                    self.RespondOK(jdata)
+
+                elif jdata["key"] == "startsystem":
+                    self.RespondStartSystem(jdata)
+
+                elif jdata["key"] == "newtask":
+                    self.RespondNewTask(jdata)
+
+                elif jdata["key"] == "shutdowntask":
+                    self.RespondShutDownTask(jdata)
+
+                elif jdata["key"] == "pausetask":
+                    self.RespondPauseTask(jdata)
                 
-            elif jdata["key"] == "OK":
-                self.RespondOK(jdata)
+                elif jdata["key"] == "resumetask":
+                    self.RespondResumeTask(jdata)
 
-            elif jdata["key"] == "startsystem":
-                self.RespondStartSystem(jdata)
+                elif jdata["key"] == "data":
+                    self.RespondData(jdata)
 
-            elif jdata["key"] == "newtask":
-                self.RespondNewTask(jdata)
+                elif jdata["key"] == "questionData":
+                    self.RespondQuestionData(jdata)
 
-            elif jdata["key"] == "shutdowntask":
-                self.RespondShutDownTask(jdata)
+                elif jdata["key"] == "RootData":
+                    self.RespondRootData(jdata)
 
-            elif jdata["key"] == "pausetask":
-                self.RespondPauseTask(jdata)
-            
-            elif jdata["key"] == "resumetask":
-                self.RespondResumeTask(jdata)
+                elif jdata["key"] == "DescendantData":
+                    self.RespondDescendantData(jdata)
 
-            elif jdata["key"] == "data":
-                self.RespondData(jdata)
+                elif jdata["key"] == "sync":
+                    self.RespondSync(jdata,1)
 
-            elif jdata["key"] == "questionData":
-                self.RespondQuestionData(jdata)
+                elif jdata["key"] == "sync2":
+                    self.RespondSync(jdata,2)
 
-            elif jdata["key"] == "RootData":
-                self.RespondRootData(jdata)
-
-            elif jdata["key"] == "DescendantData":
-                self.RespondDescendantData(jdata)
-
-            elif jdata["key"] == "sync":
-                self.RespondSync(jdata,1)
-
-            elif jdata["key"] == "sync2":
-                self.RespondSync(jdata,2)
+                else:
+                    info = "请不要直接访问通信服务器"
+                    self.sendall_length(conn, info, methods = 9)
 
             else:
-                info = "请不要直接访问通信服务器"
+                info = "非POST方法，请不要直接访问通信服务器"
                 self.sendall_length(conn, info, methods = 9)
-
-        else:
-            info = "非POST方法，请不要直接访问通信服务器"
-            self.sendall_length(conn, info, methods = 9)
+                
+        except Exception as e:
+            self.sendRunDatatoGUI("通信服务器执行出错")
+            print(traceback.format_exc())
+            self.sendRunDatatoGUI(traceback.format_exc())
 
     def RespondConnect(self, conn, jdata):
         """
@@ -649,6 +661,7 @@ class CommServer(BaseServer):
         self.Forward2sonID(jdata, name)
         BaseServer.TaskDict[name].shutdown()
 
+
     def RespondData(self, jdata):
         """
         回应子节点任务结束信号，并收集数据
@@ -673,13 +686,17 @@ class CommServer(BaseServer):
 
     def RespondRootData(self, jdata):
         """回应任务发送数据至根节点信号
+
+        返回值：
+            data: 后代节点数据
+            path: 后代节点发送过来的路径
+            recvtime: 接受到消息的时刻
         """
-        TIMEFORMAT = "%Y-%m-%d %H:%M:%S.%f"
         task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
         # 如果本节点是根节点则存储数据
         if task_cur.parentID == DaspCommon.nodeID:
             # 加入接收消息的时间，方便时间同步
-            task_cur.descendantData.put([jdata["path"], jdata["data"], datetime.now().strftime(TIMEFORMAT)])
+            task_cur.descendantData.put([jdata["data"], jdata["path"], datetime.now()])
         # 否则将数据转发给父节点
         else:  
             jdata["path"].append(DaspCommon.nodeID)
@@ -687,8 +704,11 @@ class CommServer(BaseServer):
 
     def RespondDescendantData(self, jdata):
         """回应任务发送数据至后代节点信号
+
+        返回值：
+            data: 根节点数据
+            recvtime: 接受到消息的时刻
         """
-        TIMEFORMAT = "%Y-%m-%d %H:%M:%S.%f"
         task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
         # 如果指定了路径
         if jdata["path"] != None: 
@@ -697,11 +717,11 @@ class CommServer(BaseServer):
                 self.send(nextnode, jdata)
             # 如果目标是本节点
             else:
-                task_cur.rootData.put([jdata["data"], datetime.now().strftime(TIMEFORMAT)])                
+                task_cur.rootData.put([jdata["data"], datetime.now()])                
         # 否则进行广播
         else:
             self.Forward2sonID(jdata, jdata["DAPPname"])
-            task_cur.rootData.put([jdata["data"], datetime.now().strftime(TIMEFORMAT)])
+            task_cur.rootData.put([jdata["data"], datetime.now()])
 
 
     def RespondSync(self, jdata, type):

@@ -2,14 +2,17 @@
 import queue
 q=queue.Queue()    #如果不设置长度,默认为无限长
 print(q.maxsize)    #注意没有括号
-q.put({"date":"12.123.1.23.123.123"},1)
-q.put(123,23,234)
-q.put(123)
-q.put(123)
+q.put({"date":"12.123.1.23.123.123"})
+q.put({"date":"12.123.1.23"})
 print(q.queue)
-print(q.get())
-print(q.get())
+if not q.empty():
+    print(q.get_nowait())
 
+if not q.empty():
+    print(q.get_nowait())
+
+if not q.empty():
+    print(q.get_nowait())
 # while True:
 #     q.get()  #阻塞形式
 

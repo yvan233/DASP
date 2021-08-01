@@ -202,10 +202,8 @@ class Task(DaspCommon):
                         self.resultinfo["value"] = ""
                     self.taskBeginFlag = 0 
                     self.taskEndFlag = 1
-                    self.syncNode() #收集数据前同步一次，防止父节点算法先计算结束，等待子节点超时
                     self.data_collec()
                     # print("resultinfo：", self.resultinfo)
-                    
                     self.reset()
                     return 0
         except SystemExit:
@@ -232,7 +230,12 @@ class Task(DaspCommon):
         """
         终止运行任务服务器
         """
-        self.stop_thread(self.taskthreads)
+        try:
+            self.stop_thread(self.taskthreads)
+        # 此时任务线程已退出
+        except ValueError:
+            # self.sendDatatoGUI("已执行完毕")
+            print("DAPP:{} has stopped".format(self.DAPPname))
         self.reset()
 
     def data_collec(self):
@@ -240,6 +243,7 @@ class Task(DaspCommon):
         收集算法程序运行结果
         """
         # 叶子结点
+        self.syncNode() #收集数据前同步一次，防止父节点算法先计算结束，等待子节点超时
         if self.sonID == []:
             # 根节点
             if self.parentID == DaspCommon.nodeID:
