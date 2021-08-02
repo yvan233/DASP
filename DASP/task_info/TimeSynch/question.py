@@ -4,8 +4,8 @@ from datetime import datetime,timedelta
 import os
 def updatetime(offset):
     # 当时间偏差超过50ms,进行修正
-    tmp1 = timedelta(milliseconds = 50)
-    tmp2 = timedelta(milliseconds = -50)
+    tmp1 = timedelta(milliseconds = 100)
+    tmp2 = timedelta(milliseconds = -100)
     if offset >= tmp1 or offset <= tmp2:
         TIMEFORMAT = "%Y-%m-%d %H:%M:%S.%f"
         time = datetime.now()
