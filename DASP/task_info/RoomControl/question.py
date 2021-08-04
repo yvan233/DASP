@@ -17,10 +17,10 @@ def taskFunction(self, id, adjDirection, datalist):
         zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
         if (datetime.now()-zero_time).days == 0:
             clear_con_db(db, 2)
-
+            step = 0
         elif (datetime.now()-zero_time).days > 0:
-            os.system("python3 " + os.getcwd() + "/db_backup.py")
-            clear_con_db(db, 1)
+            clear_con_db(db, 2)
+            step = 0
             cur_date = datetime.now().strftime("%Y%m%d")
             zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
         
@@ -30,8 +30,8 @@ def taskFunction(self, id, adjDirection, datalist):
             try:
                 cur_weekday = time.strftime("%A", time.localtime())        # 当前星期
                 cur_date = datetime.now().strftime("%Y%m%d")               # 当前日期
-                auto_start_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 9, 0)       
-                auto_stop_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 17, 30)     
+                auto_start_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)       
+                auto_stop_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 23, 59)     
 
                 if cur_weekday in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']:      # 工作日
                     if (datetime.now()-auto_start_time).days == 0 and (datetime.now()-auto_stop_time).days == -1:    # 启停时间内
@@ -68,14 +68,15 @@ def taskFunction(self, id, adjDirection, datalist):
                             data_fcu_mode = db_read(cursor, 'fcu_panel', 'FCU_mode_feedback', 0)
                             data_fcu_fan = db_read(cursor, 'fcu_panel', 'FCU_fan_feedback', 0)
                             fcu_onoff_state = int(data_fcu_onoff[0][3])
-                            temp_sp = int(data_temp_sp[0][3])
-                            fcu_mode = float(data_fcu_mode[0][3])
-                            fcu_fan = int(data_fcu_fan[0[3]])
+                            temp_sp = float(data_temp_sp[0][3])
+                            fcu_mode = int(data_fcu_mode[0][3])
+                            fcu_fan = int(data_fcu_fan[0][3])
                         except:
                             self.sendDatatoGUI("FCU reading failed!")
                         
                         # Control judge
                         # Condition judge
+                        
                         if int(cur_date[4:6]) in [6,7,8,9]:
                             condition = 'cooling'
                         elif int(cur_date[4:6]) in [1,2,11,12]:
@@ -91,6 +92,8 @@ def taskFunction(self, id, adjDirection, datalist):
                                     con_temp_sp = 25.0
                                 elif temp_sp > 27.0:
                                     con_temp_sp = 27.0
+                                else:
+                                    con_temp_sp = temp_sp
                                 # occ judge
                                 if occ_list[-1] > 0 and occ_list[-2] > 0:
                                     occ_onoff = 1
@@ -114,6 +117,8 @@ def taskFunction(self, id, adjDirection, datalist):
                                     con_temp_sp = 18.0
                                 elif temp_sp > 25.0:
                                     con_temp_sp = 25.0
+                                else:
+                                    con_temp_sp = temp_sp
                                 # occ judge
                                 if occ_list[-1] > 0 and occ_list[-2] > 0:
                                     occ_onoff = 1
@@ -131,15 +136,22 @@ def taskFunction(self, id, adjDirection, datalist):
                         
                         # Write db
                         try:
-                            db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'temp_setpoint', str(con_temp_sp))
-                            db_operate(cursor, 'fcu_control', db_time, '0x00000411', 'FCU_onoff_setpoint', str(con_onoff))
-                            db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_workingmode_setpoint', str(con_fcu_mode))
-                            db_operate(cursor, 'fcu_control', db_time, '0x00000413', 'FCU_fan_setpoint', str(con_fan))
-
+                            self.sendDatatoGUI('temp_setpoint:{}  FCU_onoff_setpoint:{}  FCU_workingmode_setpoint:{} FCU_fan_setpoint:{}'\
+                                .format(con_temp_sp, con_onoff, con_fcu_mode, con_fan))
+                            db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'temp_setpoint', str(con_temp_sp), step)
+                            db_operate(cursor, 'fcu_control', db_time, '0x00000411', 'FCU_onoff_setpoint', str(con_onoff), step)
+                            db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_workingmode_setpoint', str(con_fcu_mode), step)
+                            db_operate(cursor, 'fcu_control', db_time, '0x00000413', 'FCU_fan_setpoint', str(con_fan), step)
+                            
                         except Exception as derr:
                             self.sendDatatoGUI('Control signal write err: ' + str(derr))
                         db.commit()
-                        clear_con_db(db, 2)
+                        step += 1  
+                    
+                    else:
+                        cjudge = db_read(cursor, 'fcu_control', 'FCU_onoff_setpoint', 0)
+                        if cjudge:
+                            clear_con_db(db, 2)
 
             except Exception as cerr:
                 self.sendDatatoGUI('Control process err: ' + str(cerr))
@@ -147,3 +159,10 @@ def taskFunction(self, id, adjDirection, datalist):
             end_time = datetime.now()
             if (end_time-start_time).seconds < 60:
                 time.sleep(60 - (end_time-start_time).seconds)
+
+            if (datetime.now()-zero_time).days > 0:
+                clear_con_db(db, 2)
+                step = 0
+                cur_date = datetime.now().strftime("%Y%m%d")
+                zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
+            print("Control shell working!")

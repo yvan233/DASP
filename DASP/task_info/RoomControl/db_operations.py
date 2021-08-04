@@ -42,11 +42,9 @@ def db_read(cursor, table, name, num):               # num 为倒序读取数据
         data = cursor.fetchall()
     return data
 
-def db_operate(cursor, table, time, id ,name, value):
+def db_operate(cursor, table, time, id ,name, value, step_num):
     db_insert(cursor, table + '_his', time, id, name, value)
-    db_insert(cursor, table, time, id, name, value)
-    '''
     if step_num == 0:
         db_insert(cursor, table, time, id, name, value)
     else:
-        db_update(cursor, table, time, name, value)'''
+        db_update(cursor, table, time, name, value)

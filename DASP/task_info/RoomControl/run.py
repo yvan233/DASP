@@ -14,10 +14,10 @@ if __name__ == '__main__':
     zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
     if (datetime.now()-zero_time).days == 0:
         clear_con_db(db, 2)
-        
+        step = 0
     elif (datetime.now()-zero_time).days > 0:
-        os.system("python3 " + os.getcwd() + "/db_backup.py")
-        clear_con_db(db, 1)
+        clear_con_db(db, 2)
+        step = 0
         cur_date = datetime.now().strftime("%Y%m%d")
         zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
     
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                         if len(data_occ) == occ_length:
                             for o in range(occ_length):
                                 occ_list.append(int(data_occ[occ_length-1-o][3])) #  最后一个数值为最近时刻人数，首个数值为occ_length之前时刻人数
-                            #print("occ_list: "+str(occ_list))
+                            #print(occ_list)
                         else:
                             print("occ_length not enough.")
                     except Exception as oerr:
@@ -52,7 +52,7 @@ if __name__ == '__main__':
                         data_temp1 = db_read(cursor, 'sensor_room', 'room_temp1', 0)
                         room_temp1 = float(data_temp1[0][3])
                         data_temp2 = db_read(cursor, 'sensor_room', 'room_temp2', 0)
-                        room_temp2 = float(data_temp1[0][3])
+                        room_temp2 = float(data_temp2[0][3])
                         room_temp = 0.5 * (room_temp1 + room_temp2)
                         time.sleep(1)
                     except:
@@ -65,9 +65,9 @@ if __name__ == '__main__':
                         data_fcu_mode = db_read(cursor, 'fcu_panel', 'FCU_mode_feedback', 0)
                         data_fcu_fan = db_read(cursor, 'fcu_panel', 'FCU_fan_feedback', 0)
                         fcu_onoff_state = int(data_fcu_onoff[0][3])
-                        temp_sp = int(data_temp_sp[0][3])
-                        fcu_mode = float(data_fcu_mode[0][3])
-                        fcu_fan = int(data_fcu_fan[0[3]])
+                        temp_sp = float(data_temp_sp[0][3])
+                        fcu_mode = int(data_fcu_mode[0][3])
+                        fcu_fan = int(data_fcu_fan[0][3])
                     except:
                         print("FCU reading failed!")
                     
@@ -88,6 +88,8 @@ if __name__ == '__main__':
                                 con_temp_sp = 25.0
                             elif temp_sp > 27.0:
                                 con_temp_sp = 27.0
+                            else:
+                                con_temp_sp = temp_sp
                             # occ judge
                             if occ_list[-1] > 0 and occ_list[-2] > 0:
                                 occ_onoff = 1
@@ -111,6 +113,8 @@ if __name__ == '__main__':
                                 con_temp_sp = 18.0
                             elif temp_sp > 25.0:
                                 con_temp_sp = 25.0
+                            else:
+                                con_temp_sp = temp_sp
                             # occ judge
                             if occ_list[-1] > 0 and occ_list[-2] > 0:
                                 occ_onoff = 1
@@ -128,16 +132,20 @@ if __name__ == '__main__':
                     
                     # Write db
                     try:
-                        db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'temp_setpoint', str(con_temp_sp))
-                        db_operate(cursor, 'fcu_control', db_time, '0x00000411', 'FCU_onoff_setpoint', str(con_onoff))
-                        db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_workingmode_setpoint', str(con_fcu_mode))
-                        db_operate(cursor, 'fcu_control', db_time, '0x00000413', 'FCU_fan_setpoint', str(con_fan))
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'temp_setpoint', str(con_temp_sp), step)
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000411', 'FCU_onoff_setpoint', str(con_onoff), step)
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_workingmode_setpoint', str(con_fcu_mode), step)
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000413', 'FCU_fan_setpoint', str(con_fan), step)
 
                     except Exception as derr:
                         print('Control signal write err: ' + str(derr))
-                    
-                    db.commit()
-                    clear_con_db(db, 2)
+                    db.commit()  
+                    step += 1  
+                
+                else:
+                    cjudge = db_read(cursor, 'fcu_control', 'FCU_onoff_setpoint', 0)
+                    if cjudge:
+                        clear_con_db(db, 2)
 
         except Exception as cerr:
             print('Control process err: ' + str(cerr))
@@ -145,3 +153,10 @@ if __name__ == '__main__':
         end_time = datetime.now()
         if (end_time-start_time).seconds < 60:
             time.sleep(60 - (end_time-start_time).seconds)
+            
+        if (datetime.now()-zero_time).days > 0:
+            clear_con_db(db, 2)
+            step = 0
+            cur_date = datetime.now().strftime("%Y%m%d")
+            zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
+        print("Control shell working!")
