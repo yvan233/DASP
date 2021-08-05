@@ -1,8 +1,9 @@
 from datetime import datetime,timedelta
+print(datetime.now() < datetime.now()+timedelta(hours=1))
 date = datetime.now()
 cur_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 # print(date, cur_date)
-
+print(datetime.now().strftime("%A"))
 d1 = '2021-07-26 01:44:51.143242'
 d2 = '2021-07-26 01:44:53.163242'
 d3 = '2021-07-26 01:44:54.173242'

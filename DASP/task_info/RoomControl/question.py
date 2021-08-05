@@ -2,7 +2,7 @@
 import time
 import os
 import pymysql
-from datetime import datetime
+from datetime import datetime,timedelta
 from .db_operations import *
 from .basic_functions import *
     
@@ -15,26 +15,21 @@ def taskFunction(self, id, adjDirection, datalist):
 
         cur_date = datetime.now().strftime("%Y%m%d")
         zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
-        if (datetime.now()-zero_time).days == 0:
-            clear_con_db(db, 2)
-            step = 0
-        elif (datetime.now()-zero_time).days > 0:
-            clear_con_db(db, 2)
-            step = 0
-            cur_date = datetime.now().strftime("%Y%m%d")
-            zero_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)
-        
+        clear_con_db(db, 2)
+        step = 0
+        occ_onoff = 0
         while True:
             start_time = datetime.now()
-            db_time = time.strftime("%Y-%m-%d %H:%M:%S") 
+            db_time = start_time.strftime("%Y-%m-%d %H:%M:%S") 
             try:
-                cur_weekday = time.strftime("%A", time.localtime())        # 当前星期
+                cur_weekday = start_time.strftime("%A")        # 当前星期
                 cur_date = datetime.now().strftime("%Y%m%d")               # 当前日期
-                auto_start_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 0, 0)       
-                auto_stop_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 23, 59)     
+                auto_start_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 9, 0)       
+                auto_stop_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 17, 30)     
+                stop_time = datetime(int(cur_date[0:4]), int(cur_date[4:6]), int(cur_date[6:8]), 18, 00)   
 
                 if cur_weekday in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']:      # 工作日
-                    if (datetime.now()-auto_start_time).days == 0 and (datetime.now()-auto_stop_time).days == -1:    # 启停时间内
+                    if datetime.now() > auto_start_time and  datetime.now() <= auto_stop_time:    # 启停时间内
                         # Read occ list
                         try:
                             occ_length = 5
@@ -120,6 +115,7 @@ def taskFunction(self, id, adjDirection, datalist):
                                 else:
                                     con_temp_sp = temp_sp
                                 # occ judge
+
                                 if occ_list[-1] > 0 and occ_list[-2] > 0:
                                     occ_onoff = 1
                                 elif any(occ_list) == False:
@@ -136,18 +132,25 @@ def taskFunction(self, id, adjDirection, datalist):
                         
                         # Write db
                         try:
-                            self.sendDatatoGUI('temp_setpoint:{}  FCU_onoff_setpoint:{}  FCU_workingmode_setpoint:{} FCU_fan_setpoint:{}'\
+                            self.sendDatatoGUI('FCU_temp_setpoint:{}  FCU_onoff_setpoint:{}  FCU_mode_setpoint:{} FCU_fan_setpoint:{}'\
                                 .format(con_temp_sp, con_onoff, con_fcu_mode, con_fan))
-                            db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'temp_setpoint', str(con_temp_sp), step)
+                            db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'FCU_temp_setpoint', str(con_temp_sp), step)
                             db_operate(cursor, 'fcu_control', db_time, '0x00000411', 'FCU_onoff_setpoint', str(con_onoff), step)
-                            db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_workingmode_setpoint', str(con_fcu_mode), step)
+                            db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_mode_setpoint', str(con_fcu_mode), step)
                             db_operate(cursor, 'fcu_control', db_time, '0x00000413', 'FCU_fan_setpoint', str(con_fan), step)
                             
                         except Exception as derr:
                             self.sendDatatoGUI('Control signal write err: ' + str(derr))
                         db.commit()
                         step += 1  
-                    
+
+                    elif datetime.now() > stop_time and  datetime.now() <= stop_time + timedelta(minutes = 1):
+                        self.sendDatatoGUI('FCU_temp_setpoint:{}  FCU_onoff_setpoint:{}  FCU_mode_setpoint:{} FCU_fan_setpoint:{}'\
+                            .format(25, 0, con_fcu_mode, con_fan))
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'FCU_temp_setpoint', 25, 0)
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000411', 'FCU_onoff_setpoint', 0, 0)
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_mode_setpoint', 2, 0)
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000413', 'FCU_fan_setpoint', 'M', 0)
                     else:
                         cjudge = db_read(cursor, 'fcu_control', 'FCU_onoff_setpoint', 0)
                         if cjudge:
