@@ -466,13 +466,13 @@ class Task(DaspCommon):
         data = {
             "key": "DescendantData",
             "DAPPname": self.DAPPname,
-            "path": path,
+            "path": copy.deepcopy(path),
             "data": data
         }
         # 如果指定了路径
         if path != None:  
             if path:
-                nextnode = path.pop()
+                nextnode = data["path"].pop()
                 self.send(nextnode, data)
             else:
                 err = "Error! Please enter a valid path."
