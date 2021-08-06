@@ -41,8 +41,8 @@ def taskFunction(self, id, adjDirection, datalist):
 
                         # VFD states
                         try:
-                            data_vfd_onoff = db.read(cursor, 'pump_vfd', 'pump_onoff_feedback', 0)
-                            data_vfd_frequency = db.read(cursor, 'pump_vfd', 'pump_frequency_feedback', 0)
+                            data_vfd_onoff = db_read(cursor, 'pump_vfd', 'pump_onoff_feedback', 0)
+                            data_vfd_frequency = db_read(cursor, 'pump_vfd', 'pump_frequency_feedback', 0)
                             vfd_onoff = int(data_vfd_onoff[0][3])
                             vfd_frequency = int(data_vfd_frequency[0][3])
                         except Exception as err1:
@@ -50,10 +50,10 @@ def taskFunction(self, id, adjDirection, datalist):
                         # IO state lists
                         try:
                             # 读不够step_length会报错
-                            data_outdoor_temp = db.read(cursor, 'sensor_outdoor_his', 'outdoor_temp', step_length)
-                            data_p_sup = db.read(cursor, 'sensor_pressure_his', 'supply_pressure', step_length)
-                            data_p_re = db.read(cursor, 'sensor_pressure_his', 'return_pressure', step_length)
-                            data_tw_re = db.read(cursor, 'sensor_watertemp_his', 'return_temp', step_length)
+                            data_outdoor_temp = db_read(cursor, 'sensor_outdoor_his', 'outdoor_temp', step_length)
+                            data_p_sup = db_read(cursor, 'sensor_pressure_his', 'supply_pressure', step_length)
+                            data_p_re = db_read(cursor, 'sensor_pressure_his', 'return_pressure', step_length)
+                            data_tw_re = db_read(cursor, 'sensor_watertemp_his', 'return_temp', step_length)
                             for s in range(step_length):
                                 outdoor_temp_list.append(float(data_outdoor_temp[step_length-s-1][3]))
                                 p_sup_list.append(float(data_p_sup[step_length-s-1][3]))
@@ -76,7 +76,6 @@ def taskFunction(self, id, adjDirection, datalist):
                                 step_count += 1
                             except Exception as err4:
                                 self.sendDatatoGUI("Control algorithm error: " + str(err4))
-                        step += 1
                         
                     else:
                         vfd_onoff_con = 0
@@ -90,6 +89,9 @@ def taskFunction(self, id, adjDirection, datalist):
             except Exception as cerr:
                 self.sendDatatoGUI("Pump control shell error: " + str(cerr))
             
+            db.commit()
+            step += 1 
+
             end_time = datetime.now()
             if (end_time-start_time).seconds < 60:
                 time.sleep(60 - (end_time-start_time).seconds)
@@ -116,8 +118,8 @@ def taskFunction(self, id, adjDirection, datalist):
                 try:
                     tw_sup_list = []
                     hp_state_list = []
-                    data_hp_state = db.read(cursor, 'heatpump_panel_his', 'heatpump_workingmode_feedback', step_length)
-                    data_tw_sup = db.read(cursor, 'heatpump_panel_his', 'heatpump_supplytemp_feedback', step_length)
+                    data_hp_state = db_read(cursor, 'heatpump_panel_his', 'heatpump_workingmode_feedback', step_length)
+                    data_tw_sup = db_read(cursor, 'heatpump_panel_his', 'heatpump_supplytemp_feedback', step_length)
                     for s in range(step_length):
                         hp_state_list.append(int(data_hp_state[step_length-s-1][3]))
                         tw_sup_list.append(float(data_tw_sup[step_length-s-1][3]))
