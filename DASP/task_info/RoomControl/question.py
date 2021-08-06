@@ -90,9 +90,13 @@ def taskFunction(self, id, adjDirection, datalist):
                                 else:
                                     con_temp_sp = temp_sp
                                 # occ judge
-                                if occ_list[-1] > 0 and occ_list[-2] > 0:
+                                # if occ_list[-1] > 0 and occ_list[-2] > 0:
+                                #     occ_onoff = 1
+                                # elif any(occ_list) == False:
+                                #     occ_onoff = 0
+                                if any(occ_list):
                                     occ_onoff = 1
-                                elif any(occ_list) == False:
+                                else:
                                     occ_onoff = 0
                                 con_fan = cal_fcu_fan_cooling(temp_sp, room_temp, fcu_fan, occ_onoff)
                                 if con_fan == 0:
@@ -149,7 +153,7 @@ def taskFunction(self, id, adjDirection, datalist):
                             .format(25, 0, con_fcu_mode, con_fan))
                         db_operate(cursor, 'fcu_control', db_time, '0x00000410', 'FCU_temp_setpoint', 25, 0)
                         db_operate(cursor, 'fcu_control', db_time, '0x00000411', 'FCU_onoff_setpoint', 0, 0)
-                        db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_mode_setpoint', 2, 0)
+                        db_operate(cursor, 'fcu_control', db_time, '0x00000419', 'FCU_mode_setpoint', 1, 0)
                         db_operate(cursor, 'fcu_control', db_time, '0x00000413', 'FCU_fan_setpoint', 'M', 0)
                     else:
                         cjudge = db_read(cursor, 'fcu_control', 'FCU_onoff_setpoint', 0)
