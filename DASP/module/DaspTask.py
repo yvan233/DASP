@@ -200,7 +200,7 @@ class Task(DaspCommon):
                             self.sendDatatoGUI(traceback.format_exc())
                     else:
                         self.resultinfo["value"] = ""
-                    self.taskBeginFlag = 0 
+                    self.taskBeginFlag = 0
                     self.taskEndFlag = 1
                     self.data_collec()
                     # print("resultinfo：", self.resultinfo)
