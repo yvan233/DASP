@@ -1,11 +1,11 @@
 # mysql 存储成 csv脚本  转化成多维数据
 """
-后续需要加一个indoortemp
+后续需要加一个indoortemp、alarm
 """
 import pymysql
 import csv,os
 from datetime import datetime
-date = "2021-08-07"  #待导出的数据日期
+date = "2021-08-10"  #待导出的数据日期
 
 def valueindex(tablename, valuename, tablehead):
     if tablename == "fcu_panel_his" and valuename == "FCU_temp_setpoint":
