@@ -128,39 +128,39 @@ class Task(DaspCommon):
             self.TaskDatalist = selfDatalist
             self.TaskIPlist = selfIPlist
 
-        # 初始化各属性
-        self.taskBeginFlag = 0
-        self.taskEndFlag = 0
-        self.dataEndFlag = 0
-        self.resultinfo = {}
-        self.resultinfoQue = []
-        self.sonData = []
-        self.sonDataEndFlag = 0
-        self.treeFlag = 0
-        self.parentID = DaspCommon.nodeID
-        self.parentDirection = 0
+            # 初始化各属性
+            self.taskBeginFlag = 0
+            self.taskEndFlag = 0
+            self.dataEndFlag = 0
+            self.resultinfo = {}
+            self.resultinfoQue = []
+            self.sonData = []
+            self.sonDataEndFlag = 0
+            self.treeFlag = 0
+            self.parentID = DaspCommon.nodeID
+            self.parentDirection = 0
 
-        self.sonID= []
-        self.sonDirection = []
-        self.CreateTreeSonFlag = []
-        self.adjData = []
-        self.adjData_another= []
-        self.rootData = queue.Queue() 
-        self.descendantData = queue.Queue() 
+            self.sonID= []
+            self.sonDirection = []
+            self.CreateTreeSonFlag = []
+            self.adjData = []
+            self.adjData_another= []
+            self.rootData = queue.Queue() 
+            self.descendantData = queue.Queue() 
 
-        self.SyncTurnFlag = 0
-        self.SyncTurnFlag2 = 0
-        self.adjSyncStatus = []
-        self.adjSyncStatus2 = []
+            self.SyncTurnFlag = 0
+            self.SyncTurnFlag2 = 0
+            self.adjSyncStatus = []
+            self.adjSyncStatus2 = []
 
-        while len(self.adjData) < len(self.TaskadjDirection):
-            self.adjData.append([])
-            self.adjData_another.append([])
-            self.adjSyncStatus.append(0)
-            self.adjSyncStatus2.append(0)
+            while len(self.adjData) < len(self.TaskadjDirection):
+                self.adjData.append([])
+                self.adjData_another.append([])
+                self.adjSyncStatus.append(0)
+                self.adjSyncStatus2.append(0)
 
-        self.taskthreads = threading.Thread(target=self.run, args=())
-        self.taskthreads.start()
+            self.taskthreads = threading.Thread(target=self.run, args=())
+            self.taskthreads.start()
 
     def load_debuginfo(self, DebugMode = False, DatabaseInfo = [], DBname = 'Daspdb', ObservedVariable = []):
         """
@@ -175,42 +175,38 @@ class Task(DaspCommon):
         """
         任务服务器开始运行,等待任务启动标志
         """
-        try:
-            while 1:
-                time.sleep(0.01)
-                if self.taskBeginFlag == 1:
-                    if DaspCommon.nodeID in self.TaskID: #如果在任务列表中
-                        try:
-                            if self.DebugMode:
-                                tablename = "{}_{}".format(self.DAPPname, self.nodeID)
-                                taskfunc = snoop(config = self.DatabaseInfo, db = self.DBname, tablename = tablename, \
-                                    observelist = self.ObservedVariable)(self.taskfunc)
-                                self.sendDatatoGUI("启动调试模式，开始执行")
-                            else:
-                                taskfunc = self.taskfunc
-                                self.sendDatatoGUI("开始执行")
-                            print("DAPP:{} start".format(self.DAPPname))
-                            value = taskfunc(self, DaspCommon.nodeID, self.TaskadjDirection, self.TaskDatalist)
-                            self.resultinfo["value"] = value
-                            self.sendDatatoGUI("执行完毕")
-                            # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错
-                            print ("Calculation complete")
-                        except Exception as e:
-                            self.resultinfo["value"] = ""
-                            self.sendDatatoGUI("执行出错")
-                            print(traceback.format_exc())
-                            self.sendDatatoGUI(traceback.format_exc())
+        while 1:
+            time.sleep(0.01)
+            if self.taskBeginFlag == 1:
+                try:
+                    if self.DebugMode:
+                        tablename = "{}_{}".format(self.DAPPname, self.nodeID)
+                        taskfunc = snoop(config = self.DatabaseInfo, db = self.DBname, tablename = tablename, \
+                            observelist = self.ObservedVariable)(self.taskfunc)
+                        self.sendDatatoGUI("启动调试模式，开始执行")
                     else:
-                        self.resultinfo["value"] = ""
+                        taskfunc = self.taskfunc
+                        self.sendDatatoGUI("开始执行")
+                    print("DAPP:{} start".format(self.DAPPname))
+                    value = taskfunc(self, DaspCommon.nodeID, self.TaskadjDirection, self.TaskDatalist)
+                    self.resultinfo["value"] = value
+                    self.sendDatatoGUI("执行完毕")
+                    # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错
+                    print ("Calculation complete")
                     self.taskBeginFlag = 0
                     self.taskEndFlag = 1
                     self.data_collec()
-                    # print("resultinfo：", self.resultinfo)
+                except SystemExit as e:
+                    self.sendDatatoGUI("停止执行")
+                    print("DAPP:{} stop".format(self.DAPPname))
+                except Exception as e:
+                    # self.resultinfo["value"] = "执行出错"
+                    self.sendDatatoGUI("执行出错")
+                    print(traceback.format_exc())
+                    self.sendDatatoGUI(traceback.format_exc())
+                finally:
                     self.reset()
-                    return 0
-        except SystemExit:
-            self.sendDatatoGUI("停止执行")
-            print("DAPP:{} stop".format(self.DAPPname))
+                return 0
 
     def pause(self):
         """
@@ -238,7 +234,7 @@ class Task(DaspCommon):
             self.stop_thread(self.taskthreads)
         # 此时任务线程已退出
         except ValueError:
-            # self.sendDatatoGUI("已执行完毕")
+            self.sendDatatoGUI("停止执行")
             print("DAPP:{} has stopped".format(self.DAPPname))
         self.reset()
 

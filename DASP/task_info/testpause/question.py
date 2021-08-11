@@ -6,6 +6,7 @@ def taskFunction(self,id,adjDirection,datalist):
     while True:
         # time.sleep(4)    # shutdown任务时会等待
         self.timesleep(4)  # shutdown任务时不会等待
+        # self.timesleep(1) 
         i += 1
         self.sendDatatoGUI("step:{}".format(i))
     return 0  
