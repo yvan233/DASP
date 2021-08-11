@@ -54,6 +54,7 @@ class Task(DaspCommon):
             .set()设置为True
             .clear()设置为False
             .wait()  当为True时pass，当为False时阻塞等到到为True时pass
+        timeFlag: 用于timesleep
 
         SyncTurnFlag: 同步函数轮训标志
         SyncTurnFlag2: 同步通信函数轮训标志
@@ -68,6 +69,7 @@ class Task(DaspCommon):
     def __init__(self, DAPPname):
         self.DAPPname = DAPPname
         self.commTreeFlag = 1
+        self.timesleepFlag = threading.Event()
         self.runFlag = threading.Event()
         self.runFlag.set()
         
@@ -231,6 +233,8 @@ class Task(DaspCommon):
         终止运行任务服务器
         """
         try:
+            # 停止所有timesleep
+            self.timesleepFlag.set()
             self.stop_thread(self.taskthreads)
         # 此时任务线程已退出
         except ValueError:
@@ -414,6 +418,8 @@ class Task(DaspCommon):
     ##################################
     ###   下面为提供给用户的接口函数   ###
     ##################################
+    def timesleep(self, timeout = 0):
+        self.timesleepFlag.wait(timeout)
 
     def sendDatatoGUI(self, info):
         """
