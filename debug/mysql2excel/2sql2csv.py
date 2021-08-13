@@ -1,11 +1,11 @@
 # mysql 存储成 csv脚本  转化成多维数据
 """
-后续需要加一个indoortemp、alarm
+后续需要加一个alarm
 """
 import pymysql
 import csv,os
 from datetime import datetime
-date = "2021-08-10"  #待导出的数据日期
+date = "2021-08-13"  #待导出的数据日期
 
 def valueindex(tablename, valuename, tablehead):
     if tablename == "fcu_panel_his" and valuename == "FCU_temp_setpoint":
@@ -27,6 +27,7 @@ def from_mysql_get_all_info(nodename, tablename):
     conn.close()
     return data
 
+
 def write_csv(nodename,tablehead):
     filepath = 'DB_data/{}'.format(date)
     if not os.path.exists(filepath):
@@ -47,12 +48,17 @@ roomtablehead = [
     "FCU_temp_setpoint",
     "FCU_onoff_setpoint",
     "FCU_fan_setpoint",
+    "FCU_temp_feedback",
     "FCU_mode_setpoint",
     "FCU_temp_setpoint_feedback",
     "FCU_onoff_feedback",
     "FCU_lock_feedback",
     "FCU_fan_feedback",
     "FCU_mode_feedback",
+    "manul_FCU_mode",
+    "manul_temp_setpoint",
+    "manul_FCU_fan",
+    "manul_FCU_mode",
     "supply_pressure",
     "return_pressure",
     "waterflow",
