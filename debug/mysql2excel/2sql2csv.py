@@ -5,7 +5,7 @@
 import pymysql
 import csv,os
 from datetime import datetime
-date = "2021-08-13"  #待导出的数据日期
+date = "2021-08-14"  #待导出的数据日期
 
 def valueindex(tablename, valuename, tablehead):
     if tablename == "fcu_panel_his" and valuename == "FCU_temp_setpoint":
@@ -50,12 +50,13 @@ roomtablehead = [
     "FCU_fan_setpoint",
     "FCU_temp_feedback",
     "FCU_mode_setpoint",
+    "FCU_control_mode",
     "FCU_temp_setpoint_feedback",
     "FCU_onoff_feedback",
     "FCU_lock_feedback",
     "FCU_fan_feedback",
     "FCU_mode_feedback",
-    "manul_FCU_mode",
+    "manul_FCU_onoff",
     "manul_temp_setpoint",
     "manul_FCU_fan",
     "manul_FCU_mode",
