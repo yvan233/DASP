@@ -81,7 +81,7 @@ class CONTROLJUDGE():
         elif self.t > 0:    
             self.t -= 1
 
-        if data_controlmode:
+        if data_controlmode and data_control:
             # 转换控制信号
             control_mode = int(data_controlmode[0][3]) 
             if type == 'int':
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         try:
             # 频率为1min的采样
             # read 
-            print("time = " + db_time)
+            print("time = " + str(db_time))
             io.read_registers()
             io.value_transform()
             #io.value_print()

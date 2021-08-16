@@ -13,7 +13,7 @@ def taskFunction(self, id, adjDirection, datalist):
         ScriptName = 'heatpump_run.py'
     if ScriptName:
         # -u参数是为了读取缓冲区中的打印信息
-        proc = subprocess.Popen(['python3','-u', ScriptName, str()],\
+        proc = subprocess.Popen(['python3','-u', ScriptName],\
             shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             cwd=r'/home/pi/xingtian')
         while True:
