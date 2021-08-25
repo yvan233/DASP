@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 
 if __name__ == "__main__":
-    date = "2021-08-19"
+    date = "2021-08-24"
     dir_path = 'DB_data/{}'.format(date)
     writer = pd.ExcelWriter('{}/{}.xlsx'.format(dir_path, date))
     files= os.listdir(dir_path) 
