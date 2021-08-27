@@ -4,14 +4,13 @@ import os
 from collections import OrderedDict
 import math
 
-# input: time(step), fcu_control_feedback, room_temp， fcu_temp_feedback
-# output: response models of different step responses
-# comment: each model output has its start time(step), end time(step), model structure, parameters of the model and fitting parameters
+# 输入：日期
+# 输出：截取8点到19点的数据并修正温度
 
 class room_process:
     def __init__(self, name, dir_path):
         self.dir_path = dir_path
-        self.name = name + '.csv'
+        self.name = name + '_result.csv'
     
     def read_csv(self):
         files = os.listdir(self.dir_path)
@@ -19,46 +18,29 @@ class room_process:
             if file == self.name:
                 self.df = pd.read_csv(self.dir_path + '/' + file)
                 break
+        starttime = 8*60
+        endtime = 19*60
+        self.df = self.df.iloc[starttime:endtime+1]
         self.total_cols = self.df.shape[1]
         self.total_rows = self.df.shape[0]
         self.col_list = list(self.df.columns)
+        
     def process_data(self):
-        self.first_hold_cols = ['supply_pressure', 'return_pressure', 'waterflow', 'supply_temp', 'return_temp',
-                          'room_temp1', 'room_RH1', 'room_temp2', 'room_RH2', 'differential_pressure']
-        for c in range(self.total_cols):
-            # 1-order-hold
-            if self.col_list[c] in self.first_hold_cols:
-                self.df.iloc[0,c] = self.df.iloc[1,c]
-                if isinstance(self.df.iloc[0,c], float):
-                    flag = 0
-                    r_start = 0
-                    r_end = 0
-                    r_count = 0
-                    for r in range(1, self.total_rows):
-                        if math.isnan(self.df.iloc[r,c]) and self.df.iloc[r-1,c] < float('inf') and flag == 0:
-                            flag = 1
-                            r_start = r-1
-                        elif math.isnan(self.df.iloc[r-1,c]) and self.df.iloc[r,c] < float('inf') and flag == 1:
-                            flag = 0
-                            r_end = r
-                            r_count = r_end - r_start
-                            dif_total = self.df.iloc[r_end, c] - self.df.iloc[r_start, c]
-                            dif_each = dif_total / r_count
-                            for i in range(1, r_count):
-                                # 需要保留2位小数
-                                self.df.iloc[r_start+i, c] = round(self.df.iloc[r_start, c] + i*dif_each,2)
-                    else:
-                        continue
-            
-            # 0-order-hold
-            elif isinstance(self.df.iloc[0,c], float):
-                self.df.iloc[0,c] = self.df.iloc[1,c]
-                for r in range(1, self.total_rows):
-                    if math.isnan(self.df.iloc[r,c]):
-                        self.df.iloc[r,c] = self.df.iloc[r-1,c]    
-    
+        deviation1 = self.df['room_temp1'].mean() - self.df['FCU_temp_feedback'].mean()
+        deviation2 = self.df['room_temp2'].mean() - self.df['FCU_temp_feedback'].mean()
+        print(self.name[0:6], "room_temp1 deviation", deviation1)
+        print(self.name[0:6], "room_temp2 deviation", deviation2)
+        
+        if not math.isnan(deviation1) and not math.isnan(deviation1):
+            c1 = self.col_list.index('room_temp1')
+            c2 = self.col_list.index('room_temp2')
+            for r in range(self.total_rows):
+                # 需要保留2位小数
+                self.df.iloc[r, c1] = round(self.df.iloc[r, c1] - deviation1,2)
+                self.df.iloc[r, c2] = round(self.df.iloc[r, c2] - deviation2,2)
+
     def write_xlsx_results(self):
-        writer = pd.ExcelWriter(self.dir_path + '/' + self.name[0:6] + '_result.xlsx')
+        writer = pd.ExcelWriter(self.dir_path + '/' + self.name[0:6] + '_result_fixed.xlsx')
         self.wdata = OrderedDict()
         for line in list(self.df.columns):
             self.wdata[line] = list(self.df[line])    #构建excel格式
@@ -67,13 +49,13 @@ class room_process:
         writer.save()
     
     def write_csv_results(self):
-        self.df.to_csv(self.dir_path + '/' + self.name[0:6] + '_result.csv',index=0) #不保存行索引
+        self.df.to_csv(self.dir_path + '/' + self.name[0:6] + '_result_fixed.csv',index=0) #不保存行索引
 
 
 class pump_process:
     def __init__(self, name, dir_path):
         self.dir_path = dir_path
-        self.name = name + '.csv'
+        self.name = name + '_result.csv'
     
     def read_csv(self):
         files = os.listdir(self.dir_path)
@@ -81,12 +63,15 @@ class pump_process:
             if file == self.name:
                 self.df = pd.read_csv(self.dir_path + '/' + file)
                 break
+        starttime = 8*60
+        endtime = 19*60
+        self.df = self.df.iloc[starttime:endtime+1]
         self.total_cols = self.df.shape[1]
         self.total_rows = self.df.shape[0]
         self.col_list = list(self.df.columns)
 
     def write_xlsx_results(self):
-        writer = pd.ExcelWriter(self.dir_path + '/' + self.name[0:6] + '_result.xlsx')
+        writer = pd.ExcelWriter(self.dir_path + '/' + self.name[0:6] + '_result_fixed.xlsx')
         self.wdata = OrderedDict()
         for line in list(self.df.columns):
             self.wdata[line] = list(self.df[line])    #构建excel格式
@@ -95,21 +80,15 @@ class pump_process:
         writer.save()
     
     def write_csv_results(self):
-        self.df.to_csv(self.dir_path + '/' + self.name[0:6] + '_result.csv',index=0) #不保存行索引
+        self.df.to_csv(self.dir_path + '/' + self.name[0:6] + '_result_fixed.csv',index=0) #不保存行索引
     
     def process_data(self):
-        self.power_list = ['Active_power', 'Reactive_power', 'Apparent_power']
-        for c in range(self.total_cols):
-            self.df.iloc[0,c] = self.df.iloc[1,c]
-            for r in range(1, self.total_rows):
-                if isinstance(self.df.iloc[r,c], str) or math.isnan(self.df.iloc[r,c]):
-                    self.df.iloc[r,c] = self.df.iloc[r-1,c]
-
+        pass
 
 class heatpump_process:
     def __init__(self, name, dir_path):
         self.dir_path = dir_path
-        self.name = name + '.csv'
+        self.name = name + '_result.csv'
     
     def read_csv(self):
         files = os.listdir(self.dir_path)
@@ -117,12 +96,15 @@ class heatpump_process:
             if file == self.name:
                 self.df = pd.read_csv(self.dir_path + '/' + file)
                 break
+        starttime = 8*60
+        endtime = 19*60
+        self.df = self.df.iloc[starttime:endtime+1]
         self.total_cols = self.df.shape[1]
         self.total_rows = self.df.shape[0]
         self.col_list = list(self.df.columns)
 
     def write_xlsx_results(self):
-        writer = pd.ExcelWriter(self.dir_path + '/' + self.name[0:10] + '_result.xlsx')
+        writer = pd.ExcelWriter(self.dir_path + '/' + self.name[0:10] + '_result_fixed.xlsx')
         self.wdata = OrderedDict()
         for line in list(self.df.columns):
             self.wdata[line] = list(self.df[line])    #构建excel格式
@@ -131,14 +113,10 @@ class heatpump_process:
         writer.save()
     
     def write_csv_results(self):
-        self.df.to_csv(self.dir_path + '/' + self.name[0:10] + '_result.csv',index=0) #不保存行索引
+        self.df.to_csv(self.dir_path + '/' + self.name[0:10] + '_result_fixed.csv',index=0) #不保存行索引
     
     def process_data(self):
-        for c in range(self.total_cols):
-            self.df.iloc[0,c] = self.df.iloc[1,c]
-            for r in range(1, self.total_rows):
-                if isinstance(self.df.iloc[r,c], str) or math.isnan(self.df.iloc[r,c]):
-                    self.df.iloc[r,c] = self.df.iloc[r-1,c]
+        pass
 
         
 if __name__ == "__main__":
