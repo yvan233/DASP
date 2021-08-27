@@ -1,6 +1,6 @@
 from scipy.optimize import curve_fit
 import pandas as pd
-import os
+import os,sys
 from collections import OrderedDict
 import math
 
@@ -119,27 +119,26 @@ class heatpump_process:
         pass
 
         
-if __name__ == "__main__":
-    date = "2021-08-16" 
-    dir_path = 'DB_data/{}'.format(date)
-    room1 = room_process('room_1', dir_path)
-    room2 = room_process('room_2', dir_path)
-    room3 = room_process('room_3', dir_path)
-    room4 = room_process('room_4', dir_path)
-    room5 = room_process('room_5', dir_path)
-    room6 = room_process('room_6', dir_path)
-    room7 = room_process('room_7', dir_path)
-    room_list = [room1, room2, room3, room4, room5, room6, room7]
-    pump1 = pump_process('pump_1', dir_path)
-    hp1 = heatpump_process('heatpump_1', dir_path)
+date = sys.argv[1]
+dir_path = 'DB_data/{}'.format(date)
+room1 = room_process('room_1', dir_path)
+room2 = room_process('room_2', dir_path)
+room3 = room_process('room_3', dir_path)
+room4 = room_process('room_4', dir_path)
+room5 = room_process('room_5', dir_path)
+room6 = room_process('room_6', dir_path)
+room7 = room_process('room_7', dir_path)
+room_list = [room1, room2, room3, room4, room5, room6, room7]
+pump1 = pump_process('pump_1', dir_path)
+hp1 = heatpump_process('heatpump_1', dir_path)
 
-    for item in room_list:
-        item.read_csv()        
-        item.process_data()
-        item.write_csv_results()
-    pump1.read_csv()
-    pump1.process_data()
-    pump1.write_csv_results()
-    hp1.read_csv()
-    hp1.process_data()
-    hp1.write_csv_results()
+for item in room_list:
+    item.read_csv()        
+    item.process_data()
+    item.write_csv_results()
+pump1.read_csv()
+pump1.process_data()
+pump1.write_csv_results()
+hp1.read_csv()
+hp1.process_data()
+hp1.write_csv_results()
