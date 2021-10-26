@@ -17,7 +17,7 @@ class Node:
         
         """
         
-    def __init__(self, num, mode, printdata):
+    def __init__(self, num, mode = False, printdata = []):
         """
         num: 节点ID编号 从1开始
         mode: 是否直接打印输出数据

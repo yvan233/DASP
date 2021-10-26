@@ -1,4 +1,4 @@
-# 启动系统并运行分布式算法
+# 模拟节点故障，并在节点重启后重连进系统
 # 另外需要运行./script_PC/moniter.py
 
 import time 
@@ -21,6 +21,17 @@ print("启动系统")
 Controlmixin.RunSystem(rootnode)
 time.sleep(2)
 
-DAPPname = "CreatBFStree"
-print("开始任务："+DAPPname)
-Controlmixin.StartTask(DAPPname,rootnode)
+# kill room_2
+nodenumber = 2
+nodelist[nodenumber-1].kill()
+
+# 等待系统函数扫描到room_2断开，实际上检测到断开后需要30*10s才会彻底断开连接
+time.sleep(120)
+
+# 重新启动room_2节点进程
+node = Node(nodenumber)
+nodelist[nodenumber-1] = node
+
+# 重连room_2
+print("发送room_2重连信号")
+Controlmixin.reconnect("room_2")

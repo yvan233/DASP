@@ -1,15 +1,17 @@
+# 对局域网内的树莓派批量执行cmd命令
+
 import paramiko
 import os
 import csv
-
     
-localpath = os.getcwd() + "/debug/binding.csv"
+localpath = os.getcwd() + "/DASP/system/binding.csv"
 # 读取节点信息
 with open(localpath,'r')as f:
     data = csv.reader(f)
     binding = []
     for i in data:
         binding.append(i)
+
 for ele in binding[1:]:
     if ele[2] == "pi":
         if ele[1] != "offline":

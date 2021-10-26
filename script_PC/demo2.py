@@ -1,4 +1,4 @@
-# 启动系统并运行分布式算法
+# 并行示例
 # 另外需要运行./script_PC/moniter.py
 
 import time 
@@ -22,5 +22,10 @@ Controlmixin.RunSystem(rootnode)
 time.sleep(2)
 
 DAPPname = "CreatBFStree"
+print("开始任务："+DAPPname)
+Controlmixin.StartTask(DAPPname,rootnode)
+
+# 并行示例
+DAPPname = "宽度优先生成树"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)
