@@ -18,7 +18,7 @@ def taskFunction(self, id, adjDirection, datalist):
     # 子节点向根节点发送数据框架
     if id == "communication_node":
         # 开启ntp
-        # os.system("sudo timedatectl set-ntp true")
+        os.system("sudo timedatectl set-ntp true")
         while True:
             if not self.descendantData.empty():
                 # 非阻塞性地获取数据
@@ -36,7 +36,7 @@ def taskFunction(self, id, adjDirection, datalist):
 
     else:
         # 关闭ntp
-        # os.system("sudo timedatectl set-ntp false")
+        os.system("sudo timedatectl set-ntp false")
         while True:
             time1 = datetime.now().strftime(TIMEFORMAT)
             self.sendDataToRoot(time1)
