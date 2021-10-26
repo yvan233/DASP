@@ -1,4 +1,4 @@
-pip install paramiko
+`pip install paramiko`
 
 广播绑定文件 python .\script\broadcast_binding.py
 广播拓扑文件 python .\script\broadcast_topology.py
@@ -10,7 +10,7 @@ pip install paramiko
 停止计算任务 python .\script\stoptask.py [ID] [tasknum] [delay]
 
 
-# windows本地运行
+### windows本地运行
 开启所有节点：  .\IoT\start.bat 12
 开启某一节点：python .\IoT\initial.py 1
 关闭节点： taskkill /f /im python.exe
