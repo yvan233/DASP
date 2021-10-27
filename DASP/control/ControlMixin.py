@@ -165,5 +165,5 @@ class ControlMixin():
         s.close()
 
 if __name__ == '__main__':
-    ControlMixin = ControlMixin(mode = "Pc")
+    ControlMixin = ControlMixin(mode = "PI")
     print(ControlMixin.IPDict)

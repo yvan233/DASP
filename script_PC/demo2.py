@@ -21,11 +21,12 @@ print("启动系统")
 Controlmixin.RunSystem(rootnode)
 time.sleep(2)
 
-DAPPname = "CreatBFStree"
+DAPPname = "CreateBFStree"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)
 
 # 并行示例
+time.sleep(1)
 DAPPname = "宽度优先生成树"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)

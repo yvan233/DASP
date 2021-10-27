@@ -9,6 +9,6 @@ from DASP.control import ControlMixin
 rootnode = "room_1" # 根节点ID
 Controlmixin = ControlMixin("PI") # 控制函数集合
 
-DAPPname = "CreatBFStree"
+DAPPname = "CreateBFStree"
 print("开始任务：" + DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)

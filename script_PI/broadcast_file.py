@@ -118,8 +118,9 @@ class SSH(object):
 
         for root, dirs, files in os.walk(local_dir, topdown=True):
             for file in files:
-                filename = os.path.join(root, file)
-                all_files.append(filename)
+                if file[-4:] != '.pyc':
+                    filename = os.path.join(root, file)
+                    all_files.append(filename)
 
         return all_files
 
@@ -149,7 +150,7 @@ class SSH(object):
             print(traceback.format_exc())
 
 if __name__ == "__main__":
-    localpath = os.getcwd() + "/debug/binding.csv"
+    localpath = os.getcwd() + "/DASP/system/binding.csv"
     # 读取节点信息
     with open(localpath,'r')as f:
         data = csv.reader(f)

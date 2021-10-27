@@ -17,3 +17,10 @@
 开启监测  python .\script\moniter.py
 启动系统  python .\shumeipaitest\1run.py
 运行任务  python .\shumeipaitest\2starttask.py
+
+
+CreateBFStree 显示了对DSP2.0的兼容
+宽度优先生成树 显示了DASP下对同步通信函数的修改以及对程序为中文名的支持
+
+pymysql
+paramiko

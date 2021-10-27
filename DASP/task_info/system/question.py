@@ -7,7 +7,6 @@ def taskFunction(self, id, adjDirection, datalist):
     while(1):
         i = i + 1
         flag = 0
-
         for j in reversed(range(len(self.TaskadjID))):
             tmpid = self.TaskadjID[j]
             self.sendDataToID(tmpid,data)
