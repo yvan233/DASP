@@ -69,6 +69,7 @@ class Task(DaspCommon):
     def __init__(self, DAPPname):
         self.DAPPname = DAPPname
         self.commTreeFlag = 1
+        self.dataEndFlag = 0
         self.timesleepFlag = threading.Event()
         self.runFlag = threading.Event()
         self.runFlag.set()
