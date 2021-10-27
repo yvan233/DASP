@@ -4,7 +4,7 @@ import paramiko
 import os
 import csv
 import traceback
-localpath = os.getcwd() + "/DASP/system/binding.csv"
+localpath = os.getcwd() + "/DASP/task_info/system/binding.csv"
 with open(localpath,'r')as f:
     data = csv.reader(f)
     binding = []

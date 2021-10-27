@@ -40,7 +40,7 @@ def check_local_dir(local_dir_name):
         os.makedirs(local_dir_name)
 
 if __name__ == "__main__":
-    localpath = os.getcwd() + "\\debug\\binding.csv"
+    localpath = os.getcwd() + "/DASP/task_info/system/binding.csv"
     # 读取节点信息
     with open(localpath,'r')as f:
         data = csv.reader(f)

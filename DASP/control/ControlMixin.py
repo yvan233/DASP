@@ -33,7 +33,7 @@ class ControlMixin():
                 self.TaskPortDict[ele["ID"]] = ele["PORT"][6]
                 self.IPDict[ele["ID"]] = self.localIP
         if mode == "PI":
-            path = os.getcwd() + "/DASP/system/binding.csv"
+            path = os.getcwd() + "/DASP/task_info/system/binding.csv"
             # 读取节点信息
             with open(path,'r')as f:
                 data = csv.reader(f)

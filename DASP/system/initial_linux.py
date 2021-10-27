@@ -9,7 +9,7 @@ os.chdir('/home/pi/yanhu')
 import system
 if __name__ == '__main__':
     time.sleep(2)
-    path = "/home/pi/yanhu/DASP/system/binding.csv"
+    path = "/home/pi/yanhu/DASP/task_info/system/binding.csv"
     with open(path,'r')as f:
         data = csv.reader(f)
         idiplist = []
