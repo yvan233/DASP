@@ -30,3 +30,6 @@ time.sleep(1)
 DAPPname = "宽度优先生成树"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)
+
+# CreateBFStree 显示了对DSP2.0的兼容
+# 宽度优先生成树 显示了DASP下对同步通信函数的修改以及对程序为中文名的支持
