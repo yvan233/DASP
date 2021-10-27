@@ -1,16 +1,16 @@
-import csv
+import nodesystem
+import sys
 import codecs
 import json
+import os
+import socket
+import csv
 import subprocess
 import time
-import os
-# 设置当前工作目录
-os.chdir('/home/pi/yanhu')
-import system
+
 if __name__ == '__main__':
     time.sleep(2)
-    path = "/home/pi/yanhu/DASP/task_info/system/binding.csv"
-
+    path = "/home/pi/yanhu/DASP/binding.csv"
     with open(path,'r')as f:
         data = csv.reader(f)
         idiplist = []
@@ -32,7 +32,8 @@ if __name__ == '__main__':
         adjID = []
         datalist = []
         adjDirection = []
-        path = "/home/pi/yanhu/DASP/task_info/system/topology.txt"
+        # path = os.getcwd() + "\\DASP\\topology.txt"
+        path = "/home/pi/zhongdy/DASP/topology.txt"
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
         for ele in js:
@@ -56,7 +57,7 @@ if __name__ == '__main__':
         selfPORT = PORT[order]
         selfDatalist = datalist[order]
         selfIPList = []
-        selfAdjDirectionOtherSide = []
+        selfAdjOtherSideDirection = []
         n = len(IP)
         for i in range(len(selfAdjID)):
             selfIPList.append([])
@@ -69,15 +70,17 @@ if __name__ == '__main__':
                     for k in range(len(adjID[j])):
                         if adjID[j][k] == selfID:
                             selfIPList[i].append(PORT[j][adjDirection[j][k]-1])
-                            selfAdjDirectionOtherSide.append(adjDirection[j][k])
+                            selfAdjOtherSideDirection.append(adjDirection[j][k])
                             break
                     selfIPList[i].append(ID[j])
                     break
-                
-        selfIPListprint = [str(ele) for ele in selfIPList]
-        print("IPlist: "+ json.dumps(selfIPListprint, indent=2))
-        server = system.Server(selfID, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
-        server.run()
+        print(selfIPList)
+        sensor = nodesystem.Sensor(selfID, selfAdjID, selfAdjDirection, selfAdjOtherSideDirection, selfIPList, selfIP, selfPORT, selfDatalist)
+        # path = "/home/pi/Desktop/1.txt"
+        # file = open(path, 'w')
+        # file.write('hello')
+        # file.close()
+        sensor.run()
     else:
         print("该节点IP未被录入！")
 

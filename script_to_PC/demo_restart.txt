@@ -1,0 +1,6 @@
+python .\script_to_PC\moniter.py
+.\DASP\start.bat 12
+python .\script_to_PC\1run.py
+杀掉room_1，并等待系统检测到（检测不到也能直接加入进来，不会对未检测到的节点造成影响）
+.\DASP\restart.bat 1
+python .\script_to_PC\4restart.py

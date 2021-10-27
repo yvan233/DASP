@@ -1,0 +1,6 @@
+root
+DSPadmin
+TESTDB
+algorithm1
+m
+adjData
