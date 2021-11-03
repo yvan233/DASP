@@ -5,8 +5,9 @@ sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 from DASP.module import DaspCommon, TaskServer, CommServer
 
 class Server(object):
-    def __init__(self, ID, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
+    def __init__(self, ID, GUIinfo, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
         DaspCommon.nodeID = ID
+        DaspCommon.GUIinfo = GUIinfo
         DaspCommon.IP = socket.gethostbyname(IP)
         DaspCommon.PORT = PORT
         DaspCommon.adjID = adjID

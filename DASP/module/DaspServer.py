@@ -300,12 +300,7 @@ class TaskServer(BaseServer):
         """
         启动系统
         """
-        try:
-            DaspCommon.GUIinfo = jdata["GUIinfo"]
-            self.sendRunDatatoGUI("接收任务请求")
-        except KeyError:
-            print ("非来自GUI的任务请求")
-
+        self.sendRunDatatoGUI("接收任务请求")
         name = "system"
         self.newtaskbase(name, jdata)
 
@@ -337,7 +332,8 @@ class TaskServer(BaseServer):
 
         #启动任务
         self.Forward2sonID(jdata,name)
-        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
+            DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         BaseServer.TaskDict[name].taskBeginFlag = 1
         self.sendFlagtoGUI(2,name)
 
@@ -420,7 +416,8 @@ class TaskServer(BaseServer):
                 index = DaspCommon.adjID.index(ele[4])
                 self.reconnect(ele[0], ele[1], ele[4], DaspCommon.adjDirectionOtherSide[index])
 
-        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
+            DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         BaseServer.TaskDict[name].taskBeginFlag = 1
         self.sendFlagtoGUI(2,name)
 
@@ -625,7 +622,8 @@ class CommServer(BaseServer):
         回应启动系统信号，广播子节点启动系统信号，启动系统DAPP
         """
         self.Forward2sonID(jdata, "system")
-        BaseServer.TaskDict["system"].load_debuginfo(DebugMode = jdata["DebugMode"], DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+        BaseServer.TaskDict["system"].load_debuginfo(DebugMode = jdata["DebugMode"], 
+            DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         BaseServer.TaskDict["system"].taskBeginFlag = 1
 
     def RespondNewTask(self, jdata):
@@ -634,7 +632,8 @@ class CommServer(BaseServer):
         """
         name = (jdata["DAPPname"])
         self.Forward2sonID(jdata, name)
-        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
+            DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         BaseServer.TaskDict[name].taskBeginFlag = 1
 
     def RespondPauseTask(self, jdata):
