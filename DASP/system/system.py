@@ -3,7 +3,7 @@ import sys
 import threading
 import time
 sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-from DASP.module import DaspCommon, BaseServer, TaskServer, CommServer
+from DASP.module import DaspCommon, TaskServer, CommServer
 
 class Server(object):
     def __init__(self, ID, GUIinfo, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
@@ -26,9 +26,7 @@ class Server(object):
 
         taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[6])
         self.TaskServerThread = threading.Thread(target=taskserver.run,args=())
-        
-        baseserver = BaseServer()
-        self.SystemTaskThread = threading.Thread(target=baseserver.systemtask,args=())
+        self.SystemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
         # t = threading.Thread(target=self.taskFunction, args=(0,))
         # self.taskthreads.append(t)
 
@@ -39,4 +37,5 @@ class Server(object):
         # self.taskthreads[0].start()
 
 
+        
 

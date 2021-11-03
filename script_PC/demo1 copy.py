@@ -19,8 +19,8 @@ for i in range(nodeNum):
 
 # print("启动系统")
 # Controlmixin.RunSystem(rootnode)
-time.sleep(2)
+# time.sleep(2)
 
-DAPPname = "LeaderElection"
-print("开始任务："+DAPPname)
-Controlmixin.StartTask(DAPPname,rootnode)
+# DAPPname = "LeaderElection"
+# print("开始任务："+DAPPname)
+# Controlmixin.StartTask(DAPPname,rootnode)

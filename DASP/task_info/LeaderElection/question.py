@@ -14,4 +14,4 @@ def taskFunction(self,id,adjDirection,datalist):
         self.sendDatatoGUI("min "+min_id)
     if min_id == id:
         self.sendDatatoGUI("This is leader")
-    return [123]
+    return 0

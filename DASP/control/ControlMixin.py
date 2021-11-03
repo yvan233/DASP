@@ -73,7 +73,7 @@ class ControlMixin():
         以nodeID为根节点运行指定名称的DAPP
         '''
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(((self.IPDict[nodeID], self.TaskPortDict[nodeID])))
+        s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         data = {
             "key": "newtask",
             "DAPPname": DAPPname,

@@ -21,6 +21,7 @@ class Task(DaspCommon):
     属性:
         nodeID: 节点ID
         adjID：邻居ID
+        leader: 领导节点(根节点)
         sonID: 子节点ID
         parentID: 父节点ID,根节点与nodeID相同
         parentDirection 父节点方向,根节点为0
@@ -70,6 +71,8 @@ class Task(DaspCommon):
         self.DAPPname = DAPPname
         self.commTreeFlag = 1
         self.dataEndFlag = 0
+        self.loadflag = 0 
+        self.leader = None
         self.timesleepFlag = threading.Event()
         self.runFlag = threading.Event()
         self.runFlag.set()
@@ -162,6 +165,7 @@ class Task(DaspCommon):
 
             self.taskthreads = threading.Thread(target=self.run, args=())
             self.taskthreads.start()
+        self.loadflag = 1 
 
     def load_debuginfo(self, DebugMode = False, DatabaseInfo = [], DBname = 'Daspdb', ObservedVariable = []):
         """
@@ -411,21 +415,27 @@ class Task(DaspCommon):
                 del self.sonDirection[index]
                 del self.sonData[index]
 
+    def Findleader(self):
+        """
+        寻找领导人
+        """
+        self.leaderthreads = threading.Thread(target=self.LeaderElection, args=())
+        self.leaderthreads.start()
+
     def LeaderElection(self):
         """
         领导人选举
         """
+        self.leader = None
         min_id = DaspCommon.nodeID
-        self.sendDatatoGUI("min "+min_id)
         for m in range(len(self.TaskID)-1):  # 迭代节点数量的轮次数
-            _, adjData = self.transmitData(self.TaskadjDirection, [min_id]*len(self.TaskadjDirection))
-            self.sendDatatoGUI("adjData "+str(adjData))         
+            _, adjData = self.transmitData(self.TaskadjDirection, [min_id]*len(self.TaskadjDirection))      
             for ele in adjData:
                 if ele < min_id:
                     min_id = ele
-            self.sendDatatoGUI("min "+min_id)
-        if min_id == DaspCommon.nodeID:
-            self.sendDatatoGUI("This is leader")
+        self.leader = min_id
+        if self.leader == DaspCommon.nodeID:
+            self.sendDatatoGUI("This is the leader")
  
     ##################################
     ###   下面为提供给用户的接口函数   ###
