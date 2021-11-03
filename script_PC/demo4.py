@@ -13,20 +13,20 @@ node = Node(1)
 nodelist.append(node)
 
 print("启动系统")
-Controlmixin.RunSystem("room_1")
+# Controlmixin.RunSystem("room_1")
 
 
-time.sleep(15)
+time.sleep(30)
 node = Node(2)
 nodelist.append(node)
-print("发送连接room_2信号")
-Controlmixin.reconnect("room_2")
+print("启动room_2")
+# Controlmixin.reconnect("room_2")
 
 time.sleep(15)
 node = Node(3)
 nodelist.append(node)
-print("发送连接room_3信号")
-Controlmixin.reconnect("room_3")
+print("启动room_3")
+# Controlmixin.reconnect("room_3")
 
 
 """
