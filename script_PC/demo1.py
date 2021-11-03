@@ -17,8 +17,8 @@ for i in range(nodeNum):
     node = Node(i+1)
     nodelist.append(node)
 
-print("启动系统")
-Controlmixin.RunSystem(rootnode)
+# print("启动系统")
+# Controlmixin.RunSystem(rootnode)
 time.sleep(2)
 
 DAPPname = "CreateBFStree"
