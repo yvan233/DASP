@@ -263,12 +263,12 @@ class TaskServer(BaseServer):
         host: 绑定IP
         port: 绑定port
         ResultThreads: 结果转发多线程
-        ResultThreadsFlag:  结果转发多线程创建标志
     """
     def __init__(self,host,port):
         self.host = host
         self.port = port
-        self.ResultThreadsFlag = 0
+        self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
+        self.ResultThreads.start()
 
     def run(self):
         """
@@ -331,13 +331,10 @@ class TaskServer(BaseServer):
         self.Forward2sonID(jdata,name)
         BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
             DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+        # BaseServer.TaskDict[name].LeaderElection()
         BaseServer.TaskDict[name].taskBeginFlag = 1
+        
         self.sendFlagtoGUI(2,name)
-
-        if self.ResultThreadsFlag == 0: #启动计算结果转发线程
-            self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
-            self.ResultThreads.start()
-            self.ResultThreadsFlag = 1
 
     def ResultForwarding(self):
         """
@@ -568,7 +565,9 @@ class CommServer(BaseServer):
         self.Forward2sonID(jdata, name)
         BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
             DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+        # BaseServer.TaskDict[name].LeaderElection()
         BaseServer.TaskDict[name].taskBeginFlag = 1
+        
 
     def RespondPauseTask(self, jdata):
         """

@@ -411,6 +411,21 @@ class Task(DaspCommon):
                 del self.sonDirection[index]
                 del self.sonData[index]
 
+    def LeaderElection(self):
+        """
+        领导人选举
+        """
+        min_id = DaspCommon.nodeID
+        self.sendDatatoGUI("min "+min_id)
+        for m in range(len(self.TaskID)-1):  # 迭代节点数量的轮次数
+            _, adjData = self.transmitData(self.TaskadjDirection, [min_id]*len(self.TaskadjDirection))
+            self.sendDatatoGUI("adjData "+str(adjData))         
+            for ele in adjData:
+                if ele < min_id:
+                    min_id = ele
+            self.sendDatatoGUI("min "+min_id)
+        if min_id == DaspCommon.nodeID:
+            self.sendDatatoGUI("This is leader")
  
     ##################################
     ###   下面为提供给用户的接口函数   ###
