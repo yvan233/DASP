@@ -17,8 +17,6 @@ for i in range(nodeNum):
     node = Node(i+1)
     nodelist.append(node)
 
-print("启动系统")
-Controlmixin.RunSystem(rootnode)
 time.sleep(2)
 
 # kill room_2
@@ -31,7 +29,4 @@ time.sleep(120)
 # 重新启动room_2节点进程
 node = Node(nodenumber)
 nodelist[nodenumber-1] = node
-
-# 重连room_2
-print("发送room_2重连信号")
-Controlmixin.reconnect("room_2")
+print("启动room_2")

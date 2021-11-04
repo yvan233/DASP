@@ -56,5 +56,6 @@ if __name__ == '__main__':
     selfIPListprint = [str(ele) for ele in selfIPList]
     print("IPlist: "+ json.dumps(selfIPListprint, indent=2))
 
-    server = system.Server(selfID, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
+    GUIinfo = [localIP, 50000]
+    server = system.Server(selfID, GUIinfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
     server.run()

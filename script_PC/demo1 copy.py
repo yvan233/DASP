@@ -1,4 +1,4 @@
-# 并行示例
+# 启动系统并运行分布式算法
 # 另外需要运行./script_PC/moniter.py
 
 import time 
@@ -17,17 +17,10 @@ for i in range(nodeNum):
     node = Node(i+1)
     nodelist.append(node)
 
-time.sleep(2)
+# print("启动系统")
+# Controlmixin.RunSystem(rootnode)
+# time.sleep(2)
 
-DAPPname = "CreateBFStree"
-print("开始任务："+DAPPname)
-Controlmixin.StartTask(DAPPname,rootnode)
-
-# 并行示例
-time.sleep(1)
-DAPPname = "宽度优先生成树"
-print("开始任务："+DAPPname)
-Controlmixin.StartTask(DAPPname,rootnode)
-
-# CreateBFStree 显示了对DSP2.0的兼容
-# 宽度优先生成树 显示了DASP下对同步通信函数的修改以及对程序为中文名的支持
+# DAPPname = "LeaderElection"
+# print("开始任务："+DAPPname)
+# Controlmixin.StartTask(DAPPname,rootnode)

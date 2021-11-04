@@ -1,12 +1,14 @@
 import socket
 import sys
 import threading
+import time
 sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 from DASP.module import DaspCommon, TaskServer, CommServer
 
 class Server(object):
-    def __init__(self, ID, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
+    def __init__(self, ID, GUIinfo, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
         DaspCommon.nodeID = ID
+        DaspCommon.GUIinfo = GUIinfo
         DaspCommon.IP = socket.gethostbyname(IP)
         DaspCommon.PORT = PORT
         DaspCommon.adjID = adjID
@@ -24,12 +26,14 @@ class Server(object):
 
         taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[6])
         self.TaskServerThread = threading.Thread(target=taskserver.run,args=())
-        
-        # t = threading.Thread(target=self.taskFunction, args=(0,))
-        # self.taskthreads.append(t)
+        self.SystemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
 
         for i in range(6):
             self.CommServerThread[i].start()
         self.TaskServerThread.start()
-        # self.taskthreads[0].start()
+        self.SystemTaskThread.start()
+
+
+
+        
 

@@ -33,7 +33,7 @@ class DaspCommon():
     adjDirectionOtherSide = []
     adjSocket = {}
     IPlist = []
-    GUIinfo = ["localhost",0]    
+    GUIinfo = ["localhost",50000]    
     headformat = "!2I"
     headerSize = 8
 

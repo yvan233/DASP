@@ -20,8 +20,11 @@ if __name__ == '__main__':
     nodeIP = p.stdout.read()
     nodeIP = str(nodeIP,encoding = 'UTF-8').strip(' \n')
     selfID = 0
+    GUIinfo = ["localhost",50000]
     for ele in idiplist:
-        if ele[1] == nodeIP:
+        if ele[2] == "server":
+            GUIinfo = [ele[1],50000]
+        elif ele[1] == nodeIP:
             selfID = ele[0]
             break
     if selfID:
@@ -75,7 +78,7 @@ if __name__ == '__main__':
                 
         selfIPListprint = [str(ele) for ele in selfIPList]
         print("IPlist: "+ json.dumps(selfIPListprint, indent=2))
-        server = system.Server(selfID, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
+        server = system.Server(selfID, GUIinfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
         server.run()
     else:
         print("该节点IP未被录入！")
