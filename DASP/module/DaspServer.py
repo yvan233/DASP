@@ -408,13 +408,14 @@ class TaskServer(BaseServer):
             for i in data:
                 dapp_autostart.append(i)
         del dapp_autostart[0]        
-        # 可以依据time排序下
+        # 依据time排序
+        dapp_autostart = sorted(dapp_autostart,key=(lambda x:x[2]))
         beforetime = 0
         for ele in dapp_autostart:
             time.sleep(float(ele[2]) - beforetime)
-            if ele[1] == "default":
+            if ele[1] == "default":  # 默认模式，以当前网络字典序最小的节点启动算法
                 name = ele[0]
-                self.sendRunDatatoGUI("寻找leader节点",name)
+                # self.sendRunDatatoGUI("寻找leader节点",name)
                 BaseServer.TaskDict[name] = Task(name)
                 BaseServer.TaskDict[name].load()
                 BaseServer.TaskDict[name].reset()

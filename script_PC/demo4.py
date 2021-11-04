@@ -12,15 +12,17 @@ node = Node(1)
 nodelist.append(node)
 print("启动系统")
 
-time.sleep(30)
+time.sleep(15)
+print("启动room_2")
 node = Node(2)
 nodelist.append(node)
-print("启动room_2")
+
 
 time.sleep(15)
+print("启动room_3")
 node = Node(3)
 nodelist.append(node)
-print("启动room_3")
+
 
 
 """

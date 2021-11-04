@@ -1,3 +1,3 @@
 DAPP,rootnode,time
-CreateBFStree,default,5
-宽度优先生成树,default,10
+CreateBFStree,default,20
+宽度优先生成树,room_1,10

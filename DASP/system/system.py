@@ -27,14 +27,12 @@ class Server(object):
         taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[6])
         self.TaskServerThread = threading.Thread(target=taskserver.run,args=())
         self.SystemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
-        # t = threading.Thread(target=self.taskFunction, args=(0,))
-        # self.taskthreads.append(t)
 
         for i in range(6):
             self.CommServerThread[i].start()
         self.TaskServerThread.start()
         self.SystemTaskThread.start()
-        # self.taskthreads[0].start()
+
 
 
         
