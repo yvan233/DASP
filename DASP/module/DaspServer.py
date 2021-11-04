@@ -415,25 +415,26 @@ class TaskServer(BaseServer):
             time.sleep(float(ele[2]) - beforetime)
             if ele[1] == "default":  # 默认模式，以当前网络字典序最小的节点启动算法
                 name = ele[0]
-                # self.sendRunDatatoGUI("寻找leader节点",name)
                 BaseServer.TaskDict[name] = Task(name)
                 BaseServer.TaskDict[name].load()
                 BaseServer.TaskDict[name].reset()
-                BaseServer.TaskDict[name].Findleader()
-                while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)
-                    
-                if BaseServer.TaskDict[name].leader == DaspCommon.nodeID:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.connect((self.host, self.port))
-                    data = {
-                        "key": "newtask",
-                        "DAPPname": ele[0],
-                        "DebugMode": False, 
-                        "DatabaseInfo": [],
-                        "ObservedVariable": []
-                    }
-                    self.sendall_length(s, data)
-                    s.close()
+                ## 如果当前节点在任务中
+                if DaspCommon.nodeID in  BaseServer.TaskDict[name].TaskID:
+                    # self.sendRunDatatoGUI("寻找leader节点",name)
+                    BaseServer.TaskDict[name].Findleader()
+                    while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)
+                    if BaseServer.TaskDict[name].leader == DaspCommon.nodeID:
+                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        s.connect((self.host, self.port))
+                        data = {
+                            "key": "newtask",
+                            "DAPPname": ele[0],
+                            "DebugMode": False, 
+                            "DatabaseInfo": [],
+                            "ObservedVariable": []
+                        }
+                        self.sendall_length(s, data)
+                        s.close()
 
             elif ele[1] == DaspCommon.nodeID:  #本节点为根节点
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
