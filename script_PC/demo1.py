@@ -18,6 +18,6 @@ for i in range(nodeNum):
     nodelist.append(node)
 
 time.sleep(2)
-DAPPname = "宽度优先生成树"
+DAPPname = "CreateBFStree"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)
