@@ -17,10 +17,7 @@ for i in range(nodeNum):
     node = Node(i+1)
     nodelist.append(node)
 
-# print("启动系统")
-# Controlmixin.RunSystem(rootnode)
-time.sleep(20)
-
+time.sleep(2)
 DAPPname = "宽度优先生成树"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)

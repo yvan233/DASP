@@ -51,22 +51,22 @@ class ControlMixin():
         headPack = struct.pack(self.headformat , *header)
         socket.sendall(headPack+body.encode())
 
-    def RunSystem(self, nodeID):
-        '''
-        以nodeID为根节点启动系统，运行系统自检算法
-        '''
-        GUIinfo = [self.localIP, 50000]
-        data = {
-            "key": "startsystem",
-            "GUIinfo": GUIinfo,
-            "DebugMode": False, 
-            "DatabaseInfo": [],
-            "ObservedVariable": []
-        }
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
-        self.sendall_length(s, data)
-        s.close()
+    # def RunSystem(self, nodeID):
+    #     '''
+    #     以nodeID为根节点启动系统，运行系统自检算法
+    #     '''
+    #     GUIinfo = [self.localIP, 50000]
+    #     data = {
+    #         "key": "startsystem",
+    #         "GUIinfo": GUIinfo,
+    #         "DebugMode": False, 
+    #         "DatabaseInfo": [],
+    #         "ObservedVariable": []
+    #     }
+    #     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
+    #     self.sendall_length(s, data)
+    #     s.close()
 
     def StartTask(self, DAPPname, nodeID):
         '''
