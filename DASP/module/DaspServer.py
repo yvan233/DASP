@@ -419,7 +419,7 @@ class TaskServer(BaseServer):
                 BaseServer.TaskDict[name].load()
                 BaseServer.TaskDict[name].reset()
                 ## 如果当前节点在任务中
-                if DaspCommon.nodeID in  BaseServer.TaskDict[name].TaskID:
+                if DaspCommon.nodeID in BaseServer.TaskDict[name].TaskID:
                     # self.sendRunDatatoGUI("寻找leader节点",name)
                     BaseServer.TaskDict[name].Findleader()
                     while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)

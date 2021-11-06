@@ -1,4 +1,4 @@
-# 启动系统并运行分布式算法
+# 启动系统
 # 另外需要运行./script_PC/moniter.py
 
 import time 

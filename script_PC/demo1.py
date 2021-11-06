@@ -21,3 +21,12 @@ time.sleep(2)
 DAPPname = "CreateBFStree"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)
+
+## 调试模式运行DAPP
+# Databaseinfo = {
+#     'host': "127.0.0.1",
+#     'port': 3306,
+#     'user': 'root',
+#     'password': 'DSPadmin',
+# }
+# Controlmixin.StartTaskDebug(DAPPname,rootnode,Databaseinfo,["adjData_fb","m"])
