@@ -28,6 +28,7 @@ class Task(DaspCommon):
         sonDirection  子节点方向
         TaskIPlist: 邻居IP及端口列表
         adjData: 邻居数据
+        adjData_asynch: 异步邻居数据
         adjData_another: 同步通信函数中另一个邻居数据变量
         sonData: 子节点数据
         rootData: 根节点数据(队列)
@@ -148,6 +149,7 @@ class Task(DaspCommon):
             self.sonDirection = []
             self.CreateTreeSonFlag = []
             self.adjData = []
+            self.adjData_asynch = []
             self.adjData_another= []
             self.rootData = queue.Queue() 
             self.descendantData = queue.Queue() 
@@ -159,6 +161,7 @@ class Task(DaspCommon):
 
             while len(self.adjData) < len(self.TaskadjDirection):
                 self.adjData.append([])
+                self.adjData_asynch.append(queue.Queue())
                 self.adjData_another.append([])
                 self.adjSyncStatus.append(0)
                 self.adjSyncStatus2.append(0)
@@ -311,6 +314,7 @@ class Task(DaspCommon):
         清空邻居数据
         """
         for i in range(len(self.adjData)):
+            self.adjData_asynch[i] = []
             self.adjData[i] = []
             self.adjData_another[i] = []
 
@@ -403,6 +407,7 @@ class Task(DaspCommon):
             del self.adjSyncStatus[index] 
             del self.adjSyncStatus2[index]     
             del self.adjData[index]
+            del self.adjData_asynch[index]
             del self.adjData_another[index]
 
         if self.parentID == id:
@@ -547,7 +552,36 @@ class Task(DaspCommon):
                     if ele != []:
                         if ele[4] == self.TaskadjID[i]:
                             self.send(ele[4], data)
-                    
+
+    def sendAsynchData(self, direction, data):
+        """
+        通过TCP的形式将信息发送至指定方向的邻居
+        """
+        data = {
+            "key": "SendData",
+            "DAPPname": self.DAPPname,
+            "id": DaspCommon.nodeID,
+            "data": data
+        }
+        for i in range(len(self.TaskadjID)):
+            if self.TaskadjDirection[i] ==  direction:
+                for ele in self.TaskIPlist:
+                    if ele:
+                        if ele[4] == self.TaskadjID[i]:
+                            self.send(ele[4], data)
+
+    def getAsynchData(self):
+        """
+        获取邻居发过来的数据
+        """
+        while True:
+            for i,que in enumerate(self.adjData_asynch):
+                if not que.empty():
+                    # 非阻塞性地获取数据
+                    data = que.get_nowait()
+                    return (self.TaskadjDirection[i],data)
+            time.sleep(0.01)
+
     def transmitData(self,direclist,datalist):
         """
         同步通信函数，将datalist中的数据分别发到direclist的邻居方向

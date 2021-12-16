@@ -100,6 +100,7 @@ ControlMixin为控制函数集合类，仿真时初始化参数"Pc"，实际运�
 * 将树莓派连接到wifi中，记录IP，并在路由器端设置静态路由，绑定树莓派的IP地址和MAC地址。
 * 用putty/ssh/win10远程桌面等方式通过IP地址远程连接到树莓派，测试是否正常
 * 依次对所有的树莓派执行以上操作，直到所有的树莓派都连接到局域网中，并记录IP，按照模板修改`DASP\task_info\system\binding.csv`文件，不在线的树莓派IP一栏为offline，同时需要更新本机(server)的IP地址
+* 需要在树莓派端和本地测试能否相互ping通，如果本机是Windows操作系统能ping通树莓派，但树莓派无法ping通本机，则需关闭Windows防火墙
 
 ### 3.2 实际运行流程
 
@@ -113,23 +114,19 @@ ControlMixin为控制函数集合类，仿真时初始化参数"Pc"，实际运�
    
    `python ./script_PI/broadcast_file.py`
 
-5. 重启所有树莓派，运行批量重启脚本
-   
-   `python ./script_PI/broadcast_command.py`
-
-6. 在另一个终端下，运行监控脚本
+5. 在另一个终端下，运行监控脚本
 
    `python ./script_PC/moniter.py`
 
-7. 运行系统启动脚本
+6. 重启所有树莓派，运行批量重启脚本
    
-   `python ./script_PI/startsystem.py`
+   `python ./script_PI/broadcast_command.py`
 
-8. 等待监控终端出现 *[node_x]system: 通信树建立完成* 提示消息后，运行DAPP启动脚本
+7. 等待监控终端出现 *[node_x]system: 系统第1次自检：当前邻居节点[xxx]* 提示消息后，运行DAPP启动脚本
    
    `python ./script_PI/runtask.py`
 
-9. 第8步执行后可在运行监控脚本的终端看到运行结果。
+8. 第8步执行后可在运行监控脚本的终端看到运行结果。
 
 
 ### 3.3 文件说明
