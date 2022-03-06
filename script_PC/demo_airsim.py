@@ -16,3 +16,8 @@ Controlmixin = ControlMixin("Pc") # 控制函数集合
 for i in range(nodeNum):
     node = Node(i+1)
     nodelist.append(node)
+
+time.sleep(2)
+DAPPname = "Airsim"
+print("开始任务："+DAPPname)
+Controlmixin.StartTask(DAPPname,rootnode)

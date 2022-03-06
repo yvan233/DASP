@@ -419,7 +419,7 @@ class TaskServer(BaseServer):
                 BaseServer.TaskDict[name].load()
                 BaseServer.TaskDict[name].reset()
                 ## 如果当前节点在任务中
-                if DaspCommon.nodeID in  BaseServer.TaskDict[name].TaskID:
+                if DaspCommon.nodeID in BaseServer.TaskDict[name].TaskID:
                     # self.sendRunDatatoGUI("寻找leader节点",name)
                     BaseServer.TaskDict[name].Findleader()
                     while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)
@@ -505,6 +505,9 @@ class CommServer(BaseServer):
 
                 elif jdata["key"] == "questionData":
                     self.RespondQuestionData(jdata)
+                    
+                elif jdata["key"] == "SendData":
+                    self.RespondSendData(jdata)
 
                 elif jdata["key"] == "RootData":
                     self.RespondRootData(jdata)
@@ -680,6 +683,19 @@ class CommServer(BaseServer):
         elif jdata["type"] == "value2":
             BaseServer.TaskDict[name].adjData_another[index] = jdata["data"]
 
+    def RespondSendData(self, jdata):
+        """
+        回应任务发送数据信号，并存储数据
+        """
+        name = jdata["DAPPname"]
+        while(name not in BaseServer.TaskDict):time.sleep(0.01)
+        while(not hasattr(BaseServer.TaskDict[name],'loadflag')):time.sleep(0.01)
+        while(BaseServer.TaskDict[name].loadflag == 0):time.sleep(0.01)
+        
+        index = BaseServer.TaskDict[name].TaskadjID.index(jdata["id"])
+        BaseServer.TaskDict[name].adjData_asynch[index].put(jdata["data"])
+
+            
     def RespondRootData(self, jdata):
         """回应任务发送数据至根节点信号
 
