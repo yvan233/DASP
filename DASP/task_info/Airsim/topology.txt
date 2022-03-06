@@ -6,13 +6,9 @@
       "adjDirection": [1, 2],
       "datalist": {
          "Type": "Camera",
-         "Name": "Car0",
-         "Init_pose": {           
-            "UE1":[-55, 200, 0],
-            "UE2":[50, 200, 180]
-            }
+         "Name": "Car0"
          }
-   }, 
+   },
    {
       "ID": "Car1",
       "PORT": [10007, 10008, 10009], 
@@ -21,8 +17,7 @@
       "datalist": {
          "Type": "Car",
          "Name": "Car1",
-         "Init_UE":"UE1",
-         "Init_pose": [-50,185,90]
+         "Init_UE":"UE1"
          }
    }, 
    {
@@ -33,8 +28,7 @@
       "datalist": {
          "Type": "Car",
          "Name": "Escaper",
-         "Init_UE":"UE1",
-         "Init_pose": [-40,160,90]
+         "Init_UE":"UE1"
          }
    },
    {
@@ -45,8 +39,7 @@
       "datalist": {
          "Type": "Car",
          "Name": "Catcher",
-         "Init_UE":"UE2",
-         "Init_pose": [20,170,90]
+         "Init_UE":"UE2"
          }
    },
    {
@@ -63,6 +56,11 @@
             "Escaper":[5, 0, 90],
             "Catcher":[10, 0, 90],
             "Car1":[15, 0, 90]
+            },
+         "Car_init_pose": {     
+            "Car0":[-75, 200, 0],  
+            "Escaper":[-40,160,90],
+            "Car1":[-50,185,90]
             },
          "Move_pose_Y":[230,-90]
          }
@@ -81,6 +79,10 @@
             "Escaper":[5, 0, 90],
             "Catcher":[10, 0, 90],
             "Car1":[15, 0, 90]
+            },
+         "Car_init_pose": {      
+            "Car0":[55, 200, 180],
+            "Catcher":[20,170,90]
             },
          "Move_pose_Y":[230,-90]
          }
