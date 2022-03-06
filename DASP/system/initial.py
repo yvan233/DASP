@@ -39,7 +39,7 @@ if __name__ == '__main__':
     n = len(IP)
     for i in range(len(selfAdjID)):
         selfIPList.append([])
-        direction = selfAdjDirection[i] - 1
+        direction = selfAdjDirection[i]
         selfIPList[i].append(selfIP)
         selfIPList[i].append(selfPORT[direction])
         for j in range(n):
@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 selfIPList[i].append(IP[j])
                 for k in range(len(adjID[j])):
                     if adjID[j][k] == selfID:
-                        selfIPList[i].append(PORT[j][adjDirection[j][k]-1])
+                        selfIPList[i].append(PORT[j][adjDirection[j][k]])
                         selfAdjDirectionOtherSide.append(adjDirection[j][k])
                         break
                 selfIPList[i].append(ID[j])

@@ -25,14 +25,14 @@ def taskFunction(self,id,adjDirection,datalist):
         data.append(data_base_temp)
 
     # id为5的为发起节点
-    if id == "room_1":
+    if id == "1":
         Flag = True
         parentdirection.append(0)  # 假定一个0方向，父节点方向为0的即为根节点/发起节点
         for i in range(len(data)):
             data[i][1] = True      # 给每个邻居发送BFS信号  
 
     # 循环次数为网络规模的2倍
-    for m in range(20):
+    for m in range(4):
         time.sleep(0.1)                                # 异步通信函数前sleep一段时间防止通信数据覆盖写入
         for i in range(len(data)):
             self.sendDataToDirection(data[i][0],data[i][1:])   # 只传给邻居BFS和END信号

@@ -8,7 +8,7 @@ from DASP.module import Node
 from DASP.control import ControlMixin
 
 nodeNum = 12  # 节点数量
-rootnode = "room_1" # 根节点ID
+rootnode = "1" # 根节点ID
 nodelist = [] # 节点进程列表
 Controlmixin = ControlMixin("Pc") # 控制函数集合
 
