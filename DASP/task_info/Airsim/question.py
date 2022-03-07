@@ -1,7 +1,6 @@
 import time 
 import airgym
 import airsim
-from cv2 import add
 import gym
 import numpy as np
 import math
@@ -12,6 +11,7 @@ def list2pose(arr):
     return airsim.Pose(airsim.Vector3r(arr[0],arr[1],0),airsim.to_quaternion(0,0,arr[2]/180*math.pi))
 
 def add_car(self, j, env, pose):
+    env.reset()
     env.add_car(list2pose(pose))
     data = {"Key": "OK"}
     self.sendAsynchData(j,data)
@@ -20,11 +20,13 @@ def del_car(self, j, env, UE_name):
     next_UE = "UE2" if UE_name == "UE1" else "UE1"
     data = {"Key": "OK", "next_UE":next_UE}
     self.sendAsynchData(j, data)
+    env.reset()
     env.del_car()
 
 def stop_car(self, j, env):
     data = {"Key": "END"}
     self.sendAsynchData(j, data)
+    env.reset()
     env.del_car()
 
 def taskFunction(self,id,adjDirection,datalist):
@@ -91,14 +93,12 @@ def taskFunction(self,id,adjDirection,datalist):
                 self.sendAsynchData(j,{"Name":datalist["Name"], "Ip":datalist["Ip"]})
             elif data["Key"] == "Car Init":
                 env = gym.make("airsim-car-agemt-v0", init_pose = list2pose(datalist["Car_park_pose"][car_name]), 
-                    ip = datalist["Ip"], vehicle_name = car_name)   
-                env.reset()
+                    ip = datalist["Ip"], vehicle_name = car_name)     
                 t = Thread(target=add_car,args=(self, j, env, datalist["Car_init_pose"][car_name]),)
                 t.start()
             elif data["Key"] == "Car Move":
-                env = gym.make("airsim-car-agemt-v0", init_pose = list2pose(datalist["Car_park_pose"][car_name]), ip = datalist["Ip"], 
-                    vehicle_name = car_name, control_flag = False, image_flag = True)   
-                env.reset()
+                env = gym.make("airsim-car-agemt-v0", init_pose = list2pose(datalist["Car_park_pose"][car_name]), 
+                    ip = datalist["Ip"], vehicle_name = car_name)   
                 # 计算转移的位置
                 move_pose = [-10-data["X"]]+datalist["Move_pose_Y"]
                 t = Thread(target=add_car,args=(self, j, env, move_pose),)
@@ -106,13 +106,11 @@ def taskFunction(self,id,adjDirection,datalist):
             elif data["Key"] == "go to the next section":
                 env = gym.make("airsim-car-agemt-v0", init_pose = list2pose(datalist["Car_park_pose"][car_name]), 
                     ip = datalist["Ip"], vehicle_name = car_name)   
-                env.reset()
                 t = Thread(target=del_car,args=(self, j, env, datalist["Name"]),)
                 t.start()
             elif data["Key"] == "out of the test zone":
                 env = gym.make("airsim-car-agemt-v0", init_pose = list2pose(datalist["Car_park_pose"][car_name]), 
                     ip = datalist["Ip"], vehicle_name = car_name)   
-                env.reset()
                 t = Thread(target=stop_car,args=(self, j, env),)
                 t.start()
     else:
