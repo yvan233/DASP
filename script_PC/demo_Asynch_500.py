@@ -7,8 +7,8 @@ sys.path.insert(1,".") # 把上一级目录加入搜索路径
 from DASP.module import Node
 from DASP.control import ControlMixin
 
-nodeNum = 12  # 节点数量
-rootnode = "room_1" # 根节点ID
+nodeNum = 500  # 节点数量
+rootnode = "1" # 根节点ID
 nodelist = [] # 节点进程列表
 Controlmixin = ControlMixin("Pc") # 控制函数集合
 
@@ -17,7 +17,7 @@ for i in range(nodeNum):
     node = Node(i+1)
     nodelist.append(node)
 
-time.sleep(2)
+time.sleep(20)
 DAPPname = "ALST_demo"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)

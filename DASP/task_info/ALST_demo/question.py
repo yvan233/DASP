@@ -1,4 +1,6 @@
 # 无根节点的生成树
+import datetime,time
+
 def taskFunction(self,id,adjDirection,datalist):
     # init 
     min_uid = id
@@ -17,9 +19,14 @@ def taskFunction(self,id,adjDirection,datalist):
     for ele in adjDirection:
         self.sendAsynchData(ele,["search",id])
 
+    
+    starttime = datetime.datetime.now()
+    message_cnt = 0  #消息总数
+
     while True:
         j,(data,token) = self.getAsynchData()
-        self.sendDatatoGUI("recv from {}:[{},{}]".format(j,data,token))
+        message_cnt += 1
+        # self.sendDatatoGUI("recv from {}:[{},{}]".format(j,data,token))
 
         # 忽略token比自己大的消息
         if token > min_uid:
@@ -34,13 +41,13 @@ def taskFunction(self,id,adjDirection,datalist):
         # token一样，正常操作
         else:
             pass
-
-        # 如果邻居传来join信号
+       
         if data == "end" and j == parent[0]:
             for ele in child:
                 self.sendAsynchData(ele,["end",min_uid]) 
             break
 
+         # 如果邻居传来join信号
         elif data == "join":
             end_counter = end_counter - 1
             child.append(j)
@@ -59,13 +66,33 @@ def taskFunction(self,id,adjDirection,datalist):
             self.sendAsynchData(parent[0],["join",min_uid])      
             if min_uid == id:
                 leader_state = "leader"
+                endtime =  datetime.datetime.now()
+                
             else:
                 leader_state = "non-leader"         
             value = {"state":leader_state,"parent":parent,"child":child}
-            self.sendDatatoGUI(str(value))  
+
+            # self.sendDatatoGUI(str(value))  
 
             if leader_state == "leader":
                 for ele in child:
                     self.sendAsynchData(ele,["end",min_uid]) 
                 break
+    # 下面进行求和
+    end_counter = len(child)
+    if end_counter == 0:
+        self.sendAsynchData(parent[0],message_cnt)
+    else:
+        while True:
+            j,data = self.getAsynchData()
+            message_cnt += data
+            end_counter = end_counter - 1
+            if end_counter == 0:
+                self.sendAsynchData(parent[0],message_cnt)      
+                break
+
+    if leader_state == "leader":
+        time.sleep(1)
+        self.sendDatatoGUI("运行时间:"+str(endtime-starttime)+" 消息总数:"+str(message_cnt)) 
+        time.sleep(10)
     return value

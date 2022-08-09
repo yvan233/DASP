@@ -1,4 +1,5 @@
 # 无根节点的生成树
+
 def taskFunction(self,id,adjDirection,datalist):
     # init 
     min_uid = id

@@ -1,10 +1,11 @@
 import copy
 import json
+filename = "debug/topology384_3.txt"
 def topology():
     # 确定立方体结构
-    m = 10
-    n = 10
-    l = 10
+    m = 6
+    n = 8
+    l = 8
     co = []
     adjID = []
     IP = []
@@ -39,7 +40,7 @@ def topology():
         adjID.append(tmp)
     for i in range(len(adjID)):
         for j in range(len(adjID[i])):
-            adjID[i][j] += 1
+            adjID[i][j] = str(adjID[i][j]+1)
 
     # 返回[邻接节点ID数组，路由表数组，IP数组，端口数组]，其中数组的含义是涵盖了全部n个节点的相应信息
     return [IP, PORT, adjID, datalist]
@@ -54,7 +55,7 @@ datalist = tp[3]
 
 for i in range(len(IP)):
     tmp = {}
-    tmp["ID"] = i+1
+    tmp["ID"] = str(i+1)
     tmp["IP"] = IP[i]
     tmp["PORT"] = PORT[i]
     tmp["adjID"] = adjID[i]
@@ -71,6 +72,6 @@ try:
 except Exception:
     print("JSON格式错误")
 else:
-    file = open("topology.txt","w")
+    file = open(filename,"w")
     file.write(a)
     file.close()

@@ -51,6 +51,7 @@ class DaspCommon():
         headPack = struct.pack(self.headformat , *header)
         socket.sendall(headPack+body.encode())
 
+
     def recv_length(self, conn):
         '''
         循环接收数据，直到收完报头中length长度的数据
