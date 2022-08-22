@@ -9,8 +9,8 @@
    {
       "ID": "room_2",
       "PORT": [10007, 10008, 10009, 10010, 10011, 10012, 10013], 
-      "adjID": ["room_1", "room_3", "room_5"], 
-      "adjDirection": [1, 5, 6],
+      "adjID": ["room_1",  "room_5", "room_3"], 
+      "adjDirection": [1, 6, 5],
       "datalist": []
    }, 
    {
@@ -37,8 +37,8 @@
    {
       "ID": "room_6",
       "PORT": [10035, 10036, 10037, 10038, 10039, 10040, 10041], 
-      "adjID": ["room_3", "room_5", "room_7"], 
-      "adjDirection": [5, 3, 1],
+      "adjID": ["room_5", "room_7","room_3"], 
+      "adjDirection": [ 3, 1,5],
       "datalist": []
    }, 
    {
@@ -51,8 +51,8 @@
    {
       "ID": "pump_1",
       "PORT": [10056, 10057, 10058, 10059, 10060, 10061, 10062], 
-      "adjID": ["room_3", "room_7",  "pump_2"], 
-      "adjDirection": [5, 3, 1],
+      "adjID": ["room_7",  "pump_2","room_3"], 
+      "adjDirection": [3, 1,5],
       "datalist": []
    },
    {

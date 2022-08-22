@@ -1,31 +1,23 @@
 # 无根节点的生成树
-from DASP.module import Task
 import datetime,time
+def drc2id(adjDirection,adjID,drc):
+    return adjID[adjDirection.index(drc)]
+            
 
-def taskFunction(self:Task,id,adjDirection:list,datalist):
-    # init 
-    min_uid = id
-    # 生成树节点标识
+def taskFunction(self,id,adjDirection,datalist):
     flag = False 
-    # 父节点方向
     parent = []
-    # 子节点方向
     child = []
-    # 用于判断计算是否结束的END计数器，初始化为False
-    edges = [False] * len(adjDirection)
-
-    # 无发起节点
+    end_counter = len(adjDirection)
+    min_uid = id
     flag = True
-    parent.append(0)  # 假定一个0方向，父节点方向为0的即为根节点/发起节点
+    parent.append(-1)
+
     for ele in adjDirection:
         self.sendAsynchData(ele,["search",id])
 
-    starttime = datetime.datetime.now()
-    message_cnt = 0  #消息总数
-
     while True:
         j,(data,token) = self.getAsynchData()
-        message_cnt += 1
         # self.sendDatatoGUI("recv from {}:[{},{}]".format(j,data,token))
 
         # 忽略token比自己大的消息
@@ -37,7 +29,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
             flag = False
             parent = []
             child = []
-            edges = [False] * len(adjDirection)
+            end_counter = len(adjDirection)
         # token一样，正常操作
         else:
             pass
@@ -49,11 +41,11 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
 
          # 如果邻居传来join信号
         elif data == "join":
-            edges[adjDirection.index(j)] = True
+            end_counter = end_counter - 1
             child.append(j)
         # search
         else:
-            edges[adjDirection.index(j)] = True
+            end_counter = end_counter - 1
             if flag == False:
                 flag = True
                 parent.append(j)  #将邻居方向加入父节点方向
@@ -62,11 +54,10 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                     if ele != j:
                         self.sendAsynchData(ele,["search",min_uid])
                         
-        if all(edges):
+        if end_counter == 0:
             self.sendAsynchData(parent[0],["join",min_uid])      
             if min_uid == id:
                 leader_state = "leader"
-                endtime =  datetime.datetime.now()
                 for ele in child:
                     self.sendAsynchData(ele,["end",min_uid]) 
                 break
@@ -74,21 +65,10 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
             else:
                 leader_state = "non-leader"         
 
-    # 下面进行求和
-    end_counter = len(child)
-    if end_counter == 0:
-        self.sendAsynchData(parent[0],message_cnt)
-    else:
-        while True:
-            j,data = self.getAsynchData()
-            message_cnt += data
-            end_counter = end_counter - 1
-            if end_counter == 0:
-                self.sendAsynchData(parent[0],message_cnt)      
-                break
 
-    if leader_state == "leader":
-        time.sleep(1)
-        self.sendDatatoGUI("运行时间:"+str(endtime-starttime)+" 消息总数:"+str(message_cnt)) 
+    adjID = self.TaskadjID 
+
+    child = [drc2id(adjDirection,adjID,ele) for ele in child]
+    parent = [drc2id(adjDirection,adjID,ele) for ele in parent if ele != -1]
     value = {"state":leader_state,"parent":parent,"child":child}
     return value
