@@ -1,4 +1,5 @@
-# 无根节点的生成树
+# 无根节点的生成树 生成和维护
+# 测试节点3的在系统启动后加入
 from DASP.module import Task
 import time
 def drc2id(adjDirection,adjID,drc):
@@ -16,6 +17,19 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
 
     test_id = ""
     testflag = 1 
+
+    # 测试修改拓扑
+    if id in ["room_2","room_6","pump_1"]:
+        test_id = "room_3"
+        index = index = adjID.index(test_id)
+        del adjID[index]
+        del adjDirection[index]   
+        del edges[index]
+        test_id = ""
+
+
+    if id == "room_3":
+        time.sleep(10)
 
     for ele in adjDirection:
         self.sendAsynchData(ele,["search",id])
@@ -71,36 +85,12 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
             self.sendDatatoGUI(f"{value}")
             step = 2
 
-        # 测试修改拓扑
         if id in ["room_2","room_6","pump_1"]:
-            if testflag == 1:
-                time.sleep(10)
-                test_id = "room_3"
-                testflag = 2
-            elif testflag == 2:
-                # time.sleep(10)
-                # test_id = ""
-                # testflag = 0
-                # adjID.append("room_3")
-                # adjDirection.append(5)   
-                # edges.append[False]
-                pass
-
-
-        if id == "room_3":
-            time.sleep(30)
-            # flag = False 
-            # parent = -1
-            # child = []    
-            # edges = [False] * len(adjDirection)
-            # min_uid = id
-            # flag = True
-            # step = 1
-
-            # for ele in adjDirection:
-            #     self.sendAsynchData(ele,["search",id])
-            # j,(data,token) = self.getAsynchData()
-
+            if testflag == 1: 
+                adjID.append("room_3")
+                adjDirection.append(5) 
+                edges.append(False)
+                testflag = 0
                 
         if step == 2:
             if test_id:
@@ -162,16 +152,12 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                     elif token < min_uid:
                         step = 1
                     else:
-                        self.sendAsynchData(j,["end",min_uid]) 
                         edges[adjDirection.index(j)] = True
                         if data == "join":
                             child.append(j)
-                            
+                            self.sendAsynchData(j,["end",min_uid]) 
                         elif data == "search":
-                            pass
-                            
-
-                            
+                            self.sendAsynchData(j,["end",min_uid]) 
 
 
     child = [drc2id(adjDirection,adjID,ele) for ele in child]
