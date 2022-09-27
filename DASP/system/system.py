@@ -19,17 +19,17 @@ class Server(object):
     def run(self):
         #创建接口服务器
         self.CommServerThread = []
-        for i in range(6):
-            commserver = CommServer(DaspCommon.IP,DaspCommon.PORT[i])
+        for i,port in enumerate(DaspCommon.PORT[1:]):
+            commserver = CommServer(DaspCommon.IP, port)
             t = threading.Thread(target=commserver.run,args=())
             self.CommServerThread.append(t)
 
-        taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[6])
+        taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[0])
         self.TaskServerThread = threading.Thread(target=taskserver.run,args=())
         self.SystemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
 
-        for i in range(6):
-            self.CommServerThread[i].start()
+        for i,thread in enumerate(self.CommServerThread):
+            thread.start()
         self.TaskServerThread.start()
         self.SystemTaskThread.start()
 

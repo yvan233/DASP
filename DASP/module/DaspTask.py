@@ -564,12 +564,34 @@ class Task(DaspCommon):
             "data": data
         }
         for i in range(len(self.TaskadjID)):
+<<<<<<< HEAD
             if self.TaskadjDirection[i] ==  direction:
+=======
+            if self.TaskadjDirection[i] == direction:
+>>>>>>> dev_ue_yh
                 for ele in self.TaskIPlist:
                     if ele:
                         if ele[4] == self.TaskadjID[i]:
                             self.send(ele[4], data)
 
+<<<<<<< HEAD
+=======
+    # def sendAsynchDataToID(self, id, data):
+    #     """
+    #     通过TCP的形式将信息发送至指定的邻居
+    #     """
+    #     data = {
+    #         "key": "SendData",
+    #         "DAPPname": self.DAPPname,
+    #         "id": DaspCommon.nodeID,
+    #         "data": data
+    #     }
+    #     for ele in self.TaskIPlist:
+    #         if ele:
+    #             if ele[4] == id:
+    #                 self.send(ele[4], data)
+
+>>>>>>> dev_ue_yh
     def getAsynchData(self):
         """
         获取邻居发过来的数据
@@ -582,6 +604,21 @@ class Task(DaspCommon):
                     return (self.TaskadjDirection[i],data)
             time.sleep(0.01)
 
+<<<<<<< HEAD
+=======
+    # def getAsynchDataFromID(self):
+    #     """
+    #     获取邻居发过来的数据
+    #     """
+    #     while True:
+    #         for i,que in enumerate(self.adjData_asynch):
+    #             if not que.empty():
+    #                 # 非阻塞性地获取数据
+    #                 data = que.get_nowait()
+    #                 return (self.TaskadjID[i],data)
+    #         time.sleep(0.01)
+
+>>>>>>> dev_ue_yh
     def transmitData(self,direclist,datalist):
         """
         同步通信函数，将datalist中的数据分别发到direclist的邻居方向

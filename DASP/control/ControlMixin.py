@@ -30,7 +30,7 @@ class ControlMixin():
         self.IPDict = {}
         for ele in js:
             if "ID" in ele:
-                self.TaskPortDict[ele["ID"]] = ele["PORT"][6]
+                self.TaskPortDict[ele["ID"]] = ele["PORT"][0]
                 self.IPDict[ele["ID"]] = self.localIP
         if mode == "PI":
             path = os.getcwd() + "/DASP/task_info/system/binding.csv"
@@ -38,7 +38,7 @@ class ControlMixin():
             with open(path,'r')as f:
                 data = csv.reader(f)
                 for ele in data:
-                    self.TaskPortDict[ele[0]] = 10006
+                    self.TaskPortDict[ele[0]] = 10000
                     self.IPDict[ele[0]] = ele[1]
                     
 
