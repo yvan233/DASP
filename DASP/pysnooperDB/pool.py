@@ -1,6 +1,5 @@
 import json
 from threading import Lock
-
 import datetime
 
 import pymysql

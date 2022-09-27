@@ -23,6 +23,6 @@ for i in range(nodeNum):
     nodelist.append(node)
 
 time.sleep(2)
-DAPPname = "ALST_test"
+DAPPname = "宽度优先生成树"
 print("开始任务："+DAPPname)
 Controlmixin.StartTask(DAPPname,rootnode)
