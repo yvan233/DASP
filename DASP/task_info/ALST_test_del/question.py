@@ -82,7 +82,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                 # time.sleep(10)
                 # test_id = ""
                 # testflag = 0
-                # adjID.append("room_3")
+                # adjID.append("room_3")   
                 # adjDirection.append(5)   
                 # edges.append[False]
                 pass
