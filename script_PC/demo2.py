@@ -8,7 +8,7 @@ from DASP.control import ControlMixin
 nodeNum = 9  # 节点数量
 rootnode = "room_1" # 根节点ID
 nodelist = [] # 节点进程列表
-Controlmixin = ControlMixin("Pc") # 控制函数集合
+controlMixin = ControlMixin("Pc") # 控制函数集合
 
 # 启动监控脚本
 moniter = Moniter()
@@ -23,12 +23,12 @@ time.sleep(2)
 
 DAPPname = "BFStree"
 print("开始任务："+DAPPname)
-Controlmixin.startTask(DAPPname,rootnode)
+controlMixin.startTask(DAPPname,rootnode)
 
 # 并行示例
 time.sleep(1)
 DAPPname = "ALST"
 print("开始任务："+DAPPname)
-Controlmixin.startTask(DAPPname,rootnode)
+controlMixin.startTask(DAPPname,rootnode)
 
 moniter.wait()

@@ -7,7 +7,7 @@ from DASP.control import ControlMixin
 
 
 nodelist = []
-Controlmixin = ControlMixin("Pc")
+controlMixin = ControlMixin("Pc")
 
 # 启动监控脚本
 moniter = Moniter()
