@@ -1,19 +1,23 @@
 # 测试任务的暂停和恢复功能
-# 另外需要运行./script_PC/moniter.py   
 # 可以修改./DASP/task_info/testpause/question中timesleep的形式，比较差异
 import time 
 import sys
 sys.path.insert(1,".") 
-from DASP.module import Node
+from threading import Thread
+from DASP.module import Node,moniter
 from DASP.control import ControlMixin
 
-nodelist = []
-Controlmixin = ControlMixin("Pc")
-nodeNum = 12  # 节点数量
-rootnode = "room_1"
+nodeNum = 9  # 节点数量
+rootnode = "room_1" # 根节点ID
+nodelist = [] # 节点进程列表
+Controlmixin = ControlMixin("Pc") # 控制函数集合
+
+# 启动监控脚本
+t = Thread(target=moniter,)    
+t.start()
 
 for i in range(nodeNum):
-    node = Node(i+1)
+    node = Node(i)
     nodelist.append(node)
 
 time.sleep(2)

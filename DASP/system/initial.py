@@ -25,7 +25,7 @@ if __name__ == '__main__':
             adjDirection.append(ele["adjDirection"])
             datalist.append(ele["datalist"])
 
-    order = int(sys.argv[1]) - 1
+    order = int(sys.argv[1])
     selfID = ID[order]
     selfAdjID = adjID[order]
     selfAdjDirection = adjDirection[order]

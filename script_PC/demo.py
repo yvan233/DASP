@@ -1,11 +1,9 @@
 # 启动系统并运行分布式算法
-
 import time 
 import sys
 sys.path.insert(1,".") # 把上一级目录加入搜索路径
 from threading import Thread
-from moniter import moniter
-from DASP.module import Node
+from DASP.module import Node,moniter
 from DASP.control import ControlMixin
 
 nodeNum = 9  # 节点数量
@@ -19,7 +17,7 @@ t.start()
 
 # 启动节点进程
 for i in range(nodeNum):
-    node = Node(i+1)
+    node = Node(i)
     nodelist.append(node)
 
 time.sleep(2)

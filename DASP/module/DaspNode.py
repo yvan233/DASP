@@ -19,7 +19,7 @@ class Node:
         
     def __init__(self, num, mode = False, printdata = []):
         """
-        num: 节点ID编号 从1开始
+        num: 节点ID编号 从0开始
         mode: 是否直接打印输出数据
         printdata: 节点输出数据
         """
