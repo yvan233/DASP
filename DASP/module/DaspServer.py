@@ -37,7 +37,7 @@ class BaseServer(DaspCommon):
             conn, addr = server.accept()
             # print('Connected by', addr)
             headPack,body = self.recv_length(conn)
-            self.MessageHandle(headPack,body,conn)
+            self.handleMessage(headPack,body,conn)
             conn.close()
                
     def recv_long_conn(self, host, port, adjID = ""):
@@ -58,11 +58,11 @@ class BaseServer(DaspCommon):
                         data = conn.recv(1024)
                     except Exception as e:
                         # 发送端进程被杀掉
-                        self.RecvDisconnectHandle(addr, adjID)
+                        self.handleRecvDisconnection(addr, adjID)
                         break
                     if data == b"":
                         # 发送端close()
-                        self.RecvDisconnectHandle(addr, adjID)
+                        self.handleRecvDisconnection(addr, adjID)
                         break
                     if data:
                         # 把数据存入缓冲区，类似于push数据
@@ -80,11 +80,11 @@ class BaseServer(DaspCommon):
                             body = body.decode()
                             body = json.loads(body)
                             # 数据处理
-                            self.MessageHandle(headPack, body, conn)
+                            self.handleMessage(headPack, body, conn)
                             # 数据出列
                             dataBuffer = dataBuffer[self.headerSize+bodySize:] # 获取下一个数据包，类似于把数据pop出
 
-    def MessageHandle(self, headPack, body, conn):
+    def handleMessage(self, headPack, body, conn):
         """
         数据处理函数,子类可重构该函数
         """
@@ -93,13 +93,13 @@ class BaseServer(DaspCommon):
         else:
             print("非POST方法")
 
-    def RecvDisconnectHandle(self, addr, adjID):
+    def handleRecvDisconnection(self, addr, adjID):
         """
         对接收数据时邻居断开连接的操作函数               
         """
         print ("{}:{} 已断开".format(addr[0],addr[1]))      
 
-    def PingID(self, host, port, adjID, direction):
+    def pingID(self, host, port, adjID, direction):
         """
         尝试通过TCP连接指定节点
         """
@@ -260,7 +260,7 @@ class TaskServer(BaseServer):
         print ("TaskServer on: {}:{}".format(self.host,str(self.port)))
         self.recv_short_conn(self.host, self.port)
 
-    def MessageHandle(self, headPack, body, conn):
+    def handleMessage(self, headPack, body, conn):
         """
         数据处理函数,子类可重构该函数
         """
@@ -318,11 +318,11 @@ class TaskServer(BaseServer):
         self.sendFlagtoGUI(2,name)
 
         if self.ResultThreadsFlag == 0: #启动计算结果转发线程
-            self.ResultThreads = threading.Thread(target=self.ResultForwarding,args=())
+            self.ResultThreads = threading.Thread(target=self.forwardResult,args=())
             self.ResultThreads.start()
             self.ResultThreadsFlag = 1
 
-    def ResultForwarding(self):
+    def forwardResult(self):
         """
         根节点等待所有任务的数据收集结束标志，随后将计算结果转发到GUI界面
         """
@@ -388,7 +388,7 @@ class TaskServer(BaseServer):
             for ele in reversed(DaspCommon.IPlist):
                 if ele:
                     index = DaspCommon.adjID.index(ele[4])
-                    self.PingID(ele[0], ele[1], ele[4], DaspCommon.adjDirectionOtherSide[index])
+                    self.pingID(ele[0], ele[1], ele[4], DaspCommon.adjDirectionOtherSide[index])
 
             if i == 1:  # 第一轮开启系统自启动任务进程
                 self.startthreads = threading.Thread(target=self.autostarttask, args=())
@@ -471,7 +471,7 @@ class CommServer(BaseServer):
         print ("CommServer on: {}:{}".format(self.host,str(self.port)))
         self.recv_long_conn(self.host, self.port)
 
-    def MessageHandle(self, headPack, body, conn):
+    def handleMessage(self, headPack, body, conn):
         """
         数据处理函数
         """

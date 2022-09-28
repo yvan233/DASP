@@ -24,10 +24,10 @@ time.sleep(2)
 
 DAPPname = "BFStree"
 print("开始任务："+DAPPname)
-Controlmixin.StartTask(DAPPname,rootnode)
+Controlmixin.startTask(DAPPname,rootnode)
 
 # 并行示例
 time.sleep(1)
 DAPPname = "ALST"
 print("开始任务："+DAPPname)
-Controlmixin.StartTask(DAPPname,rootnode)
+Controlmixin.startTask(DAPPname,rootnode)

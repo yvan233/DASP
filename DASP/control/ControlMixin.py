@@ -51,7 +51,7 @@ class ControlMixin():
         headPack = struct.pack(self.headformat , *header)
         socket.sendall(headPack+body.encode())
 
-    # def RunSystem(self, nodeID):
+    # def runSystem(self, nodeID):
     #     '''
     #     以nodeID为根节点启动系统，运行系统自检算法
     #     '''
@@ -68,7 +68,7 @@ class ControlMixin():
     #     self.sendall_length(s, data)
     #     s.close()
 
-    def StartTask(self, DAPPname, nodeID):
+    def startTask(self, DAPPname, nodeID):
         '''
         以nodeID为根节点运行指定名称的DAPP
         '''
@@ -84,7 +84,7 @@ class ControlMixin():
         self.sendall_length(s, data)
         s.close()
 
-    def StartTaskList(self, DAPPnamelist, nodeID):
+    def startTaskList(self, DAPPnamelist, nodeID):
         '''
         以nodeID为根节点运行指定名称的DAPP列表
         '''
@@ -92,7 +92,7 @@ class ControlMixin():
             for ele in DAPPnamelist:
                 self.StartTask(ele, nodeID)
 
-    def StartTaskDebug(self, DAPPname, nodeID, DatabaseInfo = Databaseinfo, ObservedVariable = []):
+    def startTaskDebug(self, DAPPname, nodeID, DatabaseInfo = Databaseinfo, ObservedVariable = []):
         '''
         以nodeID为根节点调试模式运行指定名称的DAPP
         '''
@@ -108,7 +108,7 @@ class ControlMixin():
         self.sendall_length(s, data)
         s.close()
 
-    def PauseTask(self, DAPPname, nodeID):
+    def pauseTask(self, DAPPname, nodeID):
         '''
         以nodeID为根节点暂停运行指定名称的DAPP
         '''
@@ -121,7 +121,7 @@ class ControlMixin():
         self.sendall_length(s, data)
         s.close()
 
-    def ResumeTask(self, DAPPname, nodeID):
+    def resumeTask(self, DAPPname, nodeID):
         '''
         以nodeID为根节点恢复运行指定名称的DAPP
         '''
@@ -134,7 +134,7 @@ class ControlMixin():
         self.sendall_length(s, data)
         s.close()
 
-    def StopTask(self, DAPPname, nodeID):
+    def stopTask(self, DAPPname, nodeID):
         '''
         以nodeID为根节点停止运行指定名称的DAPP
         '''

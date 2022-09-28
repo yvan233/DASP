@@ -30,7 +30,7 @@ if __name__ == '__main__':
     selfAdjID = adjID[order]
     selfAdjDirection = adjDirection[order]
     selfIP = IP[order]
-    selfPORT = PORT[order]
+    selfPort = PORT[order]
     selfDatalist = datalist[order]
     selfIPList = []
     selfAdjDirectionOtherSide = []
@@ -39,7 +39,7 @@ if __name__ == '__main__':
         selfIPList.append([])
         direction = selfAdjDirection[i]
         selfIPList[i].append(selfIP)
-        selfIPList[i].append(selfPORT[direction])
+        selfIPList[i].append(selfPort[direction])
         for j in range(n):
             if ID[j] == selfAdjID[i]:
                 selfIPList[i].append(IP[j])
@@ -55,5 +55,5 @@ if __name__ == '__main__':
     print("IPlist: "+ json.dumps(selfIPListprint, indent=2))
 
     GUIinfo = [localIP, 50000]
-    server = system.Server(selfID, GUIinfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
+    server = system.Server(selfID, GUIinfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPort, selfDatalist)
     server.run()

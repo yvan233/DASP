@@ -202,4 +202,4 @@ if __name__ == '__main__':
     db2 = DaspMysqlClient(Default_Config,'Daspdb')
     # print (db2.show_table('test123'))
     db2.create_runtable('test')
-    db2.insert_runtable('test','adsavsa')
+    db2.insert_runtable('test','abc')

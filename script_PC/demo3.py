@@ -24,16 +24,16 @@ time.sleep(2)
 
 DAPPname = "testpause"
 print("开始任务")
-Controlmixin.StartTask(DAPPname,rootnode)
+Controlmixin.startTask(DAPPname,rootnode)
 
 time.sleep(5)
 print("发送pause信号")
-Controlmixin.PauseTask(DAPPname,rootnode)
+Controlmixin.pauseTask(DAPPname,rootnode)
 
 time.sleep(5)
 print("发送resume信号")
-Controlmixin.ResumeTask(DAPPname,rootnode)
+Controlmixin.resumeTask(DAPPname,rootnode)
 
 time.sleep(5)
 print("发送终止信号")
-Controlmixin.StopTask(DAPPname,rootnode)
+Controlmixin.stopTask(DAPPname,rootnode)
