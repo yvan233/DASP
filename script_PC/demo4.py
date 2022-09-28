@@ -2,8 +2,7 @@
 import time 
 import sys
 sys.path.insert(1,".")
-from threading import Thread
-from DASP.module import Node,moniter
+from DASP.module import Node,Moniter
 from DASP.control import ControlMixin
 
 
@@ -11,8 +10,8 @@ nodelist = []
 Controlmixin = ControlMixin("Pc")
 
 # 启动监控脚本
-t = Thread(target=moniter,)    
-t.start()
+moniter = Moniter()
+moniter.run()
 
 node = Node(0)
 nodelist.append(node)
@@ -27,3 +26,5 @@ time.sleep(15)
 print("启动room_3")
 node = Node(3)
 nodelist.append(node)
+
+moniter.wait()

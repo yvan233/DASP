@@ -22,16 +22,23 @@ class Server(object):
         for _,port in enumerate(DaspCommon.PORT[1:]):
             commserver = CommServer(DaspCommon.IP, port)
             t = threading.Thread(target=commserver.run,args=())
+            t.setDaemon(True)
             self.commServerThread.append(t)
 
         taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[0])
         self.taskServerThread = threading.Thread(target=taskserver.run,args=())
+        self.taskServerThread.setDaemon(True)
         self.systemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
+        self.systemTaskThread.setDaemon(True)
 
         for _,thread in enumerate(self.commServerThread):
             thread.start()
         self.taskServerThread.start()
         self.systemTaskThread.start()
+
+        while True:
+            time.sleep(1)
+
 
 
 

@@ -2,8 +2,7 @@
 import time 
 import sys
 sys.path.insert(1,".") # 把上一级目录加入搜索路径
-from threading import Thread
-from DASP.module import Node,moniter
+from DASP.module import Node,Moniter
 from DASP.control import ControlMixin
 
 nodeNum = 9  # 节点数量
@@ -12,8 +11,8 @@ nodelist = [] # 节点进程列表
 Controlmixin = ControlMixin("Pc") # 控制函数集合
 
 # 启动监控脚本
-t = Thread(target=moniter,)    
-t.start()
+moniter = Moniter()
+moniter.run()
 
 # 启动节点进程
 for i in range(nodeNum):
@@ -31,3 +30,5 @@ time.sleep(1)
 DAPPname = "ALST"
 print("开始任务："+DAPPname)
 Controlmixin.startTask(DAPPname,rootnode)
+
+moniter.wait()

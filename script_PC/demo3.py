@@ -3,8 +3,7 @@
 import time 
 import sys
 sys.path.insert(1,".") 
-from threading import Thread
-from DASP.module import Node,moniter
+from DASP.module import Node,Moniter
 from DASP.control import ControlMixin
 
 nodeNum = 9  # 节点数量
@@ -13,8 +12,8 @@ nodelist = [] # 节点进程列表
 Controlmixin = ControlMixin("Pc") # 控制函数集合
 
 # 启动监控脚本
-t = Thread(target=moniter,)    
-t.start()
+moniter = Moniter()
+moniter.run()
 
 for i in range(nodeNum):
     node = Node(i)
@@ -37,3 +36,5 @@ Controlmixin.resumeTask(DAPPname,rootnode)
 time.sleep(5)
 print("发送终止信号")
 Controlmixin.stopTask(DAPPname,rootnode)
+
+moniter.wait()
