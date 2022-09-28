@@ -21,6 +21,6 @@ for i in range(nodeNum):
     nodelist.append(node)
 
 time.sleep(2)
-DAPPname = "BFStree"
+DAPPname = "ALST"
 print("开始任务："+DAPPname)
 Controlmixin.startTask(DAPPname,rootnode)

@@ -426,12 +426,12 @@ class Task(DaspCommon):
 
     def Findleader(self):
         """
-        寻找领导人
+        寻找领导人，得多线程，否则任务服务器会卡死在这无法返回别的消息
         """
-        self.leaderthreads = threading.Thread(target=self.LeaderElection, args=())
+        self.leaderthreads = threading.Thread(target=self.alst, args=())
         self.leaderthreads.start()
 
-    def LeaderElection(self):
+    def floodLeaderElection(self):
         """
         领导人选举
         """
@@ -446,6 +446,59 @@ class Task(DaspCommon):
         if self.leader == DaspCommon.nodeID:
             self.sendDatatoGUI("This is the leader")
  
+    def alst(self):
+        adjDirection = self.TaskadjDirection
+        flag = False 
+        parent = -1
+        child = []    
+        edges = [False] * len(adjDirection)
+        min_uid = DaspCommon.nodeID
+        flag = True
+        step = 1
+        for ele in adjDirection:
+            self.sendAsynchData(ele,["search",min_uid])
+
+        j,(data,token) = self.getAsynchData()
+        while True:
+            if step == 1:
+                while True:
+                    if token <= min_uid:
+                        if token < min_uid:
+                            min_uid = token
+                            flag = False
+                            parent = -1
+                            child = []
+                            edges = [False] * len(adjDirection)
+                        edges[adjDirection.index(j)] = True
+                        if data == "end" and j == parent:
+                            for ele in child:
+                                self.sendAsynchData(ele,["end",min_uid]) 
+                            break
+                        elif data == "join":
+                            if j not in child:
+                                child.append(j)
+                        elif data == "search":
+                            if flag == False:
+                                flag = True
+                                parent = j 
+                                for ele in adjDirection:
+                                    if ele != j:
+                                        self.sendAsynchData(ele,["search",min_uid])
+                        if all(edges):
+                            if min_uid == DaspCommon.nodeID:
+                                leader_state = "leader"
+                                for ele in child:
+                                    self.sendAsynchData(ele,["end",min_uid]) 
+                                break
+                            else:
+                                leader_state = "non-leader"  
+                                self.sendAsynchData(parent,["join",min_uid]) 
+                    j,(data,token) = self.getAsynchData()
+                step = 2
+                self.sendDatatoGUI({"state":leader_state,"parent":parent,"child":child}) 
+            if step == 2:
+                break
+
     ##################################
     ###   下面为提供给用户的接口函数   ###
     ##################################

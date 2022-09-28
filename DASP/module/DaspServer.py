@@ -296,25 +296,26 @@ class TaskServer(BaseServer):
         """
         name = jdata["DAPPname"]
         self.sendRunDatatoGUI("接收任务请求",name)
-        BaseServer.TaskDict[name] = Task(name)
-        BaseServer.TaskDict[name].load()
+        task = Task(name)
+        task.load()
+        BaseServer.TaskDict[name] = task
 
         # 建立通信树
         sum = 0
-        for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
+        for ele in reversed(task.TaskIPlist):
             if ele:
                 if self.connect(ele[4], name) == "Communication Succeeded":
                     sum += 1
                     
-        if(sum == 0): BaseServer.TaskDict[name].treeFlag = 1   #只有一个节点的情况
-        while (BaseServer.TaskDict[name].treeFlag == 0): {time.sleep(0.01)}
+        if(sum == 0): task.treeFlag = 1   #只有一个节点的情况
+        while (task.treeFlag == 0): {time.sleep(0.01)}
         self.sendRunDatatoGUI("通信树建立完成",name)
 
         #启动任务
         self.Forward2sonID(jdata,name)
-        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
+        task.load_debuginfo(DebugMode = jdata["DebugMode"], 
             DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
-        BaseServer.TaskDict[name].taskBeginFlag = 1
+        task.taskBeginFlag = 1
         self.sendFlagtoGUI(2,name)
 
         if self.ResultThreadsFlag == 0: #启动计算结果转发线程
@@ -390,9 +391,17 @@ class TaskServer(BaseServer):
                     index = DaspCommon.adjID.index(ele[4])
                     self.pingID(ele[0], ele[1], ele[4], DaspCommon.adjDirectionOtherSide[index])
 
-            if i == 1:  # 第一轮开启系统自启动任务进程
-                self.startthreads = threading.Thread(target=self.autostarttask, args=())
-                self.startthreads.start()
+            if i == 1:  
+                # 第一轮开启系统自启动任务进程
+                # self.startthreads = threading.Thread(target=self.autostarttask, args=())
+                # self.startthreads.start()
+
+                # 执行alst算法
+                task = Task("ALST")
+                task.load()
+                task.reset()
+                task.Findleader()
+                BaseServer.TaskDict["ALST"] = task
 
             self.sendRunDatatoGUI("系统第{}次自检：当前邻居节点：{}".format(i,str(DaspCommon.adjID)))
             time.sleep(SYSTEMSETTIME)
