@@ -1,5 +1,3 @@
-# 监控脚本
-
 import socket
 import json
 
@@ -25,3 +23,6 @@ def moniter():
             else:
                 print ("数据有误")
     s.close()
+
+if __name__ == '__main__':
+    moniter()

@@ -21,7 +21,7 @@ class ControlMixin():
     
     def __init__(self, mode):
         
-        path = os.getcwd() + "/DASP/task_info/system/topology.txt"
+        path = os.getcwd() + "/Dapp/Base/topology.json"
         path = path.replace('\\', '/')  
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
@@ -33,7 +33,7 @@ class ControlMixin():
                 self.TaskPortDict[ele["ID"]] = ele["PORT"][0]
                 self.IPDict[ele["ID"]] = self.localIP
         if mode == "PI":
-            path = os.getcwd() + "/DASP/task_info/system/binding.csv"
+            path = os.getcwd() + "/Dapp/Base/binding.csv"
             # 读取节点信息
             with open(path,'r')as f:
                 data = csv.reader(f)

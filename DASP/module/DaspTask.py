@@ -97,8 +97,12 @@ class Task(DaspCommon):
         AllAdjID = []
         AllDatalist = []
         AllAdjDirection = []
-        path = os.getcwd() + "/DASP/task_info/{}/topology.txt".format(self.DAPPname)
+        path = f"{os.getcwd()}/Dapp/{self.DAPPname}/topology.json"
         path = path.replace('\\', '/') 
+        # 如果没有就用基本拓扑
+        if not os.path.exists(path):
+            path = os.getcwd() + "/Dapp/Base/topology.json"
+            path = path.replace('\\', '/') 
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
         for ele in js:

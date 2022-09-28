@@ -9,7 +9,7 @@ os.chdir('/home/pi/yanhu')
 import system
 if __name__ == '__main__':
     time.sleep(2)
-    path = "/home/pi/yanhu/DASP/task_info/system/binding.csv"
+    path = "/home/pi/yanhu/DASP/Dapp/Base/binding.csv"
     with open(path,'r')as f:
         data = csv.reader(f)
         idiplist = []
@@ -34,7 +34,7 @@ if __name__ == '__main__':
         adjID = []
         datalist = []
         adjDirection = []
-        path = "/home/pi/yanhu/DASP/task_info/system/topology.txt"
+        path = "/home/pi/yanhu/DASP/Dapp/Base/topology.json"
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
         for ele in js:

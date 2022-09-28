@@ -401,7 +401,7 @@ class TaskServer(BaseServer):
         """
         启动开机自启动任务
         """
-        path = os.getcwd() + "/DASP/task_info/system/autostart.csv"
+        path = os.getcwd() + "/Dapp/Base/autostart.csv"
         with open(path,'r',encoding='utf-8-sig')as f:
             data = csv.reader(f)
             dapp_autostart = []
