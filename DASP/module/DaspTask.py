@@ -84,7 +84,7 @@ class Task(DaspCommon):
         """
         # 加载question文件
         try:
-            question = importlib.import_module("DASP.task_info.{}.question".format(self.DAPPname))
+            question = importlib.import_module("Dapp.{}.question".format(self.DAPPname))
             question = importlib.reload(question)
             self.taskfunc = question.taskFunction
         except Exception as e:
