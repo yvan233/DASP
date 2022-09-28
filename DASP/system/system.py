@@ -28,7 +28,7 @@ class Server(object):
         self.taskServerThread = threading.Thread(target=taskserver.run,args=())
         self.systemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
 
-        for _,thread in enumerate(self.CommServerThread):
+        for _,thread in enumerate(self.commServerThread):
             thread.start()
         self.taskServerThread.start()
         self.systemTaskThread.start()
