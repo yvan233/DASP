@@ -223,12 +223,6 @@ class BaseServer(DaspCommon):
         """
         self.sendtoGUIbase(info, "RunData", DappName)
 
-    def sendEndDatatoGUI(self, info, DappName = "system"):
-        """
-        通过UDP的形式将结束信息发送至GUI
-        """
-        self.sendtoGUIbase(info, "EndData", DappName)
-
     def sendFlagtoGUI(self, info, DappName = "system"):
         """
         通过UDP的形式将运行状态发送至GUI  
@@ -298,58 +292,8 @@ class TaskServer(BaseServer):
         self.sendRunDatatoGUI("接收任务请求",name)
         task = Task(name)
         task.load()
+        task.startCommPattern()
         BaseServer.TaskDict[name] = task
-
-        # 建立通信树
-        sum = 0
-        for ele in reversed(task.taskIPlist):
-            if ele:
-                if self.connect(ele[4], name) == "Communication Succeeded":
-                    sum += 1
-                    
-        if(sum == 0): task.treeFlag = 1   #只有一个节点的情况
-        while (task.treeFlag == 0): {time.sleep(0.01)}
-        self.sendRunDatatoGUI("通信树建立完成",name)
-
-        #启动任务
-        self.Forward2childID(jdata,name)
-        task.load_debuginfo(DebugMode = jdata["DebugMode"], 
-            DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
-        task.taskBeginFlag = 1
-        self.sendFlagtoGUI(2,name)
-
-        if self.ResultThreadsFlag == 0: #启动计算结果转发线程
-            self.ResultThreads = threading.Thread(target=self.forwardResult,args=())
-            self.ResultThreads.start()
-            self.ResultThreadsFlag = 1
-
-    def forwardResult(self):
-        """
-        根节点等待所有任务的数据收集结束标志，随后将计算结果转发到GUI界面
-        """
-        while 1:
-            time.sleep(0.1)
-            for key in BaseServer.TaskDict:
-                if BaseServer.TaskDict[key].dataEndFlag == 1:
-                    # time.sleep(1)   # 防止结果显示超前其他节点
-                    BaseServer.TaskDict[key].sendDatatoGUI("任务数据收集完毕")
-                    info = []
-                    content = ""
-                    Que = BaseServer.TaskDict[key].resultinfoQue
-                    for i in range(len(Que)):
-                        if Que[i]["info"]:
-                            info.append({})
-                            info[-1]["ID"] = Que[i]["id"]
-                            info[-1]["value"] = str(Que[i]["info"]["value"])
-                    
-                    infojson = json.dumps(info, indent=2)  #格式化输出，更便于查看
-                    content =  "Nodes number:{}\nInfo:{}\n\n".format(len(Que), infojson)
-                    self.sendEndDatatoGUI(content,BaseServer.TaskDict[key].DappName)
-                    self.sendFlagtoGUI(0,BaseServer.TaskDict[key].DappName)
-                    BaseServer.TaskDict[key].taskEndFlag = 0
-                    BaseServer.TaskDict[key].dataEndFlag = 0
-                    BaseServer.TaskDict[key].resultinfoQue = []
-                    BaseServer.TaskDict[key].resultinfo = {}
 
     def pausetask(self, jdata):
         """
@@ -393,15 +337,14 @@ class TaskServer(BaseServer):
 
             if i == 1:  
                 # 第一轮开启系统自启动任务进程
-                # self.startthreads = threading.Thread(target=self.autostarttask, args=())
-                # self.startthreads.start()
+                self.startthreads = threading.Thread(target=self.autostarttask, args=())
+                self.startthreads.start()
 
-                # 执行alst算法
-                task = Task("ALST")
-                task.load()
-                task.reset()
-                task.findleader()
-                BaseServer.TaskDict["ALST"] = task
+                # # 执行alst算法
+                # task = Task("ALST")
+                # task.load()
+                # task.startCommPattern()
+                # BaseServer.TaskDict["ALST"] = task
 
             self.sendRunDatatoGUI("系统第{}次自检：当前邻居节点：{}".format(i,str(DaspCommon.adjID)))
             time.sleep(SYSTEMSETTIME)
@@ -430,7 +373,7 @@ class TaskServer(BaseServer):
                 ## 如果当前节点在任务中
                 if DaspCommon.nodeID in BaseServer.TaskDict[name].taskID:
                     # self.sendRunDatatoGUI("寻找leader节点",name)
-                    BaseServer.TaskDict[name].Findleader()
+                    BaseServer.TaskDict[name].startCommPattern()
                     while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)
                     if BaseServer.TaskDict[name].leader == DaspCommon.nodeID:
                         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -497,8 +440,8 @@ class CommServer(BaseServer):
                 elif jdata["key"] == "OK":
                     self.respondOK(jdata)
 
-                elif jdata["key"] == "newtask":
-                    self.respondNewTask(jdata)
+                elif jdata["key"] == "starttask":
+                    self.respondStartTask(jdata)
 
                 elif jdata["key"] == "shutdowntask":
                     self.respondShutDownTask(jdata)
@@ -515,8 +458,8 @@ class CommServer(BaseServer):
                 elif jdata["key"] == "questionData":
                     self.respondQuestionData(jdata)
                     
-                elif jdata["key"] == "SendData":
-                    self.respondSendData(jdata)
+                elif jdata["key"] == "AsynchData":
+                    self.respondAsynchData(jdata)
 
                 elif jdata["key"] == "RootData":
                     self.respondRootData(jdata)
@@ -631,14 +574,17 @@ class CommServer(BaseServer):
             for i in range(len(BaseServer.TaskDict[name].CreateTreeChildFlag)):
                 BaseServer.TaskDict[name].CreateTreeChildFlag[i] = 0
 
-    def respondNewTask(self, jdata):
+    def respondStartTask(self, jdata):
         """
         回应新任务信号，广播子节点启动任务信号，启动任务DAPP
         """
         name = (jdata["DappName"])
+        task = BaseServer.TaskDict[name]
+        while (task.treeFlag == 0): 
+            time.sleep(0.01)
         self.Forward2childID(jdata, name)
-        BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
-            DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+        # BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
+        #     DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         BaseServer.TaskDict[name].taskBeginFlag = 1
         
 
@@ -692,17 +638,19 @@ class CommServer(BaseServer):
         elif jdata["type"] == "value2":
             BaseServer.TaskDict[name].adjData_another[index] = jdata["data"]
 
-    def respondSendData(self, jdata):
+    def respondAsynchData(self, jdata):
         """
         回应任务发送数据信号，并存储数据
         """
         name = jdata["DappName"]
-        while(name not in BaseServer.TaskDict):time.sleep(0.01)
-        while(not hasattr(BaseServer.TaskDict[name],'loadflag')):time.sleep(0.01)
-        while(BaseServer.TaskDict[name].loadflag == 0):time.sleep(0.01)
-        
-        index = BaseServer.TaskDict[name].taskAdjID.index(jdata["id"])
-        BaseServer.TaskDict[name].adjData_asynch[index].put(jdata["data"])
+        if name not in BaseServer.TaskDict:
+            task = Task(name)
+            task.load()
+            task.startCommPattern()
+            BaseServer.TaskDict[name] = task
+        task = BaseServer.TaskDict[name]
+        index = task.taskAdjID.index(jdata["id"])
+        task.adjAsynchData[index].put(jdata["data"])
 
             
     def respondRootData(self, jdata):
