@@ -50,7 +50,6 @@ class Task(DaspCommon):
         taskBeginFlag: 任务启动标志
         taskEndFlag: 任务结束标志
         dataEndFlag: 根节点数据收集结束标志
-        CreateTreeChildFlag: 创建通信树子节点标志
         childDataEndFlag: 子节点数据收集结束标志   
         runFlag: 用于暂停的标志，threading.Event()
             .set()设置为True
@@ -150,7 +149,6 @@ class Task(DaspCommon):
 
             self.childID= []
             self.childDirection = []
-            self.CreateTreeChildFlag = []
             self.adjData = []
             self.adjAsynchData = []
             self.adjData_another= []

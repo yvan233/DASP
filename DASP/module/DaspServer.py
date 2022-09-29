@@ -111,28 +111,6 @@ class BaseServer(DaspCommon):
             "applydirection": direction
         }
         self.send(adjID, data)
-
-    def connect(self, adjID, DappName):
-        """
-        发送连接请求
-        如果没连上则改邻居不在线；如果连接上并收到connect回应，则加入子节点中
-        """
-        data = {
-            "key": "connect",
-            "id": DaspCommon.nodeID,
-            "DappName": DappName
-        }
-
-        returnflag = self.send(adjID, data)
-        if returnflag == "Communication Succeeded":
-            headPack,jres = self.recv_length(DaspCommon.adjSocket[adjID])
-            if jres['key'] == 'connect':
-                BaseServer.TaskDict[DappName].childID.append(jres["id"])
-                indext = DaspCommon.adjID.index(jres["id"])
-                BaseServer.TaskDict[DappName].childDirection.append(self.adjDirection[indext])
-                BaseServer.TaskDict[DappName].CreateTreeChildFlag.append(0)
-                BaseServer.TaskDict[DappName].childData.append([])
-        return returnflag
         
     def send(self,id,data):
         """
@@ -434,12 +412,6 @@ class CommServer(BaseServer):
                 if jdata["key"] == "ping":
                     self.respondPing(jdata)
 
-                elif jdata["key"] == "connect":
-                    self.respondConnect(conn, jdata)
-                    
-                elif jdata["key"] == "OK":
-                    self.respondOK(jdata)
-
                 elif jdata["key"] == "starttask":
                     self.respondStartTask(jdata)
 
@@ -501,78 +473,6 @@ class CommServer(BaseServer):
             else:
                 info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["applydirection"]))
                 self.sendRunDatatoGUI(info)
-        
-    def respondConnect(self, conn, jdata):
-        """
-        回应连接请求
-        如果在通信树中则发送回已连接消息
-        如果不在通信树中则新建一个Task实例并加入通信树，并转发连接请求
-        加入通信树后如果是叶子节点向父节点发送OK信号
-        """
-        name = jdata["DappName"]
-        # 如果当前节点已经在通信树中，则发回connect消息
-        if name in BaseServer.TaskDict:
-            if BaseServer.TaskDict[name].commTreeFlag == 1:
-                data = {
-                    "key": "connected",
-                    "id": DaspCommon.nodeID,
-                    "DappName": name
-                }
-                self.sendall_length(conn, data)
-                return 0
-
-        # 如果当前节点不在通信树中，则加入通信树
-        BaseServer.TaskDict[name] = Task(name)
-        BaseServer.TaskDict[name].load()
-        BaseServer.TaskDict[name].parentID = jdata["id"]
-        indext = DaspCommon.adjID.index(jdata["id"])
-        BaseServer.TaskDict[name].parentDirection = DaspCommon.adjDirection[indext]
-        data = {
-            "key": "connect",
-            "id": DaspCommon.nodeID,
-            "DappName": name
-        }
-        self.sendall_length(conn, data)
-        
-        for ele in reversed(BaseServer.TaskDict[name].taskIPlist):
-            if ele:
-                if ele[4] != BaseServer.TaskDict[name].parentID:
-                    self.connect(ele[4], name)
-
-        #如果是叶子结点
-        if len(BaseServer.TaskDict[name].childID) == 0:
-            data = {
-                "key": "OK",
-                "id": DaspCommon.nodeID,
-                "DappName": name
-            }
-            self.send(BaseServer.TaskDict[name].parentID, data=data)
-            for i in range(len(BaseServer.TaskDict[name].CreateTreeChildFlag)):
-                BaseServer.TaskDict[name].CreateTreeChildFlag[i] = 0
-
-    def respondOK(self, jdata):
-        """
-        回应OK信号，如果所有子节点都OK则向父节点发送OK信号
-        如果自己是根节点则通信树建立完毕
-        """
-        name = jdata["DappName"]
-        data = {
-            "key": "OK",
-            "id": DaspCommon.nodeID,
-            "DappName": name
-        }
-        for i in range(len(BaseServer.TaskDict[name].childID)):
-            if BaseServer.TaskDict[name].childID[i] == jdata["id"]:
-                BaseServer.TaskDict[name].CreateTreeChildFlag[i] = 1
-
-        if all(BaseServer.TaskDict[name].CreateTreeChildFlag):
-            if BaseServer.TaskDict[name].parentID != DaspCommon.nodeID:
-                self.send(BaseServer.TaskDict[name].parentID, data=data)
-            else:
-                BaseServer.TaskDict[name].treeFlag = 1
-                print ("The communication tree has been constructed!")
-            for i in range(len(BaseServer.TaskDict[name].CreateTreeChildFlag)):
-                BaseServer.TaskDict[name].CreateTreeChildFlag[i] = 0
 
     def respondStartTask(self, jdata):
         """
