@@ -112,7 +112,7 @@ class BaseServer(DaspCommon):
         }
         self.send(adjID, data)
 
-    def connect(self, adjID, DAPPname):
+    def connect(self, adjID, DappName):
         """
         发送连接请求
         如果没连上则改邻居不在线；如果连接上并收到connect回应，则加入子节点中
@@ -120,18 +120,18 @@ class BaseServer(DaspCommon):
         data = {
             "key": "connect",
             "id": DaspCommon.nodeID,
-            "DAPPname": DAPPname
+            "DappName": DappName
         }
 
         returnflag = self.send(adjID, data)
         if returnflag == "Communication Succeeded":
             headPack,jres = self.recv_length(DaspCommon.adjSocket[adjID])
             if jres['key'] == 'connect':
-                BaseServer.TaskDict[DAPPname].sonID.append(jres["id"])
+                BaseServer.TaskDict[DappName].childID.append(jres["id"])
                 indext = DaspCommon.adjID.index(jres["id"])
-                BaseServer.TaskDict[DAPPname].sonDirection.append(self.adjDirection[indext])
-                BaseServer.TaskDict[DAPPname].CreateTreeSonFlag.append(0)
-                BaseServer.TaskDict[DAPPname].sonData.append([])
+                BaseServer.TaskDict[DappName].childDirection.append(self.adjDirection[indext])
+                BaseServer.TaskDict[DappName].CreateTreeChildFlag.append(0)
+                BaseServer.TaskDict[DappName].childData.append([])
         return returnflag
         
     def send(self,id,data):
@@ -196,18 +196,18 @@ class BaseServer(DaspCommon):
                 time.sleep(30)
         print ("与邻居节点{0}连接失败".format(id))
         self.deleteadjID(id)
-        self.deleteTaskadjID(id)
+        self.deletetaskAdjID(id)
         self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
         return id
 
-    def Forward2sonID(self, jdata, DAPPname):
+    def Forward2childID(self, jdata, DappName):
         """
         将json消息转发给子节点
         """
-        if BaseServer.TaskDict[DAPPname].sonID:
-            for ele in reversed(BaseServer.TaskDict[DAPPname].TaskIPlist):
+        if BaseServer.TaskDict[DappName].childID:
+            for ele in reversed(BaseServer.TaskDict[DappName].taskIPlist):
                 if ele:
-                    if ele[4] in BaseServer.TaskDict[DAPPname].sonID:
+                    if ele[4] in BaseServer.TaskDict[DappName].childID:
                         self.send(ele[4], data=jdata)
 
     def deleteTaskDictadjID(self, id):  
@@ -215,28 +215,28 @@ class BaseServer(DaspCommon):
         删除本节点的任务和指定id邻居节点的所有连接(任务字典中的变量)
         """
         for key in BaseServer.TaskDict:
-            BaseServer.TaskDict[key].deleteTaskadjID(id)       
+            BaseServer.TaskDict[key].deletetaskAdjID(id)       
 
-    def sendRunDatatoGUI(self, info, DAPPname = "system"):
+    def sendRunDatatoGUI(self, info, DappName = "system"):
         """
         通过UDP的形式将运行信息发送至GUI
         """
-        self.sendtoGUIbase(info, "RunData", DAPPname)
+        self.sendtoGUIbase(info, "RunData", DappName)
 
-    def sendEndDatatoGUI(self, info, DAPPname = "system"):
+    def sendEndDatatoGUI(self, info, DappName = "system"):
         """
         通过UDP的形式将结束信息发送至GUI
         """
-        self.sendtoGUIbase(info, "EndData", DAPPname)
+        self.sendtoGUIbase(info, "EndData", DappName)
 
-    def sendFlagtoGUI(self, info, DAPPname = "system"):
+    def sendFlagtoGUI(self, info, DappName = "system"):
         """
         通过UDP的形式将运行状态发送至GUI  
         #0 未启动
         #1 暂停中
         #2 运行中
         """
-        self.sendtoGUIbase(info, "RunFlag", DAPPname)
+        self.sendtoGUIbase(info, "RunFlag", DappName)
 
 class TaskServer(BaseServer):
     """外部交互服务器
@@ -294,7 +294,7 @@ class TaskServer(BaseServer):
         """
         启动DAPP，加载任务、建立通信树、启动任务、启动数据转发线程
         """
-        name = jdata["DAPPname"]
+        name = jdata["DappName"]
         self.sendRunDatatoGUI("接收任务请求",name)
         task = Task(name)
         task.load()
@@ -302,7 +302,7 @@ class TaskServer(BaseServer):
 
         # 建立通信树
         sum = 0
-        for ele in reversed(task.TaskIPlist):
+        for ele in reversed(task.taskIPlist):
             if ele:
                 if self.connect(ele[4], name) == "Communication Succeeded":
                     sum += 1
@@ -312,7 +312,7 @@ class TaskServer(BaseServer):
         self.sendRunDatatoGUI("通信树建立完成",name)
 
         #启动任务
-        self.Forward2sonID(jdata,name)
+        self.Forward2childID(jdata,name)
         task.load_debuginfo(DebugMode = jdata["DebugMode"], 
             DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         task.taskBeginFlag = 1
@@ -344,8 +344,8 @@ class TaskServer(BaseServer):
                     
                     infojson = json.dumps(info, indent=2)  #格式化输出，更便于查看
                     content =  "Nodes number:{}\nInfo:{}\n\n".format(len(Que), infojson)
-                    self.sendEndDatatoGUI(content,BaseServer.TaskDict[key].DAPPname)
-                    self.sendFlagtoGUI(0,BaseServer.TaskDict[key].DAPPname)
+                    self.sendEndDatatoGUI(content,BaseServer.TaskDict[key].DappName)
+                    self.sendFlagtoGUI(0,BaseServer.TaskDict[key].DappName)
                     BaseServer.TaskDict[key].taskEndFlag = 0
                     BaseServer.TaskDict[key].dataEndFlag = 0
                     BaseServer.TaskDict[key].resultinfoQue = []
@@ -355,8 +355,8 @@ class TaskServer(BaseServer):
         """
         暂停DAPP
         """
-        name = (jdata["DAPPname"])
-        self.Forward2sonID(jdata, name)
+        name = (jdata["DappName"])
+        self.Forward2childID(jdata, name)
         BaseServer.TaskDict[name].pause()
         self.sendFlagtoGUI(1,name)
 
@@ -364,8 +364,8 @@ class TaskServer(BaseServer):
         """
         恢复DAPP
         """
-        name = (jdata["DAPPname"])
-        self.Forward2sonID(jdata, name)
+        name = (jdata["DappName"])
+        self.Forward2childID(jdata, name)
         BaseServer.TaskDict[name].resume()
         self.sendFlagtoGUI(2,name)
 
@@ -373,8 +373,8 @@ class TaskServer(BaseServer):
         """
         停止DAPP
         """
-        name = jdata["DAPPname"]
-        self.Forward2sonID(jdata,name)
+        name = jdata["DappName"]
+        self.Forward2childID(jdata,name)
         BaseServer.TaskDict[name].shutdown()
         self.sendFlagtoGUI(0,name)
 
@@ -400,7 +400,7 @@ class TaskServer(BaseServer):
                 task = Task("ALST")
                 task.load()
                 task.reset()
-                task.Findleader()
+                task.findleader()
                 BaseServer.TaskDict["ALST"] = task
 
             self.sendRunDatatoGUI("系统第{}次自检：当前邻居节点：{}".format(i,str(DaspCommon.adjID)))
@@ -428,7 +428,7 @@ class TaskServer(BaseServer):
                 BaseServer.TaskDict[name].load()
                 BaseServer.TaskDict[name].reset()
                 ## 如果当前节点在任务中
-                if DaspCommon.nodeID in BaseServer.TaskDict[name].TaskID:
+                if DaspCommon.nodeID in BaseServer.TaskDict[name].taskID:
                     # self.sendRunDatatoGUI("寻找leader节点",name)
                     BaseServer.TaskDict[name].Findleader()
                     while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)
@@ -437,7 +437,7 @@ class TaskServer(BaseServer):
                         s.connect((self.host, self.port))
                         data = {
                             "key": "newtask",
-                            "DAPPname": ele[0],
+                            "DappName": ele[0],
                             "DebugMode": False, 
                             "DatabaseInfo": [],
                             "ObservedVariable": []
@@ -450,7 +450,7 @@ class TaskServer(BaseServer):
                 s.connect((self.host, self.port))
                 data = {
                     "key": "newtask",
-                    "DAPPname": ele[0],
+                    "DappName": ele[0],
                     "DebugMode": False, 
                     "DatabaseInfo": [],
                     "ObservedVariable": []
@@ -489,46 +489,46 @@ class CommServer(BaseServer):
             if headPack[0] == 1:
                 #建立通信树
                 if jdata["key"] == "ping":
-                    self.RespondPing(jdata)
+                    self.respondPing(jdata)
 
                 elif jdata["key"] == "connect":
-                    self.RespondConnect(conn, jdata)
+                    self.respondConnect(conn, jdata)
                     
                 elif jdata["key"] == "OK":
-                    self.RespondOK(jdata)
+                    self.respondOK(jdata)
 
                 elif jdata["key"] == "newtask":
-                    self.RespondNewTask(jdata)
+                    self.respondNewTask(jdata)
 
                 elif jdata["key"] == "shutdowntask":
-                    self.RespondShutDownTask(jdata)
+                    self.respondShutDownTask(jdata)
 
                 elif jdata["key"] == "pausetask":
-                    self.RespondPauseTask(jdata)
+                    self.respondPauseTask(jdata)
                 
                 elif jdata["key"] == "resumetask":
-                    self.RespondResumeTask(jdata)
+                    self.respondResumeTask(jdata)
 
                 elif jdata["key"] == "data":
-                    self.RespondData(jdata)
+                    self.respondData(jdata)
 
                 elif jdata["key"] == "questionData":
-                    self.RespondQuestionData(jdata)
+                    self.respondQuestionData(jdata)
                     
                 elif jdata["key"] == "SendData":
-                    self.RespondSendData(jdata)
+                    self.respondSendData(jdata)
 
                 elif jdata["key"] == "RootData":
-                    self.RespondRootData(jdata)
+                    self.respondRootData(jdata)
 
                 elif jdata["key"] == "DescendantData":
-                    self.RespondDescendantData(jdata)
+                    self.respondDescendantData(jdata)
 
                 elif jdata["key"] == "sync":
-                    self.RespondSync(jdata,1)
+                    self.respondSync(jdata,1)
 
                 elif jdata["key"] == "sync2":
-                    self.RespondSync(jdata,2)
+                    self.respondSync(jdata,2)
 
                 else:
                     info = "请不要直接访问通信服务器"
@@ -543,7 +543,7 @@ class CommServer(BaseServer):
             print(traceback.format_exc())
             self.sendRunDatatoGUI(traceback.format_exc())
 
-    def RespondPing(self, jdata):
+    def respondPing(self, jdata):
         """
         回应ping信号，如果发送的节点之前不在邻居节点中 且 申请方向未被占用，则加入网络
         """
@@ -559,21 +559,21 @@ class CommServer(BaseServer):
                 info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["applydirection"]))
                 self.sendRunDatatoGUI(info)
         
-    def RespondConnect(self, conn, jdata):
+    def respondConnect(self, conn, jdata):
         """
         回应连接请求
         如果在通信树中则发送回已连接消息
         如果不在通信树中则新建一个Task实例并加入通信树，并转发连接请求
         加入通信树后如果是叶子节点向父节点发送OK信号
         """
-        name = jdata["DAPPname"]
+        name = jdata["DappName"]
         # 如果当前节点已经在通信树中，则发回connect消息
         if name in BaseServer.TaskDict:
             if BaseServer.TaskDict[name].commTreeFlag == 1:
                 data = {
                     "key": "connected",
                     "id": DaspCommon.nodeID,
-                    "DAPPname": name
+                    "DappName": name
                 }
                 self.sendall_length(conn, data)
                 return 0
@@ -587,125 +587,125 @@ class CommServer(BaseServer):
         data = {
             "key": "connect",
             "id": DaspCommon.nodeID,
-            "DAPPname": name
+            "DappName": name
         }
         self.sendall_length(conn, data)
         
-        for ele in reversed(BaseServer.TaskDict[name].TaskIPlist):
+        for ele in reversed(BaseServer.TaskDict[name].taskIPlist):
             if ele:
                 if ele[4] != BaseServer.TaskDict[name].parentID:
                     self.connect(ele[4], name)
 
         #如果是叶子结点
-        if len(BaseServer.TaskDict[name].sonID) == 0:
+        if len(BaseServer.TaskDict[name].childID) == 0:
             data = {
                 "key": "OK",
                 "id": DaspCommon.nodeID,
-                "DAPPname": name
+                "DappName": name
             }
             self.send(BaseServer.TaskDict[name].parentID, data=data)
-            for i in range(len(BaseServer.TaskDict[name].CreateTreeSonFlag)):
-                BaseServer.TaskDict[name].CreateTreeSonFlag[i] = 0
+            for i in range(len(BaseServer.TaskDict[name].CreateTreeChildFlag)):
+                BaseServer.TaskDict[name].CreateTreeChildFlag[i] = 0
 
-    def RespondOK(self, jdata):
+    def respondOK(self, jdata):
         """
         回应OK信号，如果所有子节点都OK则向父节点发送OK信号
         如果自己是根节点则通信树建立完毕
         """
-        name = jdata["DAPPname"]
+        name = jdata["DappName"]
         data = {
             "key": "OK",
             "id": DaspCommon.nodeID,
-            "DAPPname": name
+            "DappName": name
         }
-        for i in range(len(BaseServer.TaskDict[name].sonID)):
-            if BaseServer.TaskDict[name].sonID[i] == jdata["id"]:
-                BaseServer.TaskDict[name].CreateTreeSonFlag[i] = 1
+        for i in range(len(BaseServer.TaskDict[name].childID)):
+            if BaseServer.TaskDict[name].childID[i] == jdata["id"]:
+                BaseServer.TaskDict[name].CreateTreeChildFlag[i] = 1
 
-        if all(BaseServer.TaskDict[name].CreateTreeSonFlag):
+        if all(BaseServer.TaskDict[name].CreateTreeChildFlag):
             if BaseServer.TaskDict[name].parentID != DaspCommon.nodeID:
                 self.send(BaseServer.TaskDict[name].parentID, data=data)
             else:
                 BaseServer.TaskDict[name].treeFlag = 1
                 print ("The communication tree has been constructed!")
-            for i in range(len(BaseServer.TaskDict[name].CreateTreeSonFlag)):
-                BaseServer.TaskDict[name].CreateTreeSonFlag[i] = 0
+            for i in range(len(BaseServer.TaskDict[name].CreateTreeChildFlag)):
+                BaseServer.TaskDict[name].CreateTreeChildFlag[i] = 0
 
-    def RespondNewTask(self, jdata):
+    def respondNewTask(self, jdata):
         """
         回应新任务信号，广播子节点启动任务信号，启动任务DAPP
         """
-        name = (jdata["DAPPname"])
-        self.Forward2sonID(jdata, name)
+        name = (jdata["DappName"])
+        self.Forward2childID(jdata, name)
         BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
             DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         BaseServer.TaskDict[name].taskBeginFlag = 1
         
 
-    def RespondPauseTask(self, jdata):
+    def respondPauseTask(self, jdata):
         """
         回应暂停任务信号，广播子节点暂停任务信号，暂停任务DAPP
         """
-        name = (jdata["DAPPname"])
-        self.Forward2sonID(jdata, name)
+        name = (jdata["DappName"])
+        self.Forward2childID(jdata, name)
         BaseServer.TaskDict[name].pause()
 
-    def RespondResumeTask(self, jdata):
+    def respondResumeTask(self, jdata):
         """
         回应恢复任务信号，广播子节点恢复任务信号，恢复任务DAPP
         """
-        name = (jdata["DAPPname"])
-        self.Forward2sonID(jdata, name)
+        name = (jdata["DappName"])
+        self.Forward2childID(jdata, name)
         BaseServer.TaskDict[name].resume()
 
-    def RespondShutDownTask(self, jdata):
+    def respondShutDownTask(self, jdata):
         """
         回应结束任务信号，广播子节点结束任务信号，结束任务DAPP
         """
-        name = (jdata["DAPPname"])
-        self.Forward2sonID(jdata, name)
+        name = (jdata["DappName"])
+        self.Forward2childID(jdata, name)
         BaseServer.TaskDict[name].shutdown()
 
-    def RespondData(self, jdata):
+    def respondData(self, jdata):
         """
         回应子节点任务结束信号，并收集数据
         """
-        name = jdata["DAPPname"]
-        index = BaseServer.TaskDict[name].sonID.index(jdata["id"])
-        BaseServer.TaskDict[name].sonData[index] = jdata["data"]
-        if all(BaseServer.TaskDict[name].sonData):
-            BaseServer.TaskDict[name].sonDataEndFlag = 1
+        name = jdata["DappName"]
+        index = BaseServer.TaskDict[name].childID.index(jdata["id"])
+        BaseServer.TaskDict[name].childData[index] = jdata["data"]
+        if all(BaseServer.TaskDict[name].childData):
+            BaseServer.TaskDict[name].childDataEndFlag = 1
 
-    def RespondQuestionData(self, jdata):
+    def respondQuestionData(self, jdata):
         """
         回应任务发送数据信号，并存储数据
         """
-        name = jdata["DAPPname"]
+        name = jdata["DappName"]
         while(name not in BaseServer.TaskDict):time.sleep(0.01)
         while(not hasattr(BaseServer.TaskDict[name],'loadflag')):time.sleep(0.01)
         while(BaseServer.TaskDict[name].loadflag == 0):time.sleep(0.01)
         
-        index = BaseServer.TaskDict[name].TaskadjID.index(jdata["id"])
+        index = BaseServer.TaskDict[name].taskAdjID.index(jdata["id"])
         if jdata["type"] == "value":
             BaseServer.TaskDict[name].adjData[index] = jdata["data"]
 
         elif jdata["type"] == "value2":
             BaseServer.TaskDict[name].adjData_another[index] = jdata["data"]
 
-    def RespondSendData(self, jdata):
+    def respondSendData(self, jdata):
         """
         回应任务发送数据信号，并存储数据
         """
-        name = jdata["DAPPname"]
+        name = jdata["DappName"]
         while(name not in BaseServer.TaskDict):time.sleep(0.01)
         while(not hasattr(BaseServer.TaskDict[name],'loadflag')):time.sleep(0.01)
         while(BaseServer.TaskDict[name].loadflag == 0):time.sleep(0.01)
         
-        index = BaseServer.TaskDict[name].TaskadjID.index(jdata["id"])
+        index = BaseServer.TaskDict[name].taskAdjID.index(jdata["id"])
         BaseServer.TaskDict[name].adjData_asynch[index].put(jdata["data"])
 
             
-    def RespondRootData(self, jdata):
+    def respondRootData(self, jdata):
         """回应任务发送数据至根节点信号
 
         返回值：
@@ -713,7 +713,7 @@ class CommServer(BaseServer):
             path: 后代节点发送过来的路径
             recvtime: 接受到消息的时刻
         """
-        task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
+        task_cur = BaseServer.TaskDict[jdata["DappName"]]
         # 如果本节点是根节点则存储数据
         if task_cur.parentID == DaspCommon.nodeID:
             # 加入接收消息的时间，方便时间同步
@@ -723,14 +723,14 @@ class CommServer(BaseServer):
             jdata["path"].append(DaspCommon.nodeID)
             self.send(task_cur.parentID, jdata)
 
-    def RespondDescendantData(self, jdata):
+    def respondDescendantData(self, jdata):
         """回应任务发送数据至后代节点信号
 
         返回值：
             data: 根节点数据
             recvtime: 接受到消息的时刻
         """
-        task_cur = BaseServer.TaskDict[jdata["DAPPname"]]
+        task_cur = BaseServer.TaskDict[jdata["DappName"]]
         # 如果指定了路径
         if jdata["path"] != None: 
             if jdata["path"]:
@@ -741,18 +741,18 @@ class CommServer(BaseServer):
                 task_cur.rootData.put([jdata["data"], datetime.now()])                
         # 否则进行广播
         else:
-            self.Forward2sonID(jdata, jdata["DAPPname"])
+            self.Forward2childID(jdata, jdata["DappName"])
             task_cur.rootData.put([jdata["data"], datetime.now()])
 
-    def RespondSync(self, jdata, type):
+    def respondSync(self, jdata, type):
         """
         回应同步请求，并改变相应标志位
         """
-        name = jdata["DAPPname"]
+        name = jdata["DappName"]
         while(name not in BaseServer.TaskDict):time.sleep(0.01)
         while(not hasattr(BaseServer.TaskDict[name],'loadflag')):time.sleep(0.01)
         while(BaseServer.TaskDict[name].loadflag == 0):time.sleep(0.01)
-        index = BaseServer.TaskDict[name].TaskadjID.index(jdata["id"])
+        index = BaseServer.TaskDict[name].taskAdjID.index(jdata["id"])
         if type == 1:
             BaseServer.TaskDict[name].adjSyncStatus[index] = 1
         else:

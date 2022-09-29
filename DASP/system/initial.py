@@ -13,7 +13,6 @@ if __name__ == '__main__':
     adjDirection = []
     localIP = socket.gethostbyname(socket.gethostname())
     path = os.getcwd() + "/Dapp/Base/topology.json"
-    path = path.replace('\\', '/')  
     text = codecs.open(path, 'r', 'utf-8').read()
     js = json.loads(text)
     for ele in js:

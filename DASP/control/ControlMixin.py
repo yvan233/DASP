@@ -68,7 +68,7 @@ class ControlMixin():
     #     self.sendall_length(s, data)
     #     s.close()
 
-    def startTask(self, DAPPname, nodeID):
+    def startTask(self, DappName, nodeID):
         '''
         以nodeID为根节点运行指定名称的DAPP
         '''
@@ -76,7 +76,7 @@ class ControlMixin():
         s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         data = {
             "key": "newtask",
-            "DAPPname": DAPPname,
+            "DappName": DappName,
             "DebugMode": False, 
             "DatabaseInfo": [],
             "ObservedVariable": []
@@ -84,15 +84,15 @@ class ControlMixin():
         self.sendall_length(s, data)
         s.close()
 
-    def startTaskList(self, DAPPnamelist, nodeID):
+    def startTaskList(self, DappNamelist, nodeID):
         '''
         以nodeID为根节点运行指定名称的DAPP列表
         '''
-        if DAPPnamelist:
-            for ele in DAPPnamelist:
+        if DappNamelist:
+            for ele in DappNamelist:
                 self.StartTask(ele, nodeID)
 
-    def startTaskDebug(self, DAPPname, nodeID, DatabaseInfo = Databaseinfo, ObservedVariable = []):
+    def startTaskDebug(self, DappName, nodeID, DatabaseInfo = Databaseinfo, ObservedVariable = []):
         '''
         以nodeID为根节点调试模式运行指定名称的DAPP
         '''
@@ -100,7 +100,7 @@ class ControlMixin():
         s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         data = {
             "key": "newtask",
-            "DAPPname": DAPPname,
+            "DappName": DappName,
             "DebugMode": True, 
             "DatabaseInfo": DatabaseInfo,
             "ObservedVariable": ObservedVariable
@@ -108,7 +108,7 @@ class ControlMixin():
         self.sendall_length(s, data)
         s.close()
 
-    def pauseTask(self, DAPPname, nodeID):
+    def pauseTask(self, DappName, nodeID):
         '''
         以nodeID为根节点暂停运行指定名称的DAPP
         '''
@@ -116,12 +116,12 @@ class ControlMixin():
         s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         data = {
             "key": "pausetask",
-            "DAPPname": DAPPname
+            "DappName": DappName
         }
         self.sendall_length(s, data)
         s.close()
 
-    def resumeTask(self, DAPPname, nodeID):
+    def resumeTask(self, DappName, nodeID):
         '''
         以nodeID为根节点恢复运行指定名称的DAPP
         '''
@@ -129,12 +129,12 @@ class ControlMixin():
         s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         data = {
             "key": "resumetask",
-            "DAPPname": DAPPname
+            "DappName": DappName
         }
         self.sendall_length(s, data)
         s.close()
 
-    def stopTask(self, DAPPname, nodeID):
+    def stopTask(self, DappName, nodeID):
         '''
         以nodeID为根节点停止运行指定名称的DAPP
         '''
@@ -142,7 +142,7 @@ class ControlMixin():
         s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         data = {
             "key": "shutdowntask",
-            "DAPPname": DAPPname
+            "DappName": DappName
         }
         self.sendall_length(s, data)
         s.close()

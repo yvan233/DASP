@@ -20,8 +20,8 @@ for i in range(nodeNum):
     nodelist.append(node)
 
 time.sleep(2)
-DAPPname = "ALST"
-print("开始任务："+DAPPname)
-controlMixin.startTask(DAPPname,rootnode)
+DappName = "ALST"
+print("开始任务："+DappName)
+controlMixin.startTask(DappName,rootnode)
 
 moniter.wait()

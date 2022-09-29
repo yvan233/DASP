@@ -91,7 +91,7 @@ class DaspCommon():
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 30)
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 10)
 
-    def sendtoGUIbase(self, info, key, DAPPname):
+    def sendtoGUIbase(self, info, key, DappName):
         """
         通过UDP的形式将信息发送至GUI
         """
@@ -101,7 +101,7 @@ class DaspCommon():
             data = {
                 "key": key,
                 "id": DaspCommon.nodeID,
-                "DAPPname":DAPPname,
+                "DappName":DappName,
                 "info": info
             }
             sock.sendto(json.dumps(data).encode('utf-8'), addr)
