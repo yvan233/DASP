@@ -7,7 +7,7 @@ from DASP.module import Node,Moniter
 from DASP.control import ControlMixin
 
 nodeNum = 9  # 节点数量
-rootnode = "room_1" # 根节点ID
+startNode = "room_1" # 起始节点ID
 nodelist = [] # 节点进程列表
 controlMixin = ControlMixin("Pc") # 控制函数集合
 
@@ -23,18 +23,18 @@ time.sleep(2)
 
 DappName = "testpause"
 print("开始任务")
-controlMixin.startTask(DappName,rootnode)
+controlMixin.startTask(DappName,startNode)
 
 time.sleep(5)
 print("发送pause信号")
-controlMixin.pauseTask(DappName,rootnode)
+controlMixin.pauseTask(DappName,startNode)
 
 time.sleep(5)
 print("发送resume信号")
-controlMixin.resumeTask(DappName,rootnode)
+controlMixin.resumeTask(DappName,startNode)
 
 time.sleep(5)
 print("发送终止信号")
-controlMixin.stopTask(DappName,rootnode)
+controlMixin.stopTask(DappName,startNode)
 
 moniter.wait()

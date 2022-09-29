@@ -648,6 +648,12 @@ class CommServer(BaseServer):
             task.load()
             task.startCommPattern()
             BaseServer.TaskDict[name] = task
+        elif BaseServer.TaskDict[name].commTreeFlag == 0:
+            task = Task(name)
+            task.load()
+            task.startCommPattern()
+            BaseServer.TaskDict[name] = task
+
         task = BaseServer.TaskDict[name]
         index = task.taskAdjID.index(jdata["id"])
         task.adjAsynchData[index].put(jdata["data"])
