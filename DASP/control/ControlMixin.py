@@ -51,35 +51,15 @@ class ControlMixin():
         headPack = struct.pack(self.headformat , *header)
         socket.sendall(headPack+body.encode())
 
-    # def runSystem(self, nodeID):
-    #     '''
-    #     以nodeID为根节点启动系统，运行系统自检算法
-    #     '''
-    #     GUIinfo = [self.localIP, 50000]
-    #     data = {
-    #         "key": "startsystem",
-    #         "GUIinfo": GUIinfo,
-    #         "DebugMode": False, 
-    #         "DatabaseInfo": [],
-    #         "ObservedVariable": []
-    #     }
-    #     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #     s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
-    #     self.sendall_length(s, data)
-    #     s.close()
-
     def startTask(self, DappName, nodeID):
         '''
-        以nodeID为根节点运行指定名称的DAPP
+        以nodeID为发起节点运行指定名称的DAPP
         '''
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         data = {
             "key": "newtask",
-            "DappName": DappName,
-            "DebugMode": False, 
-            "DatabaseInfo": [],
-            "ObservedVariable": []
+            "DappName": DappName
         }
         self.sendall_length(s, data)
         s.close()
@@ -90,23 +70,7 @@ class ControlMixin():
         '''
         if DappNamelist:
             for ele in DappNamelist:
-                self.StartTask(ele, nodeID)
-
-    def startTaskDebug(self, DappName, nodeID, DatabaseInfo = Databaseinfo, ObservedVariable = []):
-        '''
-        以nodeID为根节点调试模式运行指定名称的DAPP
-        '''
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
-        data = {
-            "key": "newtask",
-            "DappName": DappName,
-            "DebugMode": True, 
-            "DatabaseInfo": DatabaseInfo,
-            "ObservedVariable": ObservedVariable
-        }
-        self.sendall_length(s, data)
-        s.close()
+                self.startTask(ele, nodeID)
 
     def pauseTask(self, DappName, nodeID):
         '''
@@ -144,23 +108,6 @@ class ControlMixin():
             "key": "shutdowntask",
             "DappName": DappName
         }
-        self.sendall_length(s, data)
-        s.close()
-
-    def reconnect(self, nodeID):
-        '''
-        使断开连接的nodeID重连到系统中
-        '''
-        GUIinfo = [self.localIP, 50000]
-        data = {
-            "key": "restart",
-            "GUIinfo": GUIinfo,
-            "DebugMode": False, 
-            "DatabaseInfo": [],
-            "ObservedVariable": []
-        }
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.IPDict[nodeID], self.TaskPortDict[nodeID]))
         self.sendall_length(s, data)
         s.close()
 
