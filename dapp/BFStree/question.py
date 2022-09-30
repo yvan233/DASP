@@ -32,7 +32,6 @@ def taskFunction(self,id,adjDirection,datalist):
 
     # 循环次数为网络规模的2倍
     for m in range(20):
-            
         adjData = self.transmitData(adjDirection,data)       # 同步通信函数
         adjData_fb = adjData[1]                              # 获取邻居传输的数据
         adjDirection_fb = adjData[0]                         # 获取邻居的方向数组

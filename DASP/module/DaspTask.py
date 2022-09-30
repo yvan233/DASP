@@ -82,16 +82,6 @@ class Task(DaspCommon):
         """
         加载任务运行所需信息,启动run线程,等待任务启动标志
         """
-        # 加载question文件
-        try:
-            question = importlib.import_module(f"Dapp.{self.DappName}.question")
-            question = importlib.reload(question)
-            self.taskfunc = question.taskFunction
-        except Exception as e:
-            self.sendDatatoGUI("导入出错")
-            print(traceback.format_exc())
-            self.sendDatatoGUI(traceback.format_exc())
-
         # 加载topology文件
         ID = []
         AllAdjID = []
@@ -113,6 +103,26 @@ class Task(DaspCommon):
 
         ## 如果当前节点在任务中
         if DaspCommon.nodeID in self.taskID:
+            # 加载question文件
+            try:
+                question = importlib.import_module(f"Dapp.{self.DappName}.question")
+                question = importlib.reload(question)
+                self.taskfunc = question.taskFunction
+            except Exception as e:
+                self.sendDatatoGUI("导入出错")
+                print(traceback.format_exc())
+                self.sendDatatoGUI(traceback.format_exc())
+
+            # 加载debug信息
+            debugpath = f"{os.getcwd()}/Dapp/{self.DappName}/debug.json"
+            if not os.path.exists(debugpath):
+                self.load_debuginfo(DebugMode = False)
+            else:
+                text = codecs.open(debugpath, 'r', 'utf-8').read()
+                jdata = json.loads(text)
+                self.load_debuginfo(DebugMode = jdata["DebugMode"], 
+                    DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+
             order = ID.index(DaspCommon.nodeID)
             selfAdjID = AllAdjID[order]
             selfAdjDirection = AllAdjDirection[order]
@@ -188,14 +198,14 @@ class Task(DaspCommon):
             time.sleep(0.01)
             if self.taskBeginFlag == 1:
                 try:
-                    # if self.DebugMode:
-                    #     tablename = "{}_{}".format(self.DappName, self.nodeID)
-                    #     taskfunc = snoop(config = self.DatabaseInfo, db = self.DBname, tablename = tablename, \
-                    #         observelist = self.ObservedVariable)(self.taskfunc)
-                    #     self.sendDatatoGUI("启动调试模式，开始执行")
-                    # else:
-                    taskfunc = self.taskfunc
-                    self.sendDatatoGUI("开始执行")
+                    if self.DebugMode:
+                        tablename = "{}_{}".format(self.DappName, self.nodeID)
+                        taskfunc = snoop(config = self.DatabaseInfo, db = self.DBname, tablename = tablename, \
+                            observelist = self.ObservedVariable)(self.taskfunc)
+                        self.sendDatatoGUI("启动调试模式，开始执行")
+                    else:
+                        taskfunc = self.taskfunc
+                        self.sendDatatoGUI("开始执行")
                     print("DAPP:{} start".format(self.DappName))
                     value = taskfunc(self, DaspCommon.nodeID, self.taskAdjDirection, self.taskDatalist)
                     self.resultinfo["value"] = value
@@ -533,8 +543,6 @@ class Task(DaspCommon):
                 "DappName": self.DappName
             }
             self.forward2childID(data)
-            # self.load_debuginfo(DebugMode = jdata["DebugMode"], 
-            #     DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
             self.taskBeginFlag = 1
             self.forwardResult()
                 
