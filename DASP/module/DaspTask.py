@@ -10,7 +10,7 @@ import time
 import traceback
 
 from ..pysnooperdb.tracer import Tracer as snoop
-from . import DaspCommon
+from . import DaspCommon,TcpSocket
 
 class Task(DaspCommon):
     """任务类
@@ -339,15 +339,12 @@ class Task(DaspCommon):
             try:
                 for ele in DaspCommon.IPlist:
                     if ele[4] == id:
-                        host = ele[2]
+                        ip = ele[2]
                         port = ele[3]
                         break
-                print ("connecting to {}:{}".format(host,str(port)))
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.set_keep_alive(sock)
-                remote_ip = socket.gethostbyname(host)
-                sock.connect((remote_ip, port))
-                DaspCommon.adjSocket[id] = sock
+                print ("connecting to {}:{}".format(ip,str(port)))
+                remote_ip = socket.gethostbyname(ip)
+                DaspCommon.adjSocket[id] = TcpSocket(remote_ip,port)
             except Exception as e:
                 print ("与邻居节点{}连接失败".format(id))
                 self.deleteadjID(id)
@@ -356,7 +353,7 @@ class Task(DaspCommon):
 
         # 向相应的套接字发送消息
         try:
-            self.sendall_length(DaspCommon.adjSocket[id], data)
+            DaspCommon.adjSocket[id].sendall(data)
         except Exception as e:
             self.doDisconnect(id, data)
 
@@ -368,21 +365,20 @@ class Task(DaspCommon):
         
         for ele in DaspCommon.IPlist:
             if ele[4] == id:
-                host = ele[2]
+                ip = ele[2]
                 port = ele[3]
                 break
         # 失败后每隔30s共重连10次
         while times < 10:
             times += 1
+            if id in DaspCommon.adjSocket:
+                del DaspCommon.adjSocket[id]
             try:
-                print ("reconnecting to {}:{}, times:{}".format(host,str(port),times))
+                print ("reconnecting to {}:{}, times:{}".format(ip,str(port),times))
                 self.sendDatatoGUI("与邻居节点{}连接失败，第{}次重连中...".format(id,times))
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.set_keep_alive(sock)
-                remote_ip = socket.gethostbyname(host)
-                sock.connect((remote_ip, port))
-                DaspCommon.adjSocket[id] = sock
-                self.sendall_length(DaspCommon.adjSocket[id], data)
+                remote_ip = socket.gethostbyname(ip)
+                DaspCommon.adjSocket[id] = TcpSocket(remote_ip,port)
+                DaspCommon.adjSocket[id].sendall(data)
             except Exception as e:
                 time.sleep(30)
         print ("与邻居节点{0}连接失败".format(id))

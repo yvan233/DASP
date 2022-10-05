@@ -6,6 +6,77 @@ import socket
 import struct
 
 
+class TcpSocket():
+    headformat = "!2I"
+    headerSize = 8
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.set_keep_alive()
+        self.sock.settimeout(5)
+        self.sock.connect((self.ip, self.port))
+
+    def close(self):
+        self.sock.close()
+
+    def sendall(self, jsondata, methods = 1):
+        '''
+        为发送的json数据添加methods和length报头
+            POST: methods = 1
+            REFUSE: methods = 9
+        '''
+        body = json.dumps(jsondata)
+        header = [methods, body.__len__()]
+        headPack = struct.pack(TcpSocket.headformat , *header)
+        self.sock.sendall(headPack+body.encode())
+
+    @staticmethod
+    def recv(conn):
+        '''
+        循环接收数据，直到收完报头中length长度的数据
+        '''
+        dataBuffer = bytes()
+        while True:
+            data = conn.recv(1024)
+            # if data == b"":
+            #     break
+            if data:
+                dataBuffer += data
+                while True:
+                    if len(dataBuffer) < TcpSocket.headerSize:
+                        break
+                    # 读取包头
+                    headPack = struct.unpack(TcpSocket.headformat, dataBuffer[:TcpSocket.headerSize])
+                    bodySize = headPack[1]
+                    if len(dataBuffer) < TcpSocket.headerSize+bodySize :
+                        break
+                    body = dataBuffer[TcpSocket.headerSize:TcpSocket.headerSize+bodySize]
+                    body = body.decode()
+                    body = json.loads(body)
+                    return headPack,body
+
+    def set_keep_alive(self):
+        """
+        设置套接字保活机制
+        30s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
+        """
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        if platform.system() == "Windows":
+            self.sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,30*1000,30*1000))
+
+        if platform.system() == "Linux":
+            self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
+            self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 30)
+            self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 10)
+
+
+    def do_pass(self):
+        pass
+
+    def do_fail(self):
+        pass
+
 class DaspCommon():
     '''
     Dasp公共变量及函数
@@ -37,60 +108,8 @@ class DaspCommon():
     GUIinfo = ["localhost",50000]    
     headformat = "!2I"
     headerSize = 8
-
     def __init__(self):
         pass
-
-    def sendall_length(self, socket, jsondata, methods = 1):
-        '''
-        为发送的json数据添加methods和length报头
-            POST: methods = 1
-            REFUSE: methods = 9
-        '''
-        body = json.dumps(jsondata)
-        header = [methods, body.__len__()]
-        headPack = struct.pack(self.headformat , *header)
-        socket.sendall(headPack+body.encode())
-
-
-    def recv_length(self, conn):
-        '''
-        循环接收数据，直到收完报头中length长度的数据
-            return headPack,body
-        '''
-        dataBuffer = bytes()
-        while True:
-            data = conn.recv(1024)
-            # if data == b"":
-            #     break
-            if data:
-                dataBuffer += data
-                while True:
-                    if len(dataBuffer) < self.headerSize:
-                        break  #数据包小于消息头部长度，跳出小循环
-                    # 读取包头
-                    headPack = struct.unpack(self.headformat, dataBuffer[:self.headerSize])
-                    bodySize = headPack[1]
-                    if len(dataBuffer) < self.headerSize+bodySize :
-                        break  #数据包不完整，跳出小循环
-                    body = dataBuffer[self.headerSize:self.headerSize+bodySize]
-                    body = body.decode()
-                    body = json.loads(body)
-                    return headPack,body
-
-    def set_keep_alive(self, sock):
-        """
-        设置套接字保活机制
-        30s后没反应开始探测连接，30s探测一次，一共探测10次，失败则断开
-        """
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        if platform.system() == "Windows":
-            sock.ioctl(socket.SIO_KEEPALIVE_VALS,(1,30*1000,30*1000))
-
-        if platform.system() == "Linux":
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 30)
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 10)
 
     def sendtoGUIbase(self, info, key, DappName):
         """
