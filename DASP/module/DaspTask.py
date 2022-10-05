@@ -353,16 +353,14 @@ class Task(DaspCommon):
                 self.deleteadjID(id)
                 self.deletetaskAdjID(id)
                 self.sendDatatoGUI("与邻居节点{0}连接失败".format(id)) 
-                return id
 
         # 向相应的套接字发送消息
         try:
             self.sendall_length(DaspCommon.adjSocket[id], data)
-            return "Communication Succeeded"
         except Exception as e:
-            return self.SendDisconnectHandle(id, data)
+            self.doDisconnect(id, data)
 
-    def SendDisconnectHandle(self, id, data):
+    def doDisconnect(self, id, data):
         """
         对发送数据时邻居断开连接的操作函数               
         """
@@ -385,14 +383,12 @@ class Task(DaspCommon):
                 sock.connect((remote_ip, port))
                 DaspCommon.adjSocket[id] = sock
                 self.sendall_length(DaspCommon.adjSocket[id], data)
-                return "Communication Succeeded"
             except Exception as e:
                 time.sleep(30)
         print ("与邻居节点{0}连接失败".format(id))
         self.deleteadjID(id)
         self.deletetaskAdjID(id)
         self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
-        return id
 
     def sendData(self, data):
         """

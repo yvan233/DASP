@@ -106,7 +106,7 @@ class BaseServer(DaspCommon):
             "id": DaspCommon.nodeID,
             "host": host,
             "port": port,
-            "applydirection": direction
+            "requestdirection": direction
         }
         self.send(adjID, data)
         
@@ -128,21 +128,19 @@ class BaseServer(DaspCommon):
                 remote_ip = socket.gethostbyname(host)
                 sock.connect((remote_ip, port))
                 DaspCommon.adjSocket[id] = sock
-            except Exception as e:
+            except Exception:
                 print ("与邻居节点{}连接失败".format(id))
                 self.deleteadjID(id)
                 self.deleteTaskDictadjID(id)
                 self.sendRunDatatoGUI("与邻居节点{0}连接失败".format(id)) 
-                return id
 
         # 向相应的套接字发送消息
         try:
             self.sendall_length(DaspCommon.adjSocket[id], data)
-            return "Communication Succeeded"
-        except Exception as e:
-            return self.SendDisconnectHandle(id, data)
+        except Exception:
+            self.doDisconnect(id, data)
     
-    def SendDisconnectHandle(self, id, data):
+    def doDisconnect(self, id, data):
         """
         对发送数据时邻居断开连接的操作函数               
         """
@@ -167,16 +165,14 @@ class BaseServer(DaspCommon):
                 sock.connect((remote_ip, port))
                 DaspCommon.adjSocket[id] = sock
                 self.sendall_length(DaspCommon.adjSocket[id], data)
-                return "Communication Succeeded"
             except Exception as e:
                 time.sleep(30)
         print ("与邻居节点{0}连接失败".format(id))
         self.deleteadjID(id)
-        self.deletetaskAdjID(id)
+        self.deleteTaskDictadjID(id)
         self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
-        return id
 
-    def Forward2childID(self, jdata, DappName):
+    def forward2childID(self, jdata, DappName):
         """
         将json消息转发给子节点
         """
@@ -276,7 +272,7 @@ class TaskServer(BaseServer):
         暂停DAPP
         """
         name = (jdata["DappName"])
-        self.Forward2childID(jdata, name)
+        self.forward2childID(jdata, name)
         BaseServer.TaskDict[name].pause()
         self.sendFlagtoGUI(1,name)
 
@@ -285,7 +281,7 @@ class TaskServer(BaseServer):
         恢复DAPP
         """
         name = (jdata["DappName"])
-        self.Forward2childID(jdata, name)
+        self.forward2childID(jdata, name)
         BaseServer.TaskDict[name].resume()
         self.sendFlagtoGUI(2,name)
 
@@ -294,7 +290,7 @@ class TaskServer(BaseServer):
         停止DAPP
         """
         name = jdata["DappName"]
-        self.Forward2childID(jdata,name)
+        self.forward2childID(jdata,name)
         BaseServer.TaskDict[name].shutdown()
         self.sendFlagtoGUI(0,name)
 
@@ -462,14 +458,14 @@ class CommServer(BaseServer):
         """
         id = jdata["id"]
         if id not in DaspCommon.adjID:
-            if jdata["applydirection"] not in DaspCommon.adjDirection:
-                direction = jdata["applydirection"] - 1
+            if jdata["requestdirection"] not in DaspCommon.adjDirection:
+                direction = jdata["requestdirection"] - 1
                 DaspCommon.IPlist.append([self.IP,self.PORT[direction],jdata["host"],jdata["port"],jdata["id"]])
                 DaspCommon.adjID.append(jdata["id"])
-                DaspCommon.adjDirection.append(jdata["applydirection"])
+                DaspCommon.adjDirection.append(jdata["requestdirection"])
                 self.sendRunDatatoGUI("与邻居节点{0}重连成功，已添加和{0}的连接".format(jdata["id"])) 
             else:
-                info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["applydirection"]))
+                info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["requestdirection"]))
                 self.sendRunDatatoGUI(info)
 
     def respondStartTask(self, jdata):
@@ -480,7 +476,7 @@ class CommServer(BaseServer):
         task = BaseServer.TaskDict[name]
         while (task.treeFlag == 0): 
             time.sleep(0.01)
-        self.Forward2childID(jdata, name)
+        self.forward2childID(jdata, name)
         # BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
         #     DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
         BaseServer.TaskDict[name].taskBeginFlag = 1
@@ -491,7 +487,7 @@ class CommServer(BaseServer):
         回应暂停任务信号，广播子节点暂停任务信号，暂停任务DAPP
         """
         name = (jdata["DappName"])
-        self.Forward2childID(jdata, name)
+        self.forward2childID(jdata, name)
         BaseServer.TaskDict[name].pause()
 
     def respondResumeTask(self, jdata):
@@ -499,7 +495,7 @@ class CommServer(BaseServer):
         回应恢复任务信号，广播子节点恢复任务信号，恢复任务DAPP
         """
         name = (jdata["DappName"])
-        self.Forward2childID(jdata, name)
+        self.forward2childID(jdata, name)
         BaseServer.TaskDict[name].resume()
 
     def respondShutDownTask(self, jdata):
@@ -507,7 +503,7 @@ class CommServer(BaseServer):
         回应结束任务信号，广播子节点结束任务信号，结束任务DAPP
         """
         name = (jdata["DappName"])
-        self.Forward2childID(jdata, name)
+        self.forward2childID(jdata, name)
         BaseServer.TaskDict[name].shutdown()
 
     def respondData(self, jdata):
@@ -593,7 +589,7 @@ class CommServer(BaseServer):
                 task_cur.rootData.put([jdata["data"], datetime.now()])                
         # 否则进行广播
         else:
-            self.Forward2childID(jdata, jdata["DappName"])
+            self.forward2childID(jdata, jdata["DappName"])
             task_cur.rootData.put([jdata["data"], datetime.now()])
 
     def respondSync(self, jdata, type):
