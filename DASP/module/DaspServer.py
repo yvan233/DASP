@@ -1,16 +1,14 @@
 import csv
-import os
-from platform import node
-import socket
 import json
-import time
-import threading
-import traceback
+import os
+import socket
 import struct
+import threading
+import time
+import traceback
 from datetime import datetime
-# sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-# from DASP.module import DaspCommon, Task
-from . import DaspCommon,Task
+from . import DaspCommon, Task
+
 SYSTEMSETTIME = 120
 
 class BaseServer(DaspCommon):

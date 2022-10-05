@@ -1,9 +1,10 @@
-import json
 import ctypes
 import inspect
-import struct
+import json
 import platform
 import socket
+import struct
+
 
 class DaspCommon():
     '''

@@ -1,18 +1,17 @@
-import json
-import socket
-import time
-import threading
-import traceback
-import importlib
-import os
 import codecs
 import copy
+import importlib
+import json
+import os
 import queue
-# import sys
-# sys.path.insert(1,".")  # 把上一级目录加入搜索路径
-# from DASP.module import DaspCommon
-from . import DaspCommon
+import socket
+import threading
+import time
+import traceback
+
 from ..pysnooperdb.tracer import Tracer as snoop
+from . import DaspCommon
+
 class Task(DaspCommon):
     """任务类
     
@@ -115,13 +114,7 @@ class Task(DaspCommon):
 
             # 加载debug信息
             debugpath = f"{os.getcwd()}/Dapp/{self.DappName}/debug.json"
-            if not os.path.exists(debugpath):
-                self.load_debuginfo(DebugMode = False)
-            else:
-                text = codecs.open(debugpath, 'r', 'utf-8').read()
-                jdata = json.loads(text)
-                self.load_debuginfo(DebugMode = jdata["DebugMode"], 
-                    DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
+            self.load_debuginfo(debugpath)
 
             order = ID.index(DaspCommon.nodeID)
             selfAdjID = AllAdjID[order]
@@ -181,14 +174,21 @@ class Task(DaspCommon):
             self.taskthreads.start()
         self.loadflag = 1 
 
-    def load_debuginfo(self, DebugMode = False, DatabaseInfo = [], DBname = 'Daspdb', ObservedVariable = []):
+    def load_debuginfo(self, debugpath):
         """
         加载调试模式信息
         """
-        self.DebugMode = DebugMode
-        self.DatabaseInfo = DatabaseInfo
-        self.DBname = DBname
-        self.ObservedVariable = ObservedVariable
+        self.DBname = 'Daspdb'
+        if not os.path.exists(debugpath):
+            self.DebugMode = False
+            self.DatabaseInfo = []
+            self.ObservedVariable = []
+        else:
+            text = codecs.open(debugpath, 'r', 'utf-8').read()
+            jdata = json.loads(text)
+            self.DebugMode = jdata["DebugMode"]
+            self.DatabaseInfo = jdata["DatabaseInfo"]
+            self.ObservedVariable = jdata["ObservedVariable"]
 
     def run(self):
         """
