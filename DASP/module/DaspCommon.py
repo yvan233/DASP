@@ -1,21 +1,31 @@
 import ctypes
+import datetime
 import inspect
 import json
 import platform
 import socket
 import struct
-
+import threading
+import time
 
 class TcpSocket():
     headformat = "!2I"
     headerSize = 8
-    def __init__(self, ip, port):
+    def __init__(self, ID, ip, port, owner):
+        self.ID = ID
         self.ip = ip
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_keep_alive()
         self.sock.settimeout(5)
         self.sock.connect((self.ip, self.port))
+        self.owner = owner
+
+        # heartbeat
+        self.fail_count = 0
+        self.fail_limit = 4
+        self.time_interval = 30
+        self.state = "passing"
 
     def close(self):
         self.sock.close()
@@ -70,12 +80,39 @@ class TcpSocket():
             self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 30)
             self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 10)
 
-
     def do_pass(self):
-        pass
+        self.state = "passing"
+        self.fail_count = 0
 
     def do_fail(self):
-        pass
+        if self.fail_count == 0:
+            self.first_fail_time = datetime.datetime.now()
+            self.state = "failing"
+            self.thread = threading.Thread(target=self.reconnect)
+            self.thread.start()
+        self.fail_count += 1
+        if self.fail_count >= self.fail_limit and datetime.datetime.now()-self.first_fail_time >= datetime.timedelta(seconds=self.fail_limit*self.time_interval):
+            self.state = "failed"
+            # 关闭节点连接
+            self.owner.deleteTaskAdjID(self.ID)
+
+    def reconnect(self):
+        while self.state == "failing":
+            time.sleep(self.time_interval)
+            try:
+                self.sock.close()
+            except:
+                pass
+            try:
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.set_keep_alive()
+                self.sock.settimeout(5)
+                self.sock.connect((self.ip, self.port))
+            except:
+                self.do_fail()
+            else:
+                self.do_pass()
+
 
 class DaspCommon():
     '''
@@ -96,7 +133,7 @@ class DaspCommon():
         self.headerSize：自定义消息头长度，8个字节
         (包括读取拓扑文件的信息，以及所有类共有的信息)
     '''
-    ### 类变量，直接通过DaspCommon.维护
+    # 类变量，直接通过DaspCommon.维护
     nodeID = ""
     IP = ""
     PORT = []

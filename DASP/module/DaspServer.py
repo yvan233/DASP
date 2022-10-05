@@ -114,7 +114,6 @@ class BaseServer(DaspCommon):
         """
         通过TCP的形式将信息发送至指定ID的节点
         """
-        # 如果之前没建立连接，则建立长连接
         if id not in DaspCommon.adjSocket: 
             try:
                 for ele in DaspCommon.IPlist:
@@ -122,49 +121,20 @@ class BaseServer(DaspCommon):
                         ip = ele[2]
                         port = ele[3]
                         break
-                print ("connecting to {}:{}".format(ip,str(port)))
+                print (f"connecting to {ip}:{port}")
                 remote_ip = socket.gethostbyname(ip)
-                DaspCommon.adjSocket[id] = TcpSocket(remote_ip,port)
-            except Exception:
-                print ("与邻居节点{}连接失败".format(id))
-                self.deleteadjID(id)
-                self.deleteTaskDictadjID(id)
-                self.sendRunDatatoGUI("与邻居节点{0}连接失败".format(id)) 
+                DaspCommon.adjSocket[id] = TcpSocket(id,remote_ip,port,self)
+            except:
+                # self.sendRunDatatoGUI(f"连接{ip}:{port}失败")
+                self.deleteTaskAdjID(id)
+                return 0
 
-        # 向相应的套接字发送消息
         try:
             DaspCommon.adjSocket[id].sendall(data)
-        except Exception:
-            self.doDisconnect(id, data)
-    
-    def doDisconnect(self, id, data):
-        """
-        对发送数据时邻居断开连接的操作函数               
-        """
-        times = 0
-        
-        for ele in DaspCommon.IPlist:
-            if ele[4] == id:
-                ip = ele[2]
-                port = ele[3]
-                break
-        # 失败后每隔30s共重连10次
-        while times < 10:
-            times += 1
-            if id in DaspCommon.adjSocket:
-                del DaspCommon.adjSocket[id]
-            try:
-                print ("reconnecting to {}:{}, times:{}".format(ip,str(port),times))
-                self.sendRunDatatoGUI("与邻居节点{}连接失败，第{}次重连中...".format(id,times))
-                remote_ip = socket.gethostbyname(ip)
-                DaspCommon.adjSocket[id] = TcpSocket(remote_ip,port)
-                DaspCommon.adjSocket[id].sendall(data)
-            except Exception as e:
-                time.sleep(30)
-        print ("与邻居节点{0}连接失败".format(id))
-        self.deleteadjID(id)
-        self.deleteTaskDictadjID(id)
-        self.sendRunDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
+        except:
+            DaspCommon.adjSocket[id].do_fail()
+        else:
+            DaspCommon.adjSocket[id].do_pass()
 
     def forward2childID(self, jdata, DappName):
         """
@@ -176,12 +146,14 @@ class BaseServer(DaspCommon):
                     if ele[4] in BaseServer.TaskDict[DappName].childID:
                         self.send(ele[4], data=jdata)
 
-    def deleteTaskDictadjID(self, id):  
+    def deleteTaskAdjID(self, id):  
         """
         删除本节点的任务和指定id邻居节点的所有连接(任务字典中的变量)
         """
+        self.deleteadjID(id)
         for key in BaseServer.TaskDict:
-            BaseServer.TaskDict[key].deletetaskAdjID(id)       
+            BaseServer.TaskDict[key].deleteTaskAdjID(id)       
+        self.sendRunDatatoGUI(f"与邻居节点{id}连接失败，已删除和{id}的连接") 
 
     def sendRunDatatoGUI(self, info, DappName = "system"):
         """

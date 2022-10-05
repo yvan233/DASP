@@ -342,49 +342,20 @@ class Task(DaspCommon):
                         ip = ele[2]
                         port = ele[3]
                         break
-                print ("connecting to {}:{}".format(ip,str(port)))
+                print (f"connecting to {ip}:{port}")
                 remote_ip = socket.gethostbyname(ip)
-                DaspCommon.adjSocket[id] = TcpSocket(remote_ip,port)
-            except Exception as e:
-                print ("与邻居节点{}连接失败".format(id))
-                self.deleteadjID(id)
-                self.deletetaskAdjID(id)
-                self.sendDatatoGUI("与邻居节点{0}连接失败".format(id)) 
+                DaspCommon.adjSocket[id] = TcpSocket(id,remote_ip,port,self)
+            except:
+                self.deleteTaskAdjID(id)
+                return 0
 
         # 向相应的套接字发送消息
         try:
             DaspCommon.adjSocket[id].sendall(data)
-        except Exception as e:
-            self.doDisconnect(id, data)
-
-    def doDisconnect(self, id, data):
-        """
-        对发送数据时邻居断开连接的操作函数               
-        """
-        times = 0
-        
-        for ele in DaspCommon.IPlist:
-            if ele[4] == id:
-                ip = ele[2]
-                port = ele[3]
-                break
-        # 失败后每隔30s共重连10次
-        while times < 10:
-            times += 1
-            if id in DaspCommon.adjSocket:
-                del DaspCommon.adjSocket[id]
-            try:
-                print ("reconnecting to {}:{}, times:{}".format(ip,str(port),times))
-                self.sendDatatoGUI("与邻居节点{}连接失败，第{}次重连中...".format(id,times))
-                remote_ip = socket.gethostbyname(ip)
-                DaspCommon.adjSocket[id] = TcpSocket(remote_ip,port)
-                DaspCommon.adjSocket[id].sendall(data)
-            except Exception as e:
-                time.sleep(30)
-        print ("与邻居节点{0}连接失败".format(id))
-        self.deleteadjID(id)
-        self.deletetaskAdjID(id)
-        self.sendDatatoGUI("与邻居节点{0}连接失败，已删除和{0}的连接".format(id)) 
+        except:
+            DaspCommon.adjSocket[id].do_fail()
+        else:
+            DaspCommon.adjSocket[id].do_pass()
 
     def sendData(self, data):
         """
@@ -394,10 +365,11 @@ class Task(DaspCommon):
             if ele != []:
                 self.send(ele[4], data)
 
-    def deletetaskAdjID(self, id):  
+    def deleteTaskAdjID(self, id):  
         """
         删除本节点和指定id邻居节点的所有连接
         """
+        self.deleteadjID(id)
         for ele in self.taskIPlist:
             if ele != []:
                 if ele[4] == id:
