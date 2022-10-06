@@ -229,9 +229,9 @@ class TaskServer(BaseServer):
         name = jdata["DappName"]
         self.sendRunDatatoGUI("接收任务请求",name)
         task = Task(name)
+        BaseServer.TaskDict[name] = task
         task.load()
         task.startCommPattern()
-        BaseServer.TaskDict[name] = task
 
     def pausetask(self, jdata):
         """
@@ -372,9 +372,6 @@ class CommServer(BaseServer):
                 if jdata["key"] == "ping":
                     self.respondPing(jdata)
 
-                elif jdata["key"] == "starttask":
-                    self.respondStartTask(jdata)
-
                 elif jdata["key"] == "shutdowntask":
                     self.respondShutDownTask(jdata)
 
@@ -434,20 +431,7 @@ class CommServer(BaseServer):
                 info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["requestdirection"]))
                 self.sendRunDatatoGUI(info)
 
-    def respondStartTask(self, jdata):
-        """
-        回应新任务信号，广播子节点启动任务信号，启动任务DAPP
-        """
-        name = (jdata["DappName"])
-        task = BaseServer.TaskDict[name]
-        while (task.treeFlag == 0): 
-            time.sleep(0.01)
-        self.forward2childID(jdata, name)
-        # BaseServer.TaskDict[name].load_debuginfo(DebugMode = jdata["DebugMode"], 
-        #     DatabaseInfo = jdata["DatabaseInfo"], ObservedVariable = jdata["ObservedVariable"])
-        BaseServer.TaskDict[name].taskBeginFlag = 1
         
-
     def respondPauseTask(self, jdata):
         """
         回应暂停任务信号，广播子节点暂停任务信号，暂停任务DAPP
@@ -505,16 +489,17 @@ class CommServer(BaseServer):
         name = jdata["DappName"]
         if name not in BaseServer.TaskDict:
             task = Task(name)
+            BaseServer.TaskDict[name] = task
             task.load()
             task.startCommPattern()
-            BaseServer.TaskDict[name] = task
         elif BaseServer.TaskDict[name].commTreeFlag == 0:
             task = Task(name)
+            BaseServer.TaskDict[name] = task
             task.load()
             task.startCommPattern()
-            BaseServer.TaskDict[name] = task
-
         task = BaseServer.TaskDict[name]
+        while(not hasattr(task,'loadflag')):time.sleep(0.01)
+        while(task.loadflag == 0):time.sleep(0.01)
         index = task.taskAdjID.index(jdata["id"])
         task.adjAsynchData[index].put(jdata["data"])
 

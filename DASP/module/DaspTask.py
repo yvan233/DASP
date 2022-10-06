@@ -401,8 +401,6 @@ class Task(DaspCommon):
         """
         self.commThread = threading.Thread(target=self.commPattern, args=())
         self.commThread.start()
-        self.startThread = threading.Thread(target=self.starttask, args=())
-        self.startThread.start()
 
     def floodLeaderElection(self):
         """
@@ -418,7 +416,7 @@ class Task(DaspCommon):
         self.leader = min_id
         if self.leader == DaspCommon.nodeID:
             self.sendDatatoGUI("This is the leader")
- 
+
     def commPattern(self):
         """
         communication pattern
@@ -487,28 +485,23 @@ class Task(DaspCommon):
         j,(data,token) = self.getAsynchData()
         while True:
             if step == 1:
-                leader_state,parent,child = alst(adjDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token)
+                __,parent,child = alst(adjDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token)
                 step = 2
                 # generate complete
                 setTree(parent,child)
+                self.starttask()
             if step == 2:
                 break
 
     def starttask(self):
-        if not self.taskAdjID: #只有一个节点的情况
-            self.treeFlag = 1   
-        while (self.treeFlag == 0): 
-            time.sleep(0.01)
+        # if not self.taskAdjID: #只有一个节点的情况
+        #     self.treeFlag = 1   
         if self.parentDirection == -1:
             self.sendDatatoGUI("The communication spanning tree is established.")
-            #启动任务
-            data = {
-                "key": "starttask",
-                "DappName": self.DappName
-            }
-            self.forward2childID(data)
-            self.taskBeginFlag = 1
-            self.forwardResult()
+            self.resultThread = threading.Thread(target=self.forwardResult, args=())
+            self.resultThread.start()
+        self.taskBeginFlag = 1
+            
                 
     def forwardResult(self):
         """

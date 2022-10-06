@@ -6,5 +6,5 @@
         "user": "root",
         "password": "DSPadmin"
     },
-    "ObservedVariable": ["data","parent","child"]
+    "ObservedVariable": ["j","data","token","parent","child","edges","leader_state"]
 }

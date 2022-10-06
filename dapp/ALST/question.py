@@ -1,16 +1,21 @@
 from DASP.module import Task
 
 def taskFunction(self:Task,id,adjDirection:list,datalist):
-    flag = False 
-    parent = -1
-    child = []    
-    edges = [False] * len(adjDirection)
+    def reset():
+        flag = False
+        parent = -1
+        child = []    
+        edgesFlag = [False] * len(adjDirection)
+        edges = dict(zip(adjDirection,edgesFlag))
+        return flag,parent,child,edges
+
+    flag,parent,child,edges = reset()
     min_uid = id
     flag = True
     step = 1
+    leader_state = "non-leader"  
     for ele in adjDirection:
         self.sendAsynchData(ele,["search",id])
-
     j,(data,token) = self.getAsynchData()
     while True:
         if step == 1:
@@ -18,11 +23,8 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                 if token <= min_uid:
                     if token < min_uid:
                         min_uid = token
-                        flag = False
-                        parent = -1
-                        child = []
-                        edges = [False] * len(adjDirection)
-                    edges[adjDirection.index(j)] = True
+                        flag,parent,child,edges = reset()
+                    edges[j] = True
                     if data == "end" and j == parent:
                         for ele in child:
                             self.sendAsynchData(ele,["end",min_uid]) 
@@ -37,7 +39,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                             for ele in adjDirection:
                                 if ele != j:
                                     self.sendAsynchData(ele,["search",min_uid])
-                    if all(edges):
+                    if all(edges.values()):
                         if min_uid == id:
                             leader_state = "leader"
                             for ele in child:
