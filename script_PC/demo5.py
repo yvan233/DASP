@@ -19,18 +19,26 @@ for i in range(nodeNum):
     node = Node(i)
     nodelist.append(node)
 
+# room_2短暂断开并重连
 time.sleep(10)
-
 # kill room_2
 node_num = 1
 nodelist[node_num].kill()
-
-# 等待系统函数扫描到room_2断开，实际上检测到断开后需要30*4s才会彻底断开连接
-time.sleep(250)
+# 等待系统检测到room_2断开
+time.sleep(160)
 
 # 重新启动room_2节点进程
 node = Node(node_num)
 nodelist[node_num] = node
-print("启动room_2")
+
+
+# room_2断开并被删除连接后重连
+time.sleep(120)
+nodelist[node_num].kill()
+time.sleep(260)
+
+# 重新启动room_2节点进程
+node = Node(node_num)
+nodelist[node_num] = node
 
 moniter.wait()

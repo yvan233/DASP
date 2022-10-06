@@ -23,7 +23,7 @@ class TcpSocket():
 
         # heartbeat
         self.fail_count = 0
-        self.fail_limit = 4
+        self.fail_limit = 3
         self.time_interval = 30
         self.state = "passing"
 
@@ -81,6 +81,8 @@ class TcpSocket():
             self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 10)
 
     def do_pass(self):
+        if self.state == "failing":
+            self.owner.sendRunDatatoGUI(f"与邻居节点{self.ID}重连成功") 
         self.state = "passing"
         self.fail_count = 0
 
@@ -90,6 +92,7 @@ class TcpSocket():
             self.state = "failing"
             self.thread = threading.Thread(target=self.reconnect)
             self.thread.start()
+            self.owner.sendRunDatatoGUI(f"与邻居节点{self.ID}连接失败，正在尝试重连") 
         self.fail_count += 1
         if self.fail_count >= self.fail_limit and datetime.datetime.now()-self.first_fail_time >= datetime.timedelta(seconds=self.fail_limit*self.time_interval):
             self.state = "failed"
@@ -175,12 +178,12 @@ class DaspCommon():
             index = DaspCommon.adjID.index(id)      
             del DaspCommon.adjID[index]
             del DaspCommon.adjDirection[index]
-        if id in DaspCommon.adjSocket:
-            del DaspCommon.adjSocket[id]
         for ele in DaspCommon.IPlist:
             if ele != []:
                 if ele[4] == id:
                     DaspCommon.IPlist.remove(ele)
+        if id in DaspCommon.adjSocket:
+            del DaspCommon.adjSocket[id]
 
     def _async_raise(self, tid, exctype):
         '''
