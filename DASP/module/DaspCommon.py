@@ -162,6 +162,7 @@ class DaspCommon():
                 "key": key,
                 "id": DaspCommon.nodeID,
                 "DappName":DappName,
+                "time": datetime.datetime.now().strftime("%m-%d %H:%M:%S"),
                 "info": info
             }
             sock.sendto(json.dumps(data).encode('utf-8'), addr)
