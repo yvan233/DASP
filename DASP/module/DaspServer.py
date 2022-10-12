@@ -390,6 +390,9 @@ class CommServer(BaseServer):
                 elif jdata["key"] == "AsynchData":
                     self.respondAsynchData(jdata)
 
+                elif jdata["key"] == "AlstData":
+                    self.respondAlstData(jdata)
+
                 elif jdata["key"] == "RootData":
                     self.respondRootData(jdata)
 
@@ -471,18 +474,15 @@ class CommServer(BaseServer):
         回应任务发送数据信号，并存储数据
         """
         name = jdata["DappName"]
-        while(name not in BaseServer.TaskDict):time.sleep(0.01)
-        while(not hasattr(BaseServer.TaskDict[name],'loadflag')):time.sleep(0.01)
-        while(BaseServer.TaskDict[name].loadflag == 0):time.sleep(0.01)
-        
+    
         index = BaseServer.TaskDict[name].taskAdjID.index(jdata["id"])
         if jdata["type"] == "value":
             BaseServer.TaskDict[name].adjData[index] = jdata["data"]
 
         elif jdata["type"] == "value2":
-            BaseServer.TaskDict[name].adjData_another[index] = jdata["data"]
+            BaseServer.TaskDict[name].adjData2[index] = jdata["data"]
 
-    def respondAsynchData(self, jdata):
+    def respondAlstData(self, jdata):
         """
         回应任务发送数据信号，并存储数据
         """
@@ -501,8 +501,17 @@ class CommServer(BaseServer):
         while(not hasattr(task,'loadflag')):time.sleep(0.01)
         while(task.loadflag == 0):time.sleep(0.01)
         index = task.taskAdjID.index(jdata["id"])
-        task.adjAsynchData[index].put(jdata["data"])
+        task.adjAlstData[index].put(jdata["data"])
 
+
+    def respondAsynchData(self, jdata):
+        """
+        回应任务发送数据信号，并存储数据
+        """
+        name = jdata["DappName"]
+        task = BaseServer.TaskDict[name]
+        index = task.taskAdjID.index(jdata["id"])
+        task.adjAsynchData[index].put(jdata["data"])
             
     def respondRootData(self, jdata):
         """回应任务发送数据至根节点信号
