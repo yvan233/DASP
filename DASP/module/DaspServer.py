@@ -38,7 +38,7 @@ class BaseServer(DaspCommon):
             self.handleMessage(headPack,body,conn)
             conn.close()
                
-    def recv_long_conn(self, host, port, adjID = ""):
+    def recv_long_conn(self, host, port, nbrID = ""):
         """
         长连接循环接收数据框架
         """
@@ -56,11 +56,11 @@ class BaseServer(DaspCommon):
                         data = conn.recv(1024)
                     except Exception as e:
                         # 发送端进程被杀掉
-                        self.handleRecvDisconnection(addr, adjID)
+                        self.handleRecvDisconnection(addr, nbrID)
                         break
                     if data == b"":
                         # 发送端close()
-                        self.handleRecvDisconnection(addr, adjID)
+                        self.handleRecvDisconnection(addr, nbrID)
                         break
                     if data:
                         # 把数据存入缓冲区，类似于push数据
@@ -91,13 +91,13 @@ class BaseServer(DaspCommon):
         else:
             print("非POST方法")
 
-    def handleRecvDisconnection(self, addr, adjID):
+    def handleRecvDisconnection(self, addr, nbrID):
         """
         对接收数据时邻居断开连接的操作函数               
         """
         print ("{}:{} 已断开".format(addr[0],addr[1]))      
 
-    def pingID(self, host, port, adjID, direction):
+    def pingID(self, host, port, nbrID, direction):
         """
         尝试通过TCP连接指定节点
         """
@@ -108,51 +108,51 @@ class BaseServer(DaspCommon):
             "port": port,
             "requestdirection": direction
         }
-        self.send(adjID, data)
+        self.send(nbrID, data)
         
     def send(self,id,data):
         """
         通过TCP的形式将信息发送至指定ID的节点
         """
-        if id not in DaspCommon.adjSocket: 
+        if id not in DaspCommon.nbrSocket: 
             try:
-                for ele in DaspCommon.IPlist:
+                for ele in DaspCommon.RouteTable:
                     if ele[4] == id:
                         ip = ele[2]
                         port = ele[3]
                         break
                 print (f"connecting to {ip}:{port}")
                 remote_ip = socket.gethostbyname(ip)
-                DaspCommon.adjSocket[id] = TcpSocket(id,remote_ip,port,self)
+                DaspCommon.nbrSocket[id] = TcpSocket(id,remote_ip,port,self)
             except:
                 # self.sendRunDatatoGUI(f"连接{ip}:{port}失败")
-                self.deleteTaskAdjID(id)
+                self.deleteTaskNbrID(id)
                 return 0
 
         try:
-            DaspCommon.adjSocket[id].sendall(data)
+            DaspCommon.nbrSocket[id].sendall(data)
         except:
-            DaspCommon.adjSocket[id].do_fail()
+            DaspCommon.nbrSocket[id].do_fail()
         else:
-            DaspCommon.adjSocket[id].do_pass()
+            DaspCommon.nbrSocket[id].do_pass()
 
     def forward2childID(self, jdata, DappName):
         """
         将json消息转发给子节点
         """
         if BaseServer.TaskDict[DappName].childID:
-            for ele in reversed(BaseServer.TaskDict[DappName].taskIPlist):
+            for ele in reversed(BaseServer.TaskDict[DappName].taskRouteTable):
                 if ele:
                     if ele[4] in BaseServer.TaskDict[DappName].childID:
                         self.send(ele[4], data=jdata)
 
-    def deleteTaskAdjID(self, id):  
+    def deleteTaskNbrID(self, id):  
         """
         删除本节点的任务和指定id邻居节点的所有连接(任务字典中的变量)
         """
-        self.deleteadjID(id)
+        self.deletenbrID(id)
         for key in BaseServer.TaskDict:
-            BaseServer.TaskDict[key].deleteTaskAdjID(id)       
+            BaseServer.TaskDict[key].deleteTaskNbrID(id)       
         self.sendRunDatatoGUI(f"与邻居节点{id}连接失败，已删除和{id}的连接") 
 
     def sendRunDatatoGUI(self, info, DappName = "system"):
@@ -268,10 +268,10 @@ class TaskServer(BaseServer):
         self.sendRunDatatoGUI("{}节点启动".format(DaspCommon.nodeID))
         while(True):
             i = i + 1
-            for ele in reversed(DaspCommon.IPlist):
+            for ele in reversed(DaspCommon.RouteTable):
                 if ele:
-                    index = DaspCommon.adjID.index(ele[4])
-                    self.pingID(ele[0], ele[1], ele[4], DaspCommon.adjDirectionOtherSide[index])
+                    index = DaspCommon.nbrID.index(ele[4])
+                    self.pingID(ele[0], ele[1], ele[4], DaspCommon.nbrDirectionOtherSide[index])
 
             if i == 1:  
                 # 第一轮开启系统自启动任务进程
@@ -284,7 +284,7 @@ class TaskServer(BaseServer):
                 # task.startCommPattern()
                 # BaseServer.TaskDict["ALST"] = task
 
-            self.sendRunDatatoGUI("系统第{}次自检：当前邻居节点：{}".format(i,str(DaspCommon.adjID)))
+            self.sendRunDatatoGUI("系统第{}次自检：当前邻居节点：{}".format(i,str(DaspCommon.nbrID)))
             time.sleep(SYSTEMSETTIME)
      
     def autostarttask(self):
@@ -423,12 +423,12 @@ class CommServer(BaseServer):
         回应ping信号，如果发送的节点之前不在邻居节点中 且 申请方向未被占用，则加入网络
         """
         id = jdata["id"]
-        if id not in DaspCommon.adjID:
-            if jdata["requestdirection"] not in DaspCommon.adjDirection:
+        if id not in DaspCommon.nbrID:
+            if jdata["requestdirection"] not in DaspCommon.nbrDirection:
                 direction = jdata["requestdirection"] - 1
-                DaspCommon.IPlist.append([self.IP,self.PORT[direction],jdata["host"],jdata["port"],jdata["id"]])
-                DaspCommon.adjID.append(jdata["id"])
-                DaspCommon.adjDirection.append(jdata["requestdirection"])
+                DaspCommon.RouteTable.append([self.IP,self.Port[direction],jdata["host"],jdata["port"],jdata["id"]])
+                DaspCommon.nbrID.append(jdata["id"])
+                DaspCommon.nbrDirection.append(jdata["requestdirection"])
                 self.sendRunDatatoGUI("与邻居节点{0}重连成功，已添加和{0}的连接".format(jdata["id"])) 
             else:
                 info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["requestdirection"]))
@@ -475,12 +475,12 @@ class CommServer(BaseServer):
         """
         name = jdata["DappName"]
     
-        index = BaseServer.TaskDict[name].taskAdjID.index(jdata["id"])
+        index = BaseServer.TaskDict[name].taskNbrID.index(jdata["id"])
         if jdata["type"] == "value":
-            BaseServer.TaskDict[name].adjData[index] = jdata["data"]
+            BaseServer.TaskDict[name].nbrData[index] = jdata["data"]
 
         elif jdata["type"] == "value2":
-            BaseServer.TaskDict[name].adjData2[index] = jdata["data"]
+            BaseServer.TaskDict[name].nbrData2[index] = jdata["data"]
 
     def respondAlstData(self, jdata):
         """
@@ -500,8 +500,8 @@ class CommServer(BaseServer):
         task = BaseServer.TaskDict[name]
         while(not hasattr(task,'loadflag')):time.sleep(0.01)
         while(task.loadflag == 0):time.sleep(0.01)
-        index = task.taskAdjID.index(jdata["id"])
-        task.adjAlstData[index].put(jdata["data"])
+        index = task.taskNbrID.index(jdata["id"])
+        task.nbrAlstData[index].put(jdata["data"])
 
 
     def respondAsynchData(self, jdata):
@@ -510,8 +510,8 @@ class CommServer(BaseServer):
         """
         name = jdata["DappName"]
         task = BaseServer.TaskDict[name]
-        index = task.taskAdjID.index(jdata["id"])
-        task.adjAsynchData[index].put(jdata["data"])
+        index = task.taskNbrID.index(jdata["id"])
+        task.nbrAsynchData[index].put(jdata["data"])
             
     def respondRootData(self, jdata):
         """回应任务发送数据至根节点信号
@@ -560,11 +560,11 @@ class CommServer(BaseServer):
         while(name not in BaseServer.TaskDict):time.sleep(0.01)
         while(not hasattr(BaseServer.TaskDict[name],'loadflag')):time.sleep(0.01)
         while(BaseServer.TaskDict[name].loadflag == 0):time.sleep(0.01)
-        index = BaseServer.TaskDict[name].taskAdjID.index(jdata["id"])
+        index = BaseServer.TaskDict[name].taskNbrID.index(jdata["id"])
         if type == 1:
-            BaseServer.TaskDict[name].adjSyncStatus[index] = 1
+            BaseServer.TaskDict[name].nbrSyncStatus[index] = 1
         else:
-            BaseServer.TaskDict[name].adjSyncStatus2[index] = 1
+            BaseServer.TaskDict[name].nbrSyncStatus2[index] = 1
 
 if __name__ == '__main__':
     DaspCommon.nodeID = "room_2"

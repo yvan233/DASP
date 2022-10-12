@@ -6,11 +6,11 @@ import socket
 import system
 if __name__ == '__main__':
     IP = []
-    PORT = []
+    Port = []
     ID = []
-    adjID = [] 
+    nbrID = [] 
     datalist = []
-    adjDirection = []
+    nbrDirection = []
     localIP = socket.gethostbyname(socket.gethostname())
     path = os.getcwd() + "/Dapp/Base/topology.json"
     text = codecs.open(path, 'r', 'utf-8').read()
@@ -19,40 +19,40 @@ if __name__ == '__main__':
         if "ID" in ele:
             ID.append(ele["ID"])
             IP.append(localIP)
-            PORT.append(ele["PORT"])
-            adjID.append(ele["adjID"])
-            adjDirection.append(ele["adjDirection"])
+            Port.append(ele["Port"])
+            nbrID.append(ele["nbrID"])
+            nbrDirection.append(ele["nbrDirection"])
             datalist.append(ele["datalist"])
 
     order = int(sys.argv[1])
     selfID = ID[order]
-    selfAdjID = adjID[order]
-    selfAdjDirection = adjDirection[order]
+    selfAdjID = nbrID[order]
+    selfAdjDirection = nbrDirection[order]
     selfIP = IP[order]
-    selfPort = PORT[order]
+    selfPort = Port[order]
     selfDatalist = datalist[order]
-    selfIPList = []
+    selfRouteTable = []
     selfAdjDirectionOtherSide = []
     n = len(IP)
     for i in range(len(selfAdjID)):
-        selfIPList.append([])
+        selfRouteTable.append([])
         direction = selfAdjDirection[i]
-        selfIPList[i].append(selfIP)
-        selfIPList[i].append(selfPort[direction])
+        selfRouteTable[i].append(selfIP)
+        selfRouteTable[i].append(selfPort[direction])
         for j in range(n):
             if ID[j] == selfAdjID[i]:
-                selfIPList[i].append(IP[j])
-                for k in range(len(adjID[j])):
-                    if adjID[j][k] == selfID:
-                        selfIPList[i].append(PORT[j][adjDirection[j][k]])
-                        selfAdjDirectionOtherSide.append(adjDirection[j][k])
+                selfRouteTable[i].append(IP[j])
+                for k in range(len(nbrID[j])):
+                    if nbrID[j][k] == selfID:
+                        selfRouteTable[i].append(Port[j][nbrDirection[j][k]])
+                        selfAdjDirectionOtherSide.append(nbrDirection[j][k])
                         break
-                selfIPList[i].append(ID[j])
+                selfRouteTable[i].append(ID[j])
                 break
     
-    selfIPListprint = [str(ele) for ele in selfIPList]
-    print("IPlist: "+ json.dumps(selfIPListprint, indent=2))
+    selfRouteTableprint = [str(ele) for ele in selfRouteTable]
+    print("RouteTable: "+ json.dumps(selfRouteTableprint, indent=2))
 
-    GUIinfo = [localIP, 50000]
-    server = system.Server(selfID, GUIinfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPort, selfDatalist)
+    GuiInfo = [localIP, 50000]
+    server = system.Server(selfID, GuiInfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfRouteTable, selfIP, selfPort, selfDatalist)
     server.run()

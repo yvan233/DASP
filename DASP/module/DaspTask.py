@@ -19,32 +19,32 @@ class Task(DaspCommon):
     
     属性:
         nodeID: 节点ID
-        adjID:邻居ID
+        nbrID:邻居ID
         leader: 领导节点(根节点)
         childID: 子节点ID
         parentID: 父节点ID,根节点与nodeID相同
         parentDirection 父节点方向,根节点为-1
         childDirection  子节点方向
-        taskIPlist: 邻居IP及端口列表
-        adjData: 邻居数据
-        adjData2: 同步通信函数中另一个邻居变量
-        adjDirection: 邻居方向
-        adjAsynchData: 异步邻居数据
-        adjAlstData: 异步邻居数据(Alst)
+        taskRouteTable: 邻居IP及端口列表
+        nbrData: 邻居数据
+        nbrData2: 同步通信函数中另一个邻居变量
+        nbrDirection: 邻居方向
+        nbrAsynchData: 异步邻居数据
+        nbrAlstData: 异步邻居数据(Alst)
         childData: 子节点数据
         rootData: 根节点数据(队列)
         descendantData: 后代节点数据(队列)
 
         DappName: 任务名称
-        GUIinfo: UI界面IP及端口
+        GuiInfo: UI界面IP及端口
         taskfunc: 从算法文件中加载的算法程序
-        taskAdjDirection: 当前任务邻居方向
+        taskNbrDirection: 当前任务邻居方向
         taskDatalist: 当前任务初始数据
-        taskAdjID:当前任务邻居ID
+        taskNbrID:当前任务邻居ID
         taskID: 当前任务参与的节点ID
-        resultinfo: 运行结果数据
-        resultinfoQue: 运行结果数据队列
-        taskthreads :多线程
+        resultInfo: 运行结果数据
+        resultInfoQue: 运行结果数据队列
+        taskThreads :多线程
 
         commTreeFlag: 当前节点是否被加进通信树标志
         treeFlag: 通信树建立完成标志
@@ -58,15 +58,15 @@ class Task(DaspCommon):
             .wait()  当为True时pass，当为False时阻塞等到到为True时pass
         timeFlag: 用于timesleep
 
-        SyncTurnFlag: 同步函数轮训标志
-        SyncTurnFlag2: 同步通信函数轮训标志
-        adjSyncStatus: 同步函数邻居状态
-        adjSyncStatus2: 同步函数邻居状态2(轮训)    
+        syncTurnFlag: 同步函数轮训标志
+        syncTurnFlag2: 同步通信函数轮训标志
+        nbrSyncStatus: 同步函数邻居状态
+        nbrSyncStatus2: 同步函数邻居状态2(轮训)    
 
-        DebugMode: 调试模式是否启用标志
-        DatabaseInfo: 数据库连接信息
-        DBname: 调试数据库名称（默认Daspdb）
-        ObservedVariable: 观察变量列表
+        debugMode: 调试模式是否启用标志
+        databaseInfo: 数据库连接信息
+        databaseName: 调试数据库名称（默认Daspdb）
+        observedVariable: 观察变量列表
         """
     def __init__(self, DappName):
         self.DappName = DappName
@@ -85,9 +85,9 @@ class Task(DaspCommon):
         """
         # 加载topology文件
         ID = []
-        AllAdjID = []
+        AllNbrID = []
         AllDatalist = []
-        AllAdjDirection = []
+        AllNbrDirection = []
         path = f"{os.getcwd()}/Dapp/{self.DappName}/topology.json"
         # 如果没有就用基本拓扑
         if not os.path.exists(path):
@@ -97,8 +97,8 @@ class Task(DaspCommon):
         for ele in js:
             if "ID" in ele:
                 ID.append(ele["ID"])
-                AllAdjID.append(ele["adjID"])
-                AllAdjDirection.append(ele["adjDirection"])
+                AllNbrID.append(ele["nbrID"])
+                AllNbrDirection.append(ele["nbrDirection"])
                 AllDatalist.append(ele["datalist"])
         self.taskID = ID
 
@@ -119,33 +119,33 @@ class Task(DaspCommon):
             self.load_debuginfo(debugpath)
 
             order = ID.index(DaspCommon.nodeID)
-            selfAdjID = AllAdjID[order]
-            selfAdjDirection = AllAdjDirection[order]
+            selfNbrID = AllNbrID[order]
+            selfNbrDirection = AllNbrDirection[order]
             selfDatalist = AllDatalist[order]
-            selfIPlist = []
+            selfRouteTable = []
 
             ### 如果节点已经掉线了，那初始化的任务节点ID不包含这个节点
-            for i in range(len(selfAdjID)-1,-1,-1):
-                if selfAdjID[i] not in DaspCommon.adjID:
-                    selfAdjID.remove(selfAdjID[i])
-                    selfAdjDirection.remove(selfAdjDirection[i])
-            for i in range(len(selfAdjID)):
-                selfIPlist.append([])
-                for ele in DaspCommon.IPlist:
-                    if ele[4] == selfAdjID[i]:
-                        selfIPlist[i] = ele
+            for i in range(len(selfNbrID)-1,-1,-1):
+                if selfNbrID[i] not in DaspCommon.nbrID:
+                    selfNbrID.remove(selfNbrID[i])
+                    selfNbrDirection.remove(selfNbrDirection[i])
+            for i in range(len(selfNbrID)):
+                selfRouteTable.append([])
+                for ele in DaspCommon.RouteTable:
+                    if ele[4] == selfNbrID[i]:
+                        selfRouteTable[i] = ele
                         break
-            self.taskAdjDirection = selfAdjDirection
-            self.taskAdjID = selfAdjID
+            self.taskNbrDirection = selfNbrDirection
+            self.taskNbrID = selfNbrID
             self.taskDatalist = selfDatalist
-            self.taskIPlist = selfIPlist
+            self.taskRouteTable = selfRouteTable
 
             # 初始化各属性
             self.taskBeginFlag = 0
             self.taskEndFlag = 0
             self.dataEndFlag = 0
-            self.resultinfo = {}
-            self.resultinfoQue = []
+            self.resultInfo = {}
+            self.resultInfoQue = []
             self.childData = []
             self.childDataEndFlag = 0
             self.treeFlag = 0
@@ -154,45 +154,45 @@ class Task(DaspCommon):
 
             self.childID= []
             self.childDirection = []
-            self.adjData = []
-            self.adjAsynchData = []
-            self.adjAlstData = []
-            self.adjData2= []
+            self.nbrData = []
+            self.nbrAsynchData = []
+            self.nbrAlstData = []
+            self.nbrData2= []
             self.rootData = queue.Queue() 
             self.descendantData = queue.Queue() 
 
-            self.SyncTurnFlag = 0
-            self.SyncTurnFlag2 = 0
-            self.adjSyncStatus = []
-            self.adjSyncStatus2 = []
+            self.syncTurnFlag = 0
+            self.syncTurnFlag2 = 0
+            self.nbrSyncStatus = []
+            self.nbrSyncStatus2 = []
 
-            while len(self.adjData) < len(self.taskAdjDirection):
-                self.adjData.append([])
-                self.adjAsynchData.append(queue.Queue())
-                self.adjAlstData.append(queue.Queue())
-                self.adjData2.append([])
-                self.adjSyncStatus.append(0)
-                self.adjSyncStatus2.append(0)
+            while len(self.nbrData) < len(self.taskNbrDirection):
+                self.nbrData.append([])
+                self.nbrAsynchData.append(queue.Queue())
+                self.nbrAlstData.append(queue.Queue())
+                self.nbrData2.append([])
+                self.nbrSyncStatus.append(0)
+                self.nbrSyncStatus2.append(0)
 
-            self.taskthreads = threading.Thread(target=self.run, args=())
-            self.taskthreads.start()
+            self.taskThreads = threading.Thread(target=self.run, args=())
+            self.taskThreads.start()
         self.loadflag = 1 
 
     def load_debuginfo(self, debugpath):
         """
         加载调试模式信息
         """
-        self.DBname = 'Daspdb'
+        self.databaseName = 'Daspdb'
         if not os.path.exists(debugpath):
-            self.DebugMode = False
-            self.DatabaseInfo = []
-            self.ObservedVariable = []
+            self.debugMode = False
+            self.databaseInfo = []
+            self.observedVariable = []
         else:
             text = codecs.open(debugpath, 'r', 'utf-8').read()
             jdata = json.loads(text)
-            self.DebugMode = jdata["DebugMode"]
-            self.DatabaseInfo = jdata["DatabaseInfo"]
-            self.ObservedVariable = jdata["ObservedVariable"]
+            self.debugMode = jdata["debugMode"]
+            self.databaseInfo = jdata["databaseInfo"]
+            self.observedVariable = jdata["observedVariable"]
 
     def run(self):
         """
@@ -202,17 +202,17 @@ class Task(DaspCommon):
             time.sleep(0.01)
             if self.taskBeginFlag == 1:
                 try:
-                    if self.DebugMode:
+                    if self.debugMode:
                         tablename = "{}_{}".format(self.DappName, self.nodeID)
-                        taskfunc = snoop(config = self.DatabaseInfo, db = self.DBname, tablename = tablename, \
-                            observelist = self.ObservedVariable)(self.taskfunc)
+                        taskfunc = snoop(config = self.databaseInfo, db = self.databaseName, tablename = tablename, \
+                            observelist = self.observedVariable)(self.taskfunc)
                         self.sendDatatoGUI("启动调试模式，开始执行")
                     else:
                         taskfunc = self.taskfunc
                         self.sendDatatoGUI("开始执行")
                     print("DAPP:{} start".format(self.DappName))
-                    value = taskfunc(self, DaspCommon.nodeID, self.taskAdjDirection, self.taskDatalist)
-                    self.resultinfo["value"] = value
+                    value = taskfunc(self, DaspCommon.nodeID, self.taskNbrDirection, self.taskDatalist)
+                    self.resultInfo["value"] = value
                     self.sendDatatoGUI("执行完毕")
                     # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错
                     print ("Calculation complete")
@@ -223,7 +223,7 @@ class Task(DaspCommon):
                     self.sendDatatoGUI("停止执行")
                     print("DAPP:{} stop".format(self.DappName))
                 except Exception as e:
-                    # self.resultinfo["value"] = "执行出错"
+                    # self.resultInfo["value"] = "执行出错"
                     self.sendDatatoGUI("执行出错")
                     print(traceback.format_exc())
                     self.sendDatatoGUI(traceback.format_exc())
@@ -254,7 +254,7 @@ class Task(DaspCommon):
         try:
             # 停止所有timesleep
             self.timesleepFlag.set()
-            self.stop_thread(self.taskthreads)
+            self.stop_thread(self.taskThreads)
         # 此时任务线程已退出
         except ValueError:
             self.sendDatatoGUI("停止执行")
@@ -272,22 +272,22 @@ class Task(DaspCommon):
             if self.parentID == DaspCommon.nodeID:
                 sdata = {
                     "id": DaspCommon.nodeID,
-                    "info": self.resultinfo
+                    "info": self.resultInfo
                 }
-                self.resultinfoQue.append(sdata)
+                self.resultInfoQue.append(sdata)
                 self.dataEndFlag = 1
                 print ("The whole data has been transmitted!")
             else:
                 sdata = {
                     "id": DaspCommon.nodeID,
-                    "info": self.resultinfo
+                    "info": self.resultInfo
                 }
-                self.resultinfoQue.append(sdata)
+                self.resultInfoQue.append(sdata)
                 data = {
                     "key": "data",
                     "DappName": self.DappName,
                     "id": DaspCommon.nodeID,
-                    "data": self.resultinfoQue
+                    "data": self.resultInfoQue
                 }
                 self.send(self.parentID, data)
 
@@ -299,21 +299,21 @@ class Task(DaspCommon):
             print ("childDataEndFlag complete")
             sdata = {
                 "id": DaspCommon.nodeID,
-                "info": self.resultinfo
+                "info": self.resultInfo
             }
-            self.resultinfoQue.append(sdata)
+            self.resultInfoQue.append(sdata)
             for ele in self.childData:
                 for ele2 in ele:
-                    self.resultinfoQue.append(ele2)
+                    self.resultInfoQue.append(ele2)
             if self.parentID != DaspCommon.nodeID:
                 data = {
                     "key": "data",
                     "DappName": self.DappName,
                     "id": DaspCommon.nodeID,
-                    "data": self.resultinfoQue
+                    "data": self.resultInfoQue
                 }
                 self.send(self.parentID, data=data)
-                self.resultinfoQue = []
+                self.resultInfoQue = []
             else:
                 self.dataEndFlag = 1
                 print ("The whole data has been transmitted!")
@@ -324,15 +324,15 @@ class Task(DaspCommon):
         """
         self.commTreeFlag = 0
     
-    def resetadjData(self):
+    def resetnbrData(self):
         """
         清空邻居数据
         """
-        for i in range(len(self.adjData)):
-            self.adjAsynchData[i] = []
-            self.adjAlstData[i] = []
-            self.adjData[i] = []
-            self.adjData2[i] = []
+        for i in range(len(self.nbrData)):
+            self.nbrAsynchData[i] = []
+            self.nbrAlstData[i] = []
+            self.nbrData[i] = []
+            self.nbrData2[i] = []
 
     def send(self,id,data):
         """
@@ -340,56 +340,56 @@ class Task(DaspCommon):
         """
         self.runFlag.wait()  #系统运行标志
         # 如果之前没建立连接，则建立长连接
-        if id not in DaspCommon.adjSocket: 
+        if id not in DaspCommon.nbrSocket: 
             try:
-                for ele in DaspCommon.IPlist:
+                for ele in DaspCommon.RouteTable:
                     if ele[4] == id:
                         ip = ele[2]
                         port = ele[3]
                         break
                 print (f"connecting to {ip}:{port}")
                 remote_ip = socket.gethostbyname(ip)
-                DaspCommon.adjSocket[id] = TcpSocket(id,remote_ip,port,self)
+                DaspCommon.nbrSocket[id] = TcpSocket(id,remote_ip,port,self)
             except:
-                self.deleteTaskAdjID(id)
+                self.deleteTaskNbrID(id)
                 return 0
 
         # 向相应的套接字发送消息
         try:
-            DaspCommon.adjSocket[id].sendall(data)
+            DaspCommon.nbrSocket[id].sendall(data)
         except:
-            DaspCommon.adjSocket[id].do_fail()
+            DaspCommon.nbrSocket[id].do_fail()
         else:
-            DaspCommon.adjSocket[id].do_pass()
+            DaspCommon.nbrSocket[id].do_pass()
 
     def sendData(self, data):
         """
         通过TCP的形式将信息发送至所有邻居
         """
-        for ele in reversed(self.taskIPlist):
+        for ele in reversed(self.taskRouteTable):
             if ele != []:
                 self.send(ele[4], data)
 
-    def deleteTaskAdjID(self, id):  
+    def deleteTaskNbrID(self, id):  
         """
         删除本节点和指定id邻居节点的所有连接
         """
-        self.deleteadjID(id)
-        for ele in self.taskIPlist:
+        self.deletenbrID(id)
+        for ele in self.taskRouteTable:
             if ele != []:
                 if ele[4] == id:
-                    self.taskIPlist.remove(ele)
+                    self.taskRouteTable.remove(ele)
 
-        if id in self.taskAdjID:
-            index = self.taskAdjID.index(id)      
-            del self.taskAdjID[index]
-            del self.taskAdjDirection[index]   
-            del self.adjSyncStatus[index] 
-            del self.adjSyncStatus2[index]     
-            del self.adjData[index]
-            del self.adjAsynchData[index]
-            del self.adjAlstData[index]
-            del self.adjData2[index]
+        if id in self.taskNbrID:
+            index = self.taskNbrID.index(id)      
+            del self.taskNbrID[index]
+            del self.taskNbrDirection[index]   
+            del self.nbrSyncStatus[index] 
+            del self.nbrSyncStatus2[index]     
+            del self.nbrData[index]
+            del self.nbrAsynchData[index]
+            del self.nbrAlstData[index]
+            del self.nbrData2[index]
 
         if self.parentID == id:
             self.parentID = DaspCommon.nodeID
@@ -415,8 +415,8 @@ class Task(DaspCommon):
         self.leader = None
         min_id = DaspCommon.nodeID
         for m in range(len(self.taskID)-1):  # 迭代节点数量的轮次数
-            _, adjData = self.transmitData(self.taskAdjDirection, [min_id]*len(self.taskAdjDirection))      
-            for ele in adjData:
+            _, nbrData = self.transmitData(self.taskNbrDirection, [min_id]*len(self.taskNbrDirection))      
+            for ele in nbrData:
                 if ele < min_id:
                     min_id = ele
         self.leader = min_id
@@ -431,10 +431,10 @@ class Task(DaspCommon):
             flag = False
             parent = -1
             child = []    
-            edgesFlag = [False] * len(adjDirection)
-            edges = dict(zip(adjDirection,edgesFlag))
+            edgesFlag = [False] * len(nbrDirection)
+            edges = dict(zip(nbrDirection,edgesFlag))
             return flag,parent,child,edges
-        def alst(adjDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token):
+        def alst(nbrDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token):
             """
             Asynchronous Leaderless Spanning Tree algorithm 
             """
@@ -455,7 +455,7 @@ class Task(DaspCommon):
                         if flag == False:
                             flag = True
                             parent = j 
-                            for ele in adjDirection:
+                            for ele in nbrDirection:
                                 if ele != j:
                                     self.sendAlstData(ele,["search",min_uid])
                     if all(edges.values()):
@@ -475,23 +475,23 @@ class Task(DaspCommon):
             """
             self.childDirection = child
             self.parentDirection = parent
-            self.childID = [adjID[adjDirection.index(ele)] for ele in child]
-            self.parentID = adjID[adjDirection.index(parent)] if parent != -1 else nodeID
+            self.childID = [nbrID[nbrDirection.index(ele)] for ele in child]
+            self.parentID = nbrID[nbrDirection.index(parent)] if parent != -1 else nodeID
             self.childData = [[]]*len(child)
             self.treeFlag = True
-        adjDirection = self.taskAdjDirection
-        adjID = self.taskAdjID
+        nbrDirection = self.taskNbrDirection
+        nbrID = self.taskNbrID
         nodeID = DaspCommon.nodeID
         flag,parent,child,edges = reset()
         min_uid = nodeID
         flag = True
         step = 1
-        for ele in adjDirection:
+        for ele in nbrDirection:
             self.sendAlstData(ele,["search",min_uid])
         j,(data,token) = self.getAlstData()
         while True:
             if step == 1:
-                __,parent,child = alst(adjDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token)
+                __,parent,child = alst(nbrDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token)
                 step = 2
                 # generate complete
                 setTree(parent,child)
@@ -500,7 +500,7 @@ class Task(DaspCommon):
                 break
 
     def starttask(self):
-        # if not self.taskAdjID: #只有一个节点的情况
+        # if not self.taskNbrID: #只有一个节点的情况
         #     self.treeFlag = 1   
         if self.parentDirection == -1:
             self.sendDatatoGUI("The communication spanning tree is established.")
@@ -519,7 +519,7 @@ class Task(DaspCommon):
                 self.sendDatatoGUI("任务数据收集完毕")
                 info = []
                 content = ""
-                Que = self.resultinfoQue
+                Que = self.resultInfoQue
                 for i in range(len(Que)):
                     if Que[i]["info"]:
                         info.append({})
@@ -531,8 +531,8 @@ class Task(DaspCommon):
                 self.sendEndDatatoGUI(content)
                 self.taskEndFlag = 0
                 self.dataEndFlag = 0
-                self.resultinfoQue = []
-                self.resultinfo = {}
+                self.resultInfoQue = []
+                self.resultInfo = {}
                     
     ##################################
     ###   下面为提供给用户的接口函数   ###
@@ -543,7 +543,7 @@ class Task(DaspCommon):
         将json消息转发给子节点
         """
         if self.childID:
-            for ele in reversed(self.taskIPlist):
+            for ele in reversed(self.taskRouteTable):
                 if ele:
                     if ele[4] in self.childID:
                         self.send(ele[4], data=data)
@@ -575,7 +575,7 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        for ele in self.taskIPlist:
+        for ele in self.taskRouteTable:
             if ele != []:
                 if ele[4] == id:
                     self.send(ele[4], data)
@@ -637,11 +637,11 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        for i in range(len(self.taskAdjID)):
-            if self.taskAdjDirection[i] ==  direction:
-                for ele in self.taskIPlist:
+        for i in range(len(self.taskNbrID)):
+            if self.taskNbrDirection[i] ==  direction:
+                for ele in self.taskRouteTable:
                     if ele:
-                        if ele[4] == self.taskAdjID[i]:
+                        if ele[4] == self.taskNbrID[i]:
                             self.send(ele[4], data)
 
     def sendDataToDirection2(self, direction, data):
@@ -655,11 +655,11 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        for i in range(len(self.taskAdjID)):
-            if self.taskAdjDirection[i] ==  direction:
-                for ele in self.taskIPlist:
+        for i in range(len(self.taskNbrID)):
+            if self.taskNbrDirection[i] ==  direction:
+                for ele in self.taskRouteTable:
                     if ele:
-                        if ele[4] == self.taskAdjID[i]:
+                        if ele[4] == self.taskNbrID[i]:
                             self.send(ele[4], data)
 
     def sendAsynchData(self, direction, data):
@@ -672,11 +672,11 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        for i in range(len(self.taskAdjID)):
-            if self.taskAdjDirection[i] == direction:
-                for ele in self.taskIPlist:
+        for i in range(len(self.taskNbrID)):
+            if self.taskNbrDirection[i] == direction:
+                for ele in self.taskRouteTable:
                     if ele:
-                        if ele[4] == self.taskAdjID[i]:
+                        if ele[4] == self.taskNbrID[i]:
                             self.send(ele[4], data)
 
     def sendAlstData(self, direction, data):
@@ -689,11 +689,11 @@ class Task(DaspCommon):
             "id": DaspCommon.nodeID,
             "data": data
         }
-        for i in range(len(self.taskAdjID)):
-            if self.taskAdjDirection[i] == direction:
-                for ele in self.taskIPlist:
+        for i in range(len(self.taskNbrID)):
+            if self.taskNbrDirection[i] == direction:
+                for ele in self.taskRouteTable:
                     if ele:
-                        if ele[4] == self.taskAdjID[i]:
+                        if ele[4] == self.taskNbrID[i]:
                             self.send(ele[4], data)
 
     def getAsynchData(self):
@@ -701,11 +701,11 @@ class Task(DaspCommon):
         获取邻居发过来的数据
         """
         while True:
-            for i,que in enumerate(self.adjAsynchData):
+            for i,que in enumerate(self.nbrAsynchData):
                 if not que.empty():
                     # 非阻塞性地获取数据
                     data = que.get_nowait()
-                    return (self.taskAdjDirection[i],data)
+                    return (self.taskNbrDirection[i],data)
             time.sleep(0.01)
 
     def getAlstData(self):
@@ -713,10 +713,10 @@ class Task(DaspCommon):
         获取邻居发过来的alst数据
         """
         while True:
-            for i,que in enumerate(self.adjAlstData):
+            for i,que in enumerate(self.nbrAlstData):
                 if not que.empty():
                     data = que.get_nowait()
-                    return (self.taskAdjDirection[i],data)
+                    return (self.taskNbrDirection[i],data)
             time.sleep(0.01)
 
     def transmitData(self,direclist,datalist):
@@ -724,22 +724,22 @@ class Task(DaspCommon):
         同步通信函数，将datalist中的数据分别发到direclist的邻居方向
         """
         self.runFlag.wait()  #系统运行标志
-        if (self.SyncTurnFlag2 == 0):
-            self.SyncTurnFlag2 = 1 - self.SyncTurnFlag2
+        if (self.syncTurnFlag2 == 0):
+            self.syncTurnFlag2 = 1 - self.syncTurnFlag2
             for i in reversed(range(len(direclist))):
                 self.sendDataToDirection(direclist[i],datalist[i])
             self.syncNode() 
-            ans = copy.deepcopy([self.taskAdjDirection, self.adjData])
-            for i in range(len(self.adjData)):
-                self.adjData[i] = []
+            ans = copy.deepcopy([self.taskNbrDirection, self.nbrData])
+            for i in range(len(self.nbrData)):
+                self.nbrData[i] = []
         else:
-            self.SyncTurnFlag2 = 1 - self.SyncTurnFlag2
+            self.syncTurnFlag2 = 1 - self.syncTurnFlag2
             for i in reversed(range(len(direclist))):
                 self.sendDataToDirection2(direclist[i],datalist[i])
             self.syncNode() 
-            ans = copy.deepcopy([self.taskAdjDirection, self.adjData2])
-            for i in range(len(self.adjData2)):
-                self.adjData2[i] = []    
+            ans = copy.deepcopy([self.taskNbrDirection, self.nbrData2])
+            for i in range(len(self.nbrData2)):
+                self.nbrData2[i] = []    
         return ans
 
     def syncNode(self):
@@ -747,8 +747,8 @@ class Task(DaspCommon):
         同步函数，所有节点同步一次
         """
         self.runFlag.wait()  #系统运行标志
-        if self.SyncTurnFlag == 0:   
-            self.SyncTurnFlag = 1 - self.SyncTurnFlag
+        if self.syncTurnFlag == 0:   
+            self.syncTurnFlag = 1 - self.syncTurnFlag
             data = {
                 "key": "sync",
                 "id": DaspCommon.nodeID,
@@ -756,28 +756,28 @@ class Task(DaspCommon):
             }  
             self.sendData(data)
             # 全部非空才能继续
-            while (not all(self.adjSyncStatus)):   
+            while (not all(self.nbrSyncStatus)):   
                 time.sleep(0.01)
-            for i in range(len(self.adjSyncStatus)):
-                self.adjSyncStatus[i] = 0
+            for i in range(len(self.nbrSyncStatus)):
+                self.nbrSyncStatus[i] = 0
 
-        elif self.SyncTurnFlag == 1:
-            self.SyncTurnFlag = 1 - self.SyncTurnFlag
+        elif self.syncTurnFlag == 1:
+            self.syncTurnFlag = 1 - self.syncTurnFlag
             data = {
                 "key": "sync2",
                 "id": DaspCommon.nodeID,
                 "DappName": self.DappName
             }
             self.sendData(data)
-            while (not all(self.adjSyncStatus2)):   
+            while (not all(self.nbrSyncStatus2)):   
                 time.sleep(0.01)
-            for i in range(len(self.adjSyncStatus2)):
-                self.adjSyncStatus2[i] = 0
+            for i in range(len(self.nbrSyncStatus2)):
+                self.nbrSyncStatus2[i] = 0
 
 
 if __name__ == '__main__':
 
-    DaspCommon.GUIinfo = ["172.23.96.1", 50000]
+    DaspCommon.GuiInfo = ["172.23.96.1", 50000]
     DaspCommon.nodeID = "room_1"
 
     task = Task("debugDAPP")
@@ -794,4 +794,4 @@ if __name__ == '__main__':
     # TaskDict[0] = task
     # task2 = Task(nodeID, 1)
     # TaskDict.update({1:task2})
-    # print (task.GUIinfo,TaskDict[1].GUIinfo)
+    # print (task.GuiInfo,TaskDict[1].GuiInfo)

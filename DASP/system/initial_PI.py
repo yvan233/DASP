@@ -20,10 +20,10 @@ if __name__ == '__main__':
     nodeIP = p.stdout.read()
     nodeIP = str(nodeIP,encoding = 'UTF-8').strip(' \n')
     selfID = 0
-    GUIinfo = ["localhost",50000]
+    GuiInfo = ["localhost",50000]
     for ele in idiplist:
         if ele[2] == "server":
-            GUIinfo = [ele[1],50000]
+            GuiInfo = [ele[1],50000]
         elif ele[1] == nodeIP:
             selfID = ele[0]
             break
@@ -31,9 +31,9 @@ if __name__ == '__main__':
         IP = []
         PORT = []
         ID = []
-        adjID = []
+        nbrID = []
         datalist = []
-        adjDirection = []
+        nbrDirection = []
         path = "/home/pi/yanhu/DASP/Dapp/Base/topology.json"
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
@@ -47,38 +47,38 @@ if __name__ == '__main__':
                         break
                 IP.append(tmpIP)
                 PORT.append([10000, 10001, 10002, 10003, 10004, 10005, 10006])
-                adjID.append(ele["adjID"])
-                adjDirection.append(ele["adjDirection"])
+                nbrID.append(ele["nbrID"])
+                nbrDirection.append(ele["nbrDirection"])
                 datalist.append(ele["datalist"])
                 
         order = ID.index(selfID)
-        selfAdjID = adjID[order]
-        selfAdjDirection = adjDirection[order]
+        selfAdjID = nbrID[order]
+        selfAdjDirection = nbrDirection[order]
         selfIP = IP[order]
         selfPORT = PORT[order]
         selfDatalist = datalist[order]
-        selfIPList = []
+        selfRouteTable = []
         selfAdjDirectionOtherSide = []
         n = len(IP)
         for i in range(len(selfAdjID)):
-            selfIPList.append([])
+            selfRouteTable.append([])
             direction = selfAdjDirection[i] - 1
-            selfIPList[i].append(selfIP)
-            selfIPList[i].append(selfPORT[direction])
+            selfRouteTable[i].append(selfIP)
+            selfRouteTable[i].append(selfPORT[direction])
             for j in range(n):
                 if ID[j] == selfAdjID[i]:
-                    selfIPList[i].append(IP[j])
-                    for k in range(len(adjID[j])):
-                        if adjID[j][k] == selfID:
-                            selfIPList[i].append(PORT[j][adjDirection[j][k]-1])
-                            selfAdjDirectionOtherSide.append(adjDirection[j][k])
+                    selfRouteTable[i].append(IP[j])
+                    for k in range(len(nbrID[j])):
+                        if nbrID[j][k] == selfID:
+                            selfRouteTable[i].append(PORT[j][nbrDirection[j][k]-1])
+                            selfAdjDirectionOtherSide.append(nbrDirection[j][k])
                             break
-                    selfIPList[i].append(ID[j])
+                    selfRouteTable[i].append(ID[j])
                     break
                 
-        selfIPListprint = [str(ele) for ele in selfIPList]
-        print("IPlist: "+ json.dumps(selfIPListprint, indent=2))
-        server = system.Server(selfID, GUIinfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfIPList, selfIP, selfPORT, selfDatalist)
+        selfRouteTableprint = [str(ele) for ele in selfRouteTable]
+        print("RouteTable: "+ json.dumps(selfRouteTableprint, indent=2))
+        server = system.Server(selfID, GuiInfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfRouteTable, selfIP, selfPORT, selfDatalist)
         server.run()
     else:
         print("该节点IP未被录入！")

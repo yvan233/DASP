@@ -6,26 +6,26 @@ sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 from DASP.module import DaspCommon, TaskServer, CommServer
 
 class Server(object):
-    def __init__(self, ID, GUIinfo, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
+    def __init__(self, ID, GuiInfo, nbrID, nbrDirection, nbrDirectionOtherSide, RouteTable,IP,Port,datalist):
         DaspCommon.nodeID = ID
-        DaspCommon.GUIinfo = GUIinfo
+        DaspCommon.GuiInfo = GuiInfo
         DaspCommon.IP = socket.gethostbyname(IP)
-        DaspCommon.PORT = PORT
-        DaspCommon.adjID = adjID
-        DaspCommon.adjDirection = adjDirection
-        DaspCommon.adjDirectionOtherSide = adjDirectionOtherSide
-        DaspCommon.IPlist = IPlist
+        DaspCommon.Port = Port
+        DaspCommon.nbrID = nbrID
+        DaspCommon.nbrDirection = nbrDirection
+        DaspCommon.nbrDirectionOtherSide = nbrDirectionOtherSide
+        DaspCommon.RouteTable = RouteTable
 
     def run(self):
         #创建接口服务器
         self.commServerThread = []
-        for _,port in enumerate(DaspCommon.PORT[1:]):
+        for _,port in enumerate(DaspCommon.Port[1:]):
             commserver = CommServer(DaspCommon.IP, port)
             t = threading.Thread(target=commserver.run,args=())
             t.setDaemon(True)
             self.commServerThread.append(t)
 
-        taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[0])
+        taskserver = TaskServer(DaspCommon.IP,DaspCommon.Port[0])
         self.taskServerThread = threading.Thread(target=taskserver.run,args=())
         self.taskServerThread.setDaemon(True)
         self.systemTaskThread = threading.Thread(target=taskserver.systemtask,args=())

@@ -1,12 +1,12 @@
 from DASP.module import Task
 
-def taskFunction(self:Task,id,adjDirection:list,datalist):
+def taskFunction(self:Task,id,nbrDirection:list,datalist):
     def reset():
         flag = False
         parent = -1
         child = []    
-        edgesFlag = [False] * len(adjDirection)
-        edges = dict(zip(adjDirection,edgesFlag))
+        edgesFlag = [False] * len(nbrDirection)
+        edges = dict(zip(nbrDirection,edgesFlag))
         return flag,parent,child,edges
 
     flag,parent,child,edges = reset()
@@ -14,7 +14,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
     flag = True
     step = 1
     leader_state = "non-leader"  
-    for ele in adjDirection:
+    for ele in nbrDirection:
         self.sendAsynchData(ele,["search",id])
     j,(data,token) = self.getAsynchData()
     while True:
@@ -36,7 +36,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                         if flag == False:
                             flag = True
                             parent = j 
-                            for ele in adjDirection:
+                            for ele in nbrDirection:
                                 if ele != j:
                                     self.sendAsynchData(ele,["search",min_uid])
                     if all(edges.values()):

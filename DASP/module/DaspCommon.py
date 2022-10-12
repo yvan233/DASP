@@ -97,7 +97,7 @@ class TcpSocket():
         if self.fail_count >= self.fail_limit and datetime.datetime.now()-self.first_fail_time >= datetime.timedelta(seconds=self.fail_limit*self.time_interval):
             self.state = "failed"
             # 关闭节点连接
-            self.owner.deleteTaskAdjID(self.ID)
+            self.owner.deleteTaskNbrID(self.ID)
 
     def reconnect(self):
         while self.state == "failing":
@@ -125,27 +125,27 @@ class DaspCommon():
     属性:
         nodeID: 节点ID
         IP: 节点IP
-        PORT: 节点端口列表
-        adjID: 邻居ID
-        adjDirection: 邻居方向
-        adjDirectionOtherSide: 节点在邻居的方向
-        adjsocket: 邻居通信套接字
-        IPlist: 邻居IP及端口列表
-        GUIinfo: UI界面IP及端口
+        Port: 节点端口列表
+        nbrID: 邻居ID
+        nbrDirection: 邻居方向
+        nbrDirectionOtherSide: 节点在邻居的方向
+        nbrSocket: 邻居通信套接字
+        RouteTable: 邻居IP及端口列表
+        GuiInfo: UI界面IP及端口
         self.headformat: 自定义消息头格式，methods+length，2个无符号整形变量
-        self.headerSize：自定义消息头长度，8个字节
+        self.headerSize: 自定义消息头长度，8个字节
         (包括读取拓扑文件的信息，以及所有类共有的信息)
     '''
     # 类变量，直接通过DaspCommon.维护
     nodeID = ""
     IP = ""
-    PORT = []
-    adjID = []
-    adjDirection = []
-    adjDirectionOtherSide = []
-    adjSocket = {}
-    IPlist = []
-    GUIinfo = ["localhost",50000]    
+    Port = []
+    nbrID = []
+    nbrDirection = []
+    nbrDirectionOtherSide = []
+    nbrSocket = {}
+    RouteTable = []
+    GuiInfo = ["localhost",50000]    
     headformat = "!2I"
     headerSize = 8
     def __init__(self):
@@ -157,7 +157,7 @@ class DaspCommon():
         """
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            addr = (DaspCommon.GUIinfo[0], DaspCommon.GUIinfo[1])
+            addr = (DaspCommon.GuiInfo[0], DaspCommon.GuiInfo[1])
             data = {
                 "key": key,
                 "id": DaspCommon.nodeID,
@@ -170,21 +170,21 @@ class DaspCommon():
         except Exception as e:
             print ("Failed to send" + info)
 
-    def deleteadjID(self, id):  
+    def deletenbrID(self, id):  
         """
         删除本节点和指定id邻居节点的所有连接(DaspCommon类变量)
         """
         
-        if id in DaspCommon.adjID:
-            index = DaspCommon.adjID.index(id)      
-            del DaspCommon.adjID[index]
-            del DaspCommon.adjDirection[index]
-        for ele in DaspCommon.IPlist:
+        if id in DaspCommon.nbrID:
+            index = DaspCommon.nbrID.index(id)      
+            del DaspCommon.nbrID[index]
+            del DaspCommon.nbrDirection[index]
+        for ele in DaspCommon.RouteTable:
             if ele != []:
                 if ele[4] == id:
-                    DaspCommon.IPlist.remove(ele)
-        if id in DaspCommon.adjSocket:
-            del DaspCommon.adjSocket[id]
+                    DaspCommon.RouteTable.remove(ele)
+        if id in DaspCommon.nbrSocket:
+            del DaspCommon.nbrSocket[id]
 
     def _async_raise(self, tid, exctype):
         '''

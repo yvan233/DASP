@@ -2,7 +2,7 @@
 from DASP.module import Task
 import datetime,time
 
-def taskFunction(self:Task,id,adjDirection,datalist):
+def taskFunction(self:Task,id,nbrDirection,datalist):
     # init 
     min_uid = id
     # 生成树节点标识
@@ -12,12 +12,12 @@ def taskFunction(self:Task,id,adjDirection,datalist):
     # 子节点方向
     child = []
     # 用于判断计算是否结束的END计数器，初始化为False
-    edges = [False] * len(adjDirection)
+    edges = [False] * len(nbrDirection)
 
     # 无发起节点
     flag = True
     parent.append(0)  # 假定一个0方向，父节点方向为0的即为根节点/发起节点
-    for ele in adjDirection:
+    for ele in nbrDirection:
         self.sendAsynchData(ele,["search",id])
 
     starttime = datetime.datetime.now()
@@ -37,7 +37,7 @@ def taskFunction(self:Task,id,adjDirection,datalist):
             flag = False
             parent = []
             child = []
-            edges = [False] * len(adjDirection)
+            edges = [False] * len(nbrDirection)
         # token一样，正常操作
         else:
             pass
@@ -49,16 +49,16 @@ def taskFunction(self:Task,id,adjDirection,datalist):
 
          # 如果邻居传来join信号
         elif data == "join":
-            edges[adjDirection.index(j)] = True
+            edges[nbrDirection.index(j)] = True
             child.append(j)
         # search
         else:
-            edges[adjDirection.index(j)] = True
+            edges[nbrDirection.index(j)] = True
             if flag == False:
                 flag = True
                 parent.append(j)  #将邻居方向加入父节点方向
                 # 向其他邻居广播BFS信号
-                for ele in adjDirection:
+                for ele in nbrDirection:
                     if ele != j:
                         self.sendAsynchData(ele,["search",min_uid])
                         

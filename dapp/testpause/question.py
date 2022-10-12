@@ -1,7 +1,7 @@
 import copy
 import time 
 
-def taskFunction(self,id,adjDirection,datalist):
+def taskFunction(self,id,nbrDirection,datalist):
     i = 0
     while True:
         # time.sleep(4)    # shutdown任务时会阻塞等待

@@ -2,15 +2,15 @@
 # 测试节点3的断开
 from DASP.module import Task
 import time
-def drc2id(adjDirection,adjID,drc):
-    return adjID[adjDirection.index(drc)]
+def drc2id(nbrDirection,nbrID,drc):
+    return nbrID[nbrDirection.index(drc)]
             
-def taskFunction(self:Task,id,adjDirection:list,datalist):
-    adjID = self.TaskadjID 
+def taskFunction(self:Task,id,nbrDirection:list,datalist):
+    nbrID = self.TasknbrID 
     flag = False 
     parent = -1
     child = []    
-    edges = [False] * len(adjDirection)
+    edges = [False] * len(nbrDirection)
     min_uid = id
     flag = True
     step = 1
@@ -18,7 +18,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
     test_id = ""
     testflag = 1 
 
-    for ele in adjDirection:
+    for ele in nbrDirection:
         self.sendAsynchData(ele,["search",id])
     j,(data,token) = self.getAsynchData()
     while True:
@@ -30,9 +30,9 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                         flag = False
                         parent = -1
                         child = []
-                        edges = [False] * len(adjDirection)
+                        edges = [False] * len(nbrDirection)
 
-                    edges[adjDirection.index(j)] = True
+                    edges[nbrDirection.index(j)] = True
                     if data == "end":
                         if j == parent:
                             for ele in child:
@@ -49,7 +49,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                             flag = True
                             parent = j  #将邻居方向加入父节点方向
                             # 向其他邻居广播BFS信号
-                            for ele in adjDirection:
+                            for ele in nbrDirection:
                                 if ele != j:
                                     self.sendAsynchData(ele,["search",min_uid])
                                     
@@ -66,8 +66,8 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                 self.sendDatatoGUI("recv from {}:[{},{}]".format(j,data,token))
                             
 
-            child_show = [drc2id(adjDirection,adjID,ele) for ele in child]
-            parent_show = [drc2id(adjDirection,adjID,parent) if parent != -1 else -1]
+            child_show = [drc2id(nbrDirection,nbrID,ele) for ele in child]
+            parent_show = [drc2id(nbrDirection,nbrID,parent) if parent != -1 else -1]
             value = {"parent":parent_show,"child":child_show}
             self.sendDatatoGUI(f"{value}")
             step = 2
@@ -82,8 +82,8 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                 # time.sleep(10)
                 # test_id = ""
                 # testflag = 0
-                # adjID.append("room_3")   
-                # adjDirection.append(5)   
+                # nbrID.append("room_3")   
+                # nbrDirection.append(5)   
                 # edges.append[False]
                 pass
 
@@ -93,32 +93,32 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
             # flag = False 
             # parent = -1
             # child = []    
-            # edges = [False] * len(adjDirection)
+            # edges = [False] * len(nbrDirection)
             # min_uid = id
             # flag = True
             # step = 1
 
-            # for ele in adjDirection:
+            # for ele in nbrDirection:
             #     self.sendAsynchData(ele,["search",id])
             # j,(data,token) = self.getAsynchData()
 
                 
         if step == 2:
             if test_id:
-                index = adjID.index(test_id)
-                if adjDirection[index] == parent:
-                    del adjID[index]
-                    del adjDirection[index]   
+                index = nbrID.index(test_id)
+                if nbrDirection[index] == parent:
+                    del nbrID[index]
+                    del nbrDirection[index]   
                     del edges[index]
 
                     flag = False 
                     parent = -1
                     child = []    
-                    edges = [False] * len(adjDirection)
+                    edges = [False] * len(nbrDirection)
                     min_uid = id
                     flag = True
                     step = 1
-                    for ele in adjDirection:
+                    for ele in nbrDirection:
                         self.sendAsynchData(ele,["search",min_uid])
                     self.sendDatatoGUI(f"已删除和{test_id}的链接")
                     j,(data,token) = self.getAsynchData()
@@ -126,16 +126,16 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                     test_id = ""
                     continue
 
-                elif adjDirection[index] in child:
-                    child.remove(adjDirection[index])
-                    del adjID[index]
-                    del adjDirection[index]   
+                elif nbrDirection[index] in child:
+                    child.remove(nbrDirection[index])
+                    del nbrID[index]
+                    del nbrDirection[index]   
                     del edges[index]
                     test_id = ""
                     self.sendDatatoGUI(f"已删除和{test_id}的链接")
                 else:
-                    del adjID[index]
-                    del adjDirection[index]   
+                    del nbrID[index]
+                    del nbrDirection[index]   
                     del edges[index]
                     test_id = ""
                     self.sendDatatoGUI(f"已删除和{test_id}的链接")
@@ -146,17 +146,17 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                 if j == parent:
                     parent = -1
                     child = []    
-                    edges = [False] * len(adjDirection)
+                    edges = [False] * len(nbrDirection)
                     min_uid = id
                     flag = True
                     step = 1
                     if min_uid < token:
-                        for ele in adjDirection:
+                        for ele in nbrDirection:
                             self.sendAsynchData(ele,["search",id])
                 else:
                     if j in child:
                         child.remove(j)
-                    edges[adjDirection.index(j)] = False
+                    edges[nbrDirection.index(j)] = False
                     
                     if token > min_uid:
                         self.sendAsynchData(j,["search",min_uid]) 
@@ -164,7 +164,7 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                         step = 1
                     else:
                         self.sendAsynchData(j,["end",min_uid]) 
-                        edges[adjDirection.index(j)] = True
+                        edges[nbrDirection.index(j)] = True
                         if data == "join":
                             child.append(j)
                             
@@ -175,8 +175,8 @@ def taskFunction(self:Task,id,adjDirection:list,datalist):
                             
 
 
-    child = [drc2id(adjDirection,adjID,ele) for ele in child]
-    parent = [drc2id(adjDirection,adjID,ele) for ele in parent if ele != -1]
+    child = [drc2id(nbrDirection,nbrID,ele) for ele in child]
+    parent = [drc2id(nbrDirection,nbrID,ele) for ele in parent if ele != -1]
     value = {"state":leader_state,"parent":parent,"child":child}
 
     return value

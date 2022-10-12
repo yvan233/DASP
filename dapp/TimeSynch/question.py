@@ -13,7 +13,7 @@ def updatetime(offset):
         set_time = new_time.strftime(TIMEFORMAT)
         os.system("sudo timedatectl set-time '{}'".format(set_time))    
     
-def taskFunction(self, id, adjDirection, datalist):
+def taskFunction(self, id, nbrDirection, datalist):
     TIMEFORMAT = "%Y-%m-%d %H:%M:%S.%f"
     # 子节点向根节点发送数据框架
     if id == "communication_node":

@@ -30,7 +30,7 @@ class ControlMixin():
         self.IPDict = {}
         for ele in js:
             if "ID" in ele:
-                self.TaskPortDict[ele["ID"]] = ele["PORT"][0]
+                self.TaskPortDict[ele["ID"]] = ele["Port"][0]
                 self.IPDict[ele["ID"]] = self.localIP
         if mode == "PI":
             path = os.getcwd() + "/Dapp/Base/binding.csv"
