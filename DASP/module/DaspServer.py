@@ -125,7 +125,6 @@ class BaseServer(DaspCommon):
                 remote_ip = socket.gethostbyname(ip)
                 DaspCommon.nbrSocket[id] = TcpSocket(id,remote_ip,port,self)
             except:
-                # self.sendRunDatatoGUI(f"连接{ip}:{port}失败")
                 self.deleteTaskNbrID(id)
                 return 0
 
@@ -150,7 +149,7 @@ class BaseServer(DaspCommon):
         """
         删除本节点的任务和指定id邻居节点的所有连接(任务字典中的变量)
         """
-        self.deletenbrID(id)
+        self.deleteNbrID(id)
         for key in BaseServer.TaskDict:
             BaseServer.TaskDict[key].deleteTaskNbrID(id)       
         self.sendRunDatatoGUI(f"与邻居节点{id}连接失败，已删除和{id}的连接") 
@@ -228,7 +227,7 @@ class TaskServer(BaseServer):
         """
         name = jdata["DappName"]
         self.sendRunDatatoGUI("接收任务请求",name)
-        task = Task(name)
+        task = Task(name, self)
         BaseServer.TaskDict[name] = task
         task.load()
         task.startCommPattern()
@@ -278,12 +277,6 @@ class TaskServer(BaseServer):
                 self.startthreads = threading.Thread(target=self.autostarttask, args=())
                 self.startthreads.start()
 
-                # # 执行alst算法
-                # task = Task("ALST")
-                # task.load()
-                # task.startCommPattern()
-                # BaseServer.TaskDict["ALST"] = task
-
             self.sendRunDatatoGUI("系统第{}次自检：当前邻居节点：{}".format(i,str(DaspCommon.nbrID)))
             time.sleep(SYSTEMSETTIME)
      
@@ -305,7 +298,7 @@ class TaskServer(BaseServer):
             time.sleep(float(ele[2]) - beforetime)
             if ele[1] == "default":  # 默认模式，以当前网络字典序最小的节点启动算法
                 name = ele[0]
-                BaseServer.TaskDict[name] = Task(name)
+                BaseServer.TaskDict[name] = Task(name, self)
                 BaseServer.TaskDict[name].load()
                 BaseServer.TaskDict[name].reset()
                 ## 如果当前节点在任务中
@@ -488,12 +481,12 @@ class CommServer(BaseServer):
         """
         name = jdata["DappName"]
         if name not in BaseServer.TaskDict:
-            task = Task(name)
+            task = Task(name, self)
             BaseServer.TaskDict[name] = task
             task.load()
             task.startCommPattern()
         elif BaseServer.TaskDict[name].commTreeFlag == 0:
-            task = Task(name)
+            task = Task(name, self)
             BaseServer.TaskDict[name] = task
             task.load()
             task.startCommPattern()
@@ -565,11 +558,3 @@ class CommServer(BaseServer):
             BaseServer.TaskDict[name].nbrSyncStatus[index] = 1
         else:
             BaseServer.TaskDict[name].nbrSyncStatus2[index] = 1
-
-if __name__ == '__main__':
-    DaspCommon.nodeID = "room_2"
-    task = Task("debugDAPP")
-    task.load()
-    BaseServer.TaskDict["debugDAPP"] = task
-    BaseServer.TaskDict["debugDAPP"].load_debuginfo()
-    BaseServer.TaskDict["debugDAPP"].taskBeginFlag = 1

@@ -68,13 +68,12 @@ class Task(DaspCommon):
         databaseName: 调试数据库名称（默认Daspdb）
         observedVariable: 观察变量列表
         """
-    def __init__(self, DappName):
+    def __init__(self, DappName, owner):
         self.DappName = DappName
+        self.owner = owner
         self.commTreeFlag = 1
         self.dataEndFlag = 0
         self.loadflag = 0 
-        self.leader = None
-        self.commThread = None
         self.timesleepFlag = threading.Event()
         self.runFlag = threading.Event()
         self.runFlag.set()
@@ -116,7 +115,7 @@ class Task(DaspCommon):
 
             # 加载debug信息
             debugpath = f"{os.getcwd()}/Dapp/{self.DappName}/debug.json"
-            self.load_debuginfo(debugpath)
+            self.loadDebugInfo(debugpath)
 
             order = ID.index(DaspCommon.nodeID)
             selfNbrID = AllNbrID[order]
@@ -151,7 +150,8 @@ class Task(DaspCommon):
             self.treeFlag = 0
             self.parentID = DaspCommon.nodeID
             self.parentDirection = -1
-
+            self.leader = None
+            
             self.childID= []
             self.childDirection = []
             self.nbrData = []
@@ -178,7 +178,7 @@ class Task(DaspCommon):
             self.taskThreads.start()
         self.loadflag = 1 
 
-    def load_debuginfo(self, debugpath):
+    def loadDebugInfo(self, debugpath):
         """
         加载调试模式信息
         """
@@ -218,7 +218,7 @@ class Task(DaspCommon):
                     print ("Calculation complete")
                     self.taskBeginFlag = 0
                     self.taskEndFlag = 1
-                    self.data_collec()
+                    self.collecResult()
                 except SystemExit as e:
                     self.sendDatatoGUI("停止执行")
                     print("DAPP:{} stop".format(self.DappName))
@@ -261,7 +261,7 @@ class Task(DaspCommon):
             print("DAPP:{} has stopped".format(self.DappName))
         self.reset()
 
-    def data_collec(self):
+    def collecResult(self):
         """
         收集算法程序运行结果
         """
@@ -324,7 +324,7 @@ class Task(DaspCommon):
         """
         self.commTreeFlag = 0
     
-    def resetnbrData(self):
+    def resetNbrData(self):
         """
         清空邻居数据
         """
@@ -338,29 +338,7 @@ class Task(DaspCommon):
         """
         通过TCP的形式将信息发送至指定ID的节点
         """
-        self.runFlag.wait()  #系统运行标志
-        # 如果之前没建立连接，则建立长连接
-        if id not in DaspCommon.nbrSocket: 
-            try:
-                for ele in DaspCommon.RouteTable:
-                    if ele[4] == id:
-                        ip = ele[2]
-                        port = ele[3]
-                        break
-                print (f"connecting to {ip}:{port}")
-                remote_ip = socket.gethostbyname(ip)
-                DaspCommon.nbrSocket[id] = TcpSocket(id,remote_ip,port,self)
-            except:
-                self.deleteTaskNbrID(id)
-                return 0
-
-        # 向相应的套接字发送消息
-        try:
-            DaspCommon.nbrSocket[id].sendall(data)
-        except:
-            DaspCommon.nbrSocket[id].do_fail()
-        else:
-            DaspCommon.nbrSocket[id].do_pass()
+        self.owner.send(id,data)
 
     def sendData(self, data):
         """
@@ -374,7 +352,6 @@ class Task(DaspCommon):
         """
         删除本节点和指定id邻居节点的所有连接
         """
-        self.deletenbrID(id)
         for ele in self.taskRouteTable:
             if ele != []:
                 if ele[4] == id:
@@ -459,6 +436,7 @@ class Task(DaspCommon):
                                 if ele != j:
                                     self.sendAlstData(ele,["search",min_uid])
                     if all(edges.values()):
+                        self.leader = min_uid
                         if min_uid == nodeID:
                             leader_state = "leader"
                             for ele in child:
@@ -496,20 +474,21 @@ class Task(DaspCommon):
                 # generate complete
                 setTree(parent,child)
                 self.starttask()
-            if step == 2:
+            if step == 2:                
                 break
 
     def starttask(self):
-        # if not self.taskNbrID: #只有一个节点的情况
+        # only have one node
+        # if not self.taskNbrID:
         #     self.treeFlag = 1   
         if self.parentDirection == -1:
             self.sendDatatoGUI("The communication spanning tree is established.")
-            self.resultThread = threading.Thread(target=self.forwardResult, args=())
+            self.resultThread = threading.Thread(target=self.aggregateResult, args=())
             self.resultThread.start()
         self.taskBeginFlag = 1
             
                 
-    def forwardResult(self):
+    def aggregateResult(self):
         """
         根节点等待所有任务的数据收集结束标志，随后将计算结果转发到GUI界面
         """

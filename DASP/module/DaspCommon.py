@@ -170,7 +170,7 @@ class DaspCommon():
         except Exception as e:
             print ("Failed to send" + info)
 
-    def deletenbrID(self, id):  
+    def deleteNbrID(self, id):  
         """
         删除本节点和指定id邻居节点的所有连接(DaspCommon类变量)
         """
@@ -180,7 +180,7 @@ class DaspCommon():
             del DaspCommon.nbrID[index]
             del DaspCommon.nbrDirection[index]
         for ele in DaspCommon.RouteTable:
-            if ele != []:
+            if ele:
                 if ele[4] == id:
                     DaspCommon.RouteTable.remove(ele)
         if id in DaspCommon.nbrSocket:
