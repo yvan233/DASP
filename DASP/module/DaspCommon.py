@@ -24,7 +24,7 @@ class TcpSocket():
         # heartbeat
         self.fail_count = 0
         self.fail_limit = 3
-        self.time_interval = 30
+        self.time_interval = 30/4
         self.state = "passing"
 
     def close(self):

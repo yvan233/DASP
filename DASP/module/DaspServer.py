@@ -9,7 +9,7 @@ import traceback
 from datetime import datetime
 from . import DaspCommon, TcpSocket, Task
 
-SYSTEMSETTIME = 120
+SYSTEMSETTIME = 30
 
 class BaseServer(DaspCommon):
     '''基础服务器
@@ -153,6 +153,13 @@ class BaseServer(DaspCommon):
         for key in BaseServer.TaskDict:
             BaseServer.TaskDict[key].deleteTaskNbrID(id)       
         self.sendRunDatatoGUI(f"与邻居节点{id}连接失败，已删除和{id}的连接") 
+
+    def addTaskNbrID(self, id, direction):
+        """
+        添加本节点的任务和指定id邻居节点的所有连接(任务字典中的变量)
+        """
+        for key in BaseServer.TaskDict:
+            BaseServer.TaskDict[key].addTaskNbrID(id, direction)    
 
     def sendRunDatatoGUI(self, info, DappName = "system"):
         """
@@ -415,17 +422,18 @@ class CommServer(BaseServer):
         """
         回应ping信号，如果发送的节点之前不在邻居节点中 且 申请方向未被占用，则加入网络
         """
-        id = jdata["id"]
-        if id not in DaspCommon.nbrID:
-            if jdata["requestdirection"] not in DaspCommon.nbrDirection:
-                direction = jdata["requestdirection"] - 1
-                DaspCommon.RouteTable.append([self.IP,self.Port[direction],jdata["host"],jdata["port"],jdata["id"]])
-                DaspCommon.nbrID.append(jdata["id"])
-                DaspCommon.nbrDirection.append(jdata["requestdirection"])
-                self.sendRunDatatoGUI("与邻居节点{0}重连成功，已添加和{0}的连接".format(jdata["id"])) 
+        ID = jdata["id"]
+        direction = jdata["requestdirection"]
+        if ID not in DaspCommon.nbrID:
+            if direction not in DaspCommon.nbrDirection:
+                DaspCommon.RouteTable.append([self.IP,self.Port[direction],jdata["host"],jdata["port"],ID])
+                DaspCommon.nbrID.append(ID)
+                DaspCommon.nbrDirection.append(direction)
+                self.sendRunDatatoGUI("与邻居节点{0}重连成功，已添加和{0}的连接".format(ID))
             else:
-                info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,str(jdata["requestdirection"]))
+                info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,direction)
                 self.sendRunDatatoGUI(info)
+            self.addTaskNbrID(ID, direction)
 
         
     def respondPauseTask(self, jdata):
