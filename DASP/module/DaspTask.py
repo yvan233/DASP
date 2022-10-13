@@ -47,7 +47,6 @@ class Task(DaspCommon):
         taskThreads :多线程
 
         commTreeFlag: 当前节点是否被加进通信树标志
-        treeFlag: 通信树建立完成标志
         taskBeginFlag: 任务启动标志
         taskEndFlag: 任务结束标志
         dataEndFlag: 根节点数据收集结束标志
@@ -67,6 +66,8 @@ class Task(DaspCommon):
         databaseInfo: 数据库连接信息
         databaseName: 调试数据库名称（默认Daspdb）
         observedVariable: 观察变量列表
+
+        deleteDirection: 删除的节点方向
         """
     def __init__(self, DappName, owner):
         self.DappName = DappName
@@ -147,7 +148,6 @@ class Task(DaspCommon):
             self.resultInfoQue = []
             self.childData = []
             self.childDataEndFlag = 0
-            self.treeFlag = 0
             self.parentID = DaspCommon.nodeID
             self.parentDirection = -1
             self.leader = None
@@ -160,6 +160,7 @@ class Task(DaspCommon):
             self.nbrData2= []
             self.rootData = queue.Queue() 
             self.descendantData = queue.Queue() 
+            self.deleteDirection = queue.Queue()
 
             self.syncTurnFlag = 0
             self.syncTurnFlag2 = 0
@@ -358,7 +359,8 @@ class Task(DaspCommon):
                     self.taskRouteTable.remove(ele)
 
         if id in self.taskNbrID:
-            index = self.taskNbrID.index(id)      
+            index = self.taskNbrID.index(id)    
+            self.deleteDirection.put(self.taskNbrDirection[index])  
             del self.taskNbrID[index]
             del self.taskNbrDirection[index]   
             del self.nbrSyncStatus[index] 
@@ -368,15 +370,7 @@ class Task(DaspCommon):
             del self.nbrAlstData[index]
             del self.nbrData2[index]
 
-        if self.parentID == id:
-            self.parentID = DaspCommon.nodeID
-            self.parentDirection = -1
-        else:
-            if id in self.childID:
-                index = self.childID.index(id) 
-                del self.childID[index]     
-                del self.childDirection[index]
-                del self.childData[index]
+        
 
     def startCommPattern(self):
         """
@@ -456,7 +450,6 @@ class Task(DaspCommon):
             self.childID = [nbrID[nbrDirection.index(ele)] for ele in child]
             self.parentID = nbrID[nbrDirection.index(parent)] if parent != -1 else nodeID
             self.childData = [[]]*len(child)
-            self.treeFlag = True
         nbrDirection = self.taskNbrDirection
         nbrID = self.taskNbrID
         nodeID = DaspCommon.nodeID
@@ -474,13 +467,74 @@ class Task(DaspCommon):
                 # generate complete
                 setTree(parent,child)
                 self.starttask()
-            if step == 2:                
-                break
+            if step == 2:           
+                if not self.deleteDirection.empty():
+                    direction = self.deleteDirection.get_nowait()
+                    if self.parentDirection == direction:
+                        self.parentID = DaspCommon.nodeID
+                        self.parentDirection = -1
+                        flag,parent,child,edges = reset()
+                        min_uid = nodeID
+                        flag = True
+                        step = 1
+                        for ele in nbrDirection:
+                            self.sendAlstData(ele,["search",min_uid])
+                        j,(data,token) = self.getAlstData()
+                        self.sendDatatoGUI("recv from {}:[{},{}]".format(j,data,token))
+
+                    elif direction in self.childDirection:
+                        index = self.childDirection.index(direction) 
+                        del edges[direction]
+                        del child[index]
+                        del self.childID[index]     
+                        del self.childDirection[index]
+                        del self.childData[index]
+                    else:
+                        del edges[direction]
+                else:
+                    for i,que in enumerate(self.nbrAlstData):
+                        if not que.empty():
+                            qdata = que.get_nowait()
+                            j,(data,token) = self.taskNbrDirection[i],qdata
+                            if j == self.parentDirection:
+                                self.parentID = DaspCommon.nodeID
+                                self.parentDirection = -1
+                                flag,parent,child,edges = reset()
+                                min_uid = nodeID
+                                flag = True
+                                step = 1
+                                if token > min_uid :
+                                    for ele in nbrDirection:
+                                        self.sendAlstData(ele,["search",min_uid])
+                            else:
+                                if j in self.childDirection:
+                                    index = self.childDirection.index(direction) 
+                                    del child[index]
+                                    del self.childID[index]     
+                                    del self.childDirection[index]
+                                    del self.childData[index]
+                                edges[j] = False
+                                
+                                if token > self.leader:
+                                    self.sendAlstData(j,["search",self.leader]) 
+                                elif token < self.leader:
+                                    step = 1
+                                else:
+                                    edges[j] = True
+                                    if data == "join":
+                                        if j not in self.childDirection:
+                                            child.append(j)
+                                            self.childDirection.append(j)
+                                            self.childID.append(nbrID[nbrDirection.index(j)])
+                                            self.childData.append([])
+                                        self.sendAlstData(j,["end",self.leader]) 
+                                    elif data == "search":
+                                        self.sendAlstData(j,["end",self.leader]) 
+                            break
+
+                time.sleep(0.01)
 
     def starttask(self):
-        # only have one node
-        # if not self.taskNbrID:
-        #     self.treeFlag = 1   
         if self.parentDirection == -1:
             self.sendDatatoGUI("The communication spanning tree is established.")
             self.resultThread = threading.Thread(target=self.aggregateResult, args=())
