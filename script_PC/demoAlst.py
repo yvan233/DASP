@@ -26,11 +26,10 @@ controlMixin.startTask(DappName,startNode)
 
 
 node_num = 8
-
-# room_2断开并被删除连接后重连
-time.sleep(120/4)
+# Heatpump断开并被删除连接后重连
+time.sleep(120)
 nodelist[node_num].kill()
-time.sleep(260/4)
+time.sleep(260)
 
 # 重新启动room_2节点进程
 node = Node(node_num)

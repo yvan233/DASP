@@ -7,9 +7,7 @@ import threading
 import time
 import traceback
 from datetime import datetime
-from . import DaspCommon, TcpSocket, Task
-
-SYSTEMSETTIME = 30
+from . import DaspCommon, TcpSocket, Task, Const
 
 class BaseServer(DaspCommon):
     '''基础服务器
@@ -285,7 +283,7 @@ class TaskServer(BaseServer):
                 self.startthreads.start()
 
             self.sendRunDatatoGUI("The current neighbors are {}".format(str(DaspCommon.nbrID)))
-            time.sleep(SYSTEMSETTIME)
+            time.sleep(Const.SYSTEM_TASK_TIME)
      
     def autostarttask(self):
         """

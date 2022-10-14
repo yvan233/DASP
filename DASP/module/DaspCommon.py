@@ -8,6 +8,11 @@ import struct
 import threading
 import time
 
+class Const():
+    RECONNECT_FAIL_LIMIT = 3
+    RECONNECT_TIME_INTERVAL = 30
+    SYSTEM_TASK_TIME = 120
+
 class TcpSocket():
     headformat = "!2I"
     headerSize = 8
@@ -23,8 +28,8 @@ class TcpSocket():
 
         # heartbeat
         self.fail_count = 0
-        self.fail_limit = 3
-        self.time_interval = 30/4
+        self.fail_limit = Const.RECONNECT_FAIL_LIMIT
+        self.time_interval = Const.RECONNECT_TIME_INTERVAL
         self.state = "passing"
 
     def close(self):
