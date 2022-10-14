@@ -54,7 +54,7 @@ class Node:
         """
         self.proc.kill()
         self.proc.wait()
-        print ("[node{}]: 进程已被杀死".format(self.num))
+        print ("[node{}]: The process has been killed.".format(self.num))
 
 if __name__ == '__main__':
     nodelist = []

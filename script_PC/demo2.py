@@ -22,13 +22,13 @@ for i in range(nodeNum):
 time.sleep(2)
 
 DappName = "BFStree"
-print("开始任务："+DappName)
+print("start task: "+DappName)
 controlMixin.startTask(DappName,startNode)
 
 # 并行示例
 time.sleep(1)
 DappName = "ALST"
-print("开始任务："+DappName)
+print("start task: "+DappName)
 controlMixin.startTask(DappName,startNode)
 
 moniter.wait()

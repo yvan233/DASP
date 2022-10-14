@@ -82,7 +82,7 @@ class TcpSocket():
 
     def do_pass(self):
         if self.state == "failing":
-            self.owner.sendRunDatatoGUI(f"与邻居节点{self.ID}重连成功") 
+            self.owner.sendRunDatatoGUI(f"Reconnected successfully with neighbor node {self.ID}.") 
         self.state = "passing"
         self.fail_count = 0
 
@@ -92,7 +92,7 @@ class TcpSocket():
             self.state = "failing"
             self.thread = threading.Thread(target=self.reconnect)
             self.thread.start()
-            self.owner.sendRunDatatoGUI(f"与邻居节点{self.ID}连接失败，正在尝试重连") 
+            self.owner.sendRunDatatoGUI(f"Connection to neighbor node {self.ID} failed, trying to reconnect.") 
         self.fail_count += 1
         if self.fail_count >= self.fail_limit and datetime.datetime.now()-self.first_fail_time >= datetime.timedelta(seconds=self.fail_limit*self.time_interval):
             self.state = "failed"

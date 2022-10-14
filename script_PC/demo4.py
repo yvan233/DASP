@@ -15,15 +15,15 @@ moniter.run()
 
 node = Node(0)
 nodelist.append(node)
-print("启动系统")
+print("start system")
 
 time.sleep(15)
-print("启动room_2")
+print("start room_2")
 node = Node(1)
 nodelist.append(node)
 
 time.sleep(15)
-print("启动room_3")
+print("start room_3")
 node = Node(3)
 nodelist.append(node)
 

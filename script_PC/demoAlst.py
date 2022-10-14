@@ -21,7 +21,7 @@ for i in range(nodeNum):
 
 time.sleep(2)
 DappName = "timeloop"
-print("开始任务："+DappName)
+print("start task: "+DappName)
 controlMixin.startTask(DappName,startNode)
 
 

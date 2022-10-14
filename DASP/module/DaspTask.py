@@ -110,7 +110,7 @@ class Task(DaspCommon):
                 question = importlib.reload(question)
                 self.taskfunc = question.taskFunction
             except Exception as e:
-                self.sendDatatoGUI("导入出错")
+                self.sendDatatoGUI("DAPP import error!")
                 print(traceback.format_exc())
                 self.sendDatatoGUI(traceback.format_exc())
 
@@ -207,25 +207,24 @@ class Task(DaspCommon):
                         tablename = "{}_{}".format(self.DappName, self.nodeID)
                         taskfunc = snoop(config = self.databaseInfo, db = self.databaseName, tablename = tablename, \
                             observelist = self.observedVariable)(self.taskfunc)
-                        self.sendDatatoGUI("启动调试模式，开始执行")
+                        self.sendDatatoGUI("start task in debug mode")
                     else:
                         taskfunc = self.taskfunc
-                        self.sendDatatoGUI("开始执行")
+                        self.sendDatatoGUI("start task")
                     print("DAPP:{} start".format(self.DappName))
                     value = taskfunc(self, DaspCommon.nodeID, self.taskNbrDirection, self.taskDatalist)
                     self.resultInfo["value"] = value
-                    self.sendDatatoGUI("执行完毕")
+                    self.sendDatatoGUI("complete task")
                     # time.sleep(1)  # 防止该节点任务结束，其他节点的同步函数出错
                     print ("Calculation complete")
                     self.taskBeginFlag = 0
                     self.taskEndFlag = 1
                     self.collecResult()
                 except SystemExit as e:
-                    self.sendDatatoGUI("停止执行")
+                    self.sendDatatoGUI("stop task")
                     print("DAPP:{} stop".format(self.DappName))
                 except Exception as e:
-                    # self.resultInfo["value"] = "执行出错"
-                    self.sendDatatoGUI("执行出错")
+                    self.sendDatatoGUI("task error!")
                     print(traceback.format_exc())
                     self.sendDatatoGUI(traceback.format_exc())
                 finally:
@@ -237,7 +236,7 @@ class Task(DaspCommon):
         暂停运行任务服务器
         """
         self.runFlag.clear()     # 设置为False, 阻塞
-        self.sendtoGUIbase("开始暂停", "RunData", self.DappName) # 防止阻塞，不用sendDatatoGUI
+        self.sendtoGUIbase("pause", "RunData", self.DappName) # 防止阻塞，不用sendDatatoGUI
         print("DAPP:{} pause".format(self.DappName))
 
     def resume(self):
@@ -245,7 +244,7 @@ class Task(DaspCommon):
         恢复运行任务服务器
         """
         self.runFlag.set()    # 设置为True, 停止阻塞
-        self.sendtoGUIbase("开始恢复", "RunData", self.DappName) # 防止阻塞，不用sendDatatoGUI
+        self.sendtoGUIbase("resume", "RunData", self.DappName) # 防止阻塞，不用sendDatatoGUI
         print("DAPP:{} resume".format(self.DappName))
 
     def shutdown(self):
@@ -258,7 +257,7 @@ class Task(DaspCommon):
             self.stop_thread(self.taskThreads)
         # 此时任务线程已退出
         except ValueError:
-            self.sendDatatoGUI("停止执行")
+            self.sendDatatoGUI("stop")
             print("DAPP:{} has stopped".format(self.DappName))
         self.reset()
 
@@ -390,7 +389,6 @@ class Task(DaspCommon):
             self.nbrData2.append([])
             self.nbrAsynchData.append(queue.Queue())
             self.nbrAlstData.append(queue.Queue())
-            self.sendDatatoGUI(f"已添加，添加后的邻居id{self.taskNbrID}")
 
     def startCommPattern(self):
         """
@@ -486,13 +484,12 @@ class Task(DaspCommon):
                 step = 2
                 # generate complete
                 setTree(parent,child)
-                self.sendDatatoGUI("parentID:{},childID:{}".format(self.parentID,self.childID))
+                # self.sendDatatoGUI("parentID:{},childID:{}".format(self.parentID,self.childID))
                 self.starttask()
             if step == 2:           
                 if not self.deleteDirection.empty():
                     while not self.deleteDirection.empty():
                         direction = self.deleteDirection.get_nowait()
-                        self.sendDatatoGUI("delete nbr connect:{}".format(direction))
                         if self.parentDirection == direction:
                             self.parentID = DaspCommon.nodeID
                             self.parentDirection = -1
@@ -502,7 +499,6 @@ class Task(DaspCommon):
                             step = 1
                             for ele in nbrDirection:
                                 self.sendAlstData(ele,["search",min_uid])
-                                self.sendDatatoGUI("     send to {}:[{},{}]".format(nbrID[nbrDirection.index(ele)],"search",min_uid))
                             j,(data,token) = self.getAlstData()
                         elif direction in self.childDirection:
                             index = self.childDirection.index(direction) 
@@ -512,13 +508,11 @@ class Task(DaspCommon):
                             del self.childData[index]
                         else:
                             del edges[direction]
-                    self.sendDatatoGUI("parentID:{},childID:{}".format(self.parentID,self.childID))
                 else:
                     for i,que in enumerate(self.nbrAlstData):
                         if not que.empty():
                             qdata = que.get_nowait()
                             j,(data,token) = nbrDirection[i],qdata
-                            self.sendDatatoGUI("recv from {}:[{},{}]".format(nbrID[i],data,token))
                             if j == self.parentDirection:
                                 self.parentID = DaspCommon.nodeID
                                 self.parentDirection = -1
@@ -539,8 +533,7 @@ class Task(DaspCommon):
                                 # Only the leader node can directly maintain the spanning tree
                                 if self.leader == nodeID:                                    
                                     if token > self.leader:
-                                        self.sendAlstData(j,["search",self.leader]) 
-                                        self.sendDatatoGUI("     send to {}:[{},{}]".format(nbrID[i],"search",self.leader))
+                                        self.sendAlstData(j,["search",self.leader])
                                     elif token < self.leader:
                                         step = 1
                                     else:
@@ -563,14 +556,13 @@ class Task(DaspCommon):
                                     if token > min_uid:
                                         for ele in nbrDirection:
                                             self.sendAlstData(ele,["search",min_uid])
-                                self.sendDatatoGUI("childID:{}".format(self.childID))
                             break
 
                 time.sleep(0.01)
 
     def starttask(self):
         if self.parentDirection == -1:
-            self.sendDatatoGUI("The communication spanning tree is established.")
+            self.sendDatatoGUI("(Root node) The spanning tree has been built.")
             self.resultThread = threading.Thread(target=self.aggregateResult, args=())
             self.resultThread.start()
         self.taskBeginFlag = 1
@@ -583,7 +575,7 @@ class Task(DaspCommon):
         while 1:
             time.sleep(0.1)
             if self.dataEndFlag == 1:
-                self.sendDatatoGUI("任务数据收集完毕")
+                self.sendDatatoGUI("The task result aggregation completed.")
                 info = []
                 content = ""
                 Que = self.resultInfoQue
@@ -783,7 +775,6 @@ class Task(DaspCommon):
             for i,que in enumerate(self.nbrAlstData):
                 if not que.empty():
                     data = que.get_nowait()
-                    self.sendDatatoGUI("recv from {}:{}".format(self.taskNbrID[i],data))
                     return (self.taskNbrDirection[i],data)
             time.sleep(0.01)
 
@@ -841,25 +832,3 @@ class Task(DaspCommon):
                 time.sleep(0.01)
             for i in range(len(self.nbrSyncStatus2)):
                 self.nbrSyncStatus2[i] = 0
-
-
-if __name__ == '__main__':
-
-    DaspCommon.GuiInfo = ["172.23.96.1", 50000]
-    DaspCommon.nodeID = "room_1"
-
-    task = Task("debugDAPP")
-    task.load()
-
-    task2 = Task("debugDAPP")
-    task2.load()
-
-    task.taskBeginFlag = 1
-    task2.taskBeginFlag = 1
-
-    # TaskDict = {}
-    # task = Task(nodeID, 8)
-    # TaskDict[0] = task
-    # task2 = Task(nodeID, 1)
-    # TaskDict.update({1:task2})
-    # print (task.GuiInfo,TaskDict[1].GuiInfo)

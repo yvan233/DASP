@@ -22,17 +22,17 @@ class Moniter:
                 data, addr = s.recvfrom(100000000)
                 jdata = json.loads(data)
             except Exception:
-                print ("接收数据出错")
+                print ("Moniter error!")
             else:
                 if jdata["key"] == "RunData":
-                    print(f"{jdata['time']} [{jdata['id']}]{jdata['DappName']}: {jdata['info']}")
+                    print(f"{jdata['time']} {jdata['id']:>10} {jdata['DappName']:>12}: {jdata['info']}")
                 elif jdata["key"] == "EndData":
-                    print(f"{jdata['time']} [{jdata['id']}]{jdata['DappName']}运行结束，运行结果:\n{jdata['info']}")
+                    print(f"{jdata['time']} {jdata['id']:>10} {jdata['DappName']:>12}: Task finished. The result:\n{jdata['info']}")
                 elif jdata["key"] == "RunFlag":
                     # print(str(jdata["tasknum"]) +str(jdata["info"]))
                     pass
                 else:
-                    print ("数据有误")
+                    print ("Data error!")
 
     def wait(self):
         while True:

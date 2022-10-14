@@ -22,19 +22,19 @@ for i in range(nodeNum):
 time.sleep(2)
 
 DappName = "testpause"
-print("开始任务")
+print("start task")
 controlMixin.startTask(DappName,startNode)
 
 time.sleep(5)
-print("发送pause信号")
+print("send pause signal")
 controlMixin.pauseTask(DappName,startNode)
 
 time.sleep(5)
-print("发送resume信号")
+print("send resume signal")
 controlMixin.resumeTask(DappName,startNode)
 
 time.sleep(5)
-print("发送终止信号")
+print("send stop signal")
 controlMixin.stopTask(DappName,startNode)
 
 moniter.wait()

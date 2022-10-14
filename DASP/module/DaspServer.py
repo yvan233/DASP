@@ -152,7 +152,7 @@ class BaseServer(DaspCommon):
         self.deleteNbrID(id)
         for key in BaseServer.TaskDict:
             BaseServer.TaskDict[key].deleteTaskNbrID(id)       
-        self.sendRunDatatoGUI(f"与邻居节点{id}连接失败，已删除和{id}的连接") 
+        self.sendRunDatatoGUI(f"Connection to neighbor node {id} has been deleted.") 
 
     def addTaskNbrID(self, id, direction):
         """
@@ -224,7 +224,7 @@ class TaskServer(BaseServer):
                 info = "暂未提供POST以外的接口"
                 self.sendall_length(conn, info, methods = 9)
         except Exception as e:
-            self.sendRunDatatoGUI("任务服务器执行出错")
+            self.sendRunDatatoGUI("Task server error!")
             print(traceback.format_exc())
             self.sendRunDatatoGUI(traceback.format_exc())
 
@@ -233,7 +233,7 @@ class TaskServer(BaseServer):
         启动DAPP，加载任务、建立通信树、启动任务、启动数据转发线程
         """
         name = jdata["DappName"]
-        self.sendRunDatatoGUI("接收任务请求",name)
+        self.sendRunDatatoGUI("Receive new task requests.",name)
         task = Task(name, self)
         BaseServer.TaskDict[name] = task
         task.load()
@@ -271,7 +271,7 @@ class TaskServer(BaseServer):
         系统任务，不断ping邻居节点，维护拓扑
         """
         i = 0
-        self.sendRunDatatoGUI("{}节点启动".format(DaspCommon.nodeID))
+        self.sendRunDatatoGUI("{} system start.".format(DaspCommon.nodeID))
         while(True):
             i = i + 1
             for ele in reversed(DaspCommon.RouteTable):
@@ -284,7 +284,7 @@ class TaskServer(BaseServer):
                 self.startthreads = threading.Thread(target=self.autostarttask, args=())
                 self.startthreads.start()
 
-            self.sendRunDatatoGUI("系统第{}次自检：当前邻居节点：{}".format(i,str(DaspCommon.nbrID)))
+            self.sendRunDatatoGUI("The current neighbors are {}".format(str(DaspCommon.nbrID)))
             time.sleep(SYSTEMSETTIME)
      
     def autostarttask(self):
@@ -310,7 +310,6 @@ class TaskServer(BaseServer):
                 BaseServer.TaskDict[name].reset()
                 ## 如果当前节点在任务中
                 if DaspCommon.nodeID in BaseServer.TaskDict[name].taskID:
-                    # self.sendRunDatatoGUI("寻找leader节点",name)
                     BaseServer.TaskDict[name].startCommPattern()
                     while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)
                     if BaseServer.TaskDict[name].leader == DaspCommon.nodeID:
@@ -414,7 +413,7 @@ class CommServer(BaseServer):
                 self.sendall_length(conn, info, methods = 9)
                 
         except Exception as e:
-            self.sendRunDatatoGUI("通信服务器执行出错")
+            self.sendRunDatatoGUI("Communication server error!")
             print(traceback.format_exc())
             self.sendRunDatatoGUI(traceback.format_exc())
 
@@ -429,9 +428,9 @@ class CommServer(BaseServer):
                 DaspCommon.RouteTable.append([self.IP,self.Port[direction],jdata["host"],jdata["port"],ID])
                 DaspCommon.nbrID.append(ID)
                 DaspCommon.nbrDirection.append(direction)
-                self.sendRunDatatoGUI("与邻居节点{0}重连成功，已添加和{0}的连接".format(ID))
+                self.sendRunDatatoGUI(f"Reconnected successfully with neighbor node {ID}, connection with {ID} has been added.")
             else:
-                info = "节点{}方向{}已被占用，请选择其他方向！".format(DaspCommon.nodeID,direction)
+                info = f"The direction {DaspCommon.nodeID} of node {direction} is occupied, please choose another direction!"
                 self.sendRunDatatoGUI(info)
             self.addTaskNbrID(ID, direction)
 
