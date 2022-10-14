@@ -1,4 +1,4 @@
-# 并行示例
+# 模拟节点故障，并在节点重启后重连进系统
 import time 
 import sys
 sys.path.insert(1,".") # 把上一级目录加入搜索路径
@@ -19,13 +19,21 @@ for i in range(nodeNum):
     node = Node(i)
     nodelist.append(node)
 
-DappName = "BFStree"
+DappName = "timeloop"
 print("start task: "+DappName)
 controlMixin.startTask(DappName,startNode)
 
-# 并行示例
-DappName = "ALST"
-print("start task: "+DappName)
-controlMixin.startTask(DappName,startNode)
+node_num = 8
+# Heatpump断开并被删除连接后重连
+time.sleep(10)
+nodelist[node_num].kill()
+time.sleep(240)
+
+# 重新启动room_2节点进程
+node = Node(node_num)
+nodelist[node_num] = node
+time.sleep(2)
+controlMixin.startTask(DappName,"heatpump")
+
 
 moniter.wait()

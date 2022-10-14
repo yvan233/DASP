@@ -1,4 +1,3 @@
-
 import subprocess
 import threading
 import time
@@ -19,7 +18,7 @@ class Node:
         
     def __init__(self, num, mode = False, printdata = []):
         """
-        num: 节点ID编号 从1开始
+        num: 节点ID编号 从0开始
         mode: 是否直接打印输出数据
         printdata: 节点输出数据
         """
@@ -30,6 +29,7 @@ class Node:
         self.printdata = printdata
         print("[node{}]pid:{}".format(num,self.proc.pid))
         self.thread = threading.Thread(target=self.getprintdata,args=(mode,))
+        self.thread.setDaemon(True)
         self.thread.start()
         
     def getprintdata(self, mode = False):
@@ -40,7 +40,7 @@ class Node:
             rcode = self.proc.poll()
             # 若进程未结束
             if rcode is None:
-                line = self.proc.stdout.readline().strip().decode('GBK')  #cmd窗口默认GBK编码
+                line = self.proc.stdout.readline().strip().decode('GBK',"ignore")  #cmd窗口默认GBK编码
                 self.printdata.append(line)
                 if mode:
                     print('[node{}]: {}'.format(self.num,line))
@@ -54,7 +54,7 @@ class Node:
         """
         self.proc.kill()
         self.proc.wait()
-        print ("[node{}]: 进程已被杀死".format(self.num))
+        print ("[node{}]: The process has been killed.".format(self.num))
 
 if __name__ == '__main__':
     nodelist = []

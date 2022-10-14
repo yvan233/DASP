@@ -1,4 +1,4 @@
-# 并行示例
+# 启动系统并运行分布式算法
 import time 
 import sys
 sys.path.insert(1,".") # 把上一级目录加入搜索路径
@@ -19,11 +19,6 @@ for i in range(nodeNum):
     node = Node(i)
     nodelist.append(node)
 
-DappName = "BFStree"
-print("start task: "+DappName)
-controlMixin.startTask(DappName,startNode)
-
-# 并行示例
 DappName = "ALST"
 print("start task: "+DappName)
 controlMixin.startTask(DappName,startNode)

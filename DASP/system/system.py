@@ -6,32 +6,39 @@ sys.path.insert(1,".")  # 把上一级目录加入搜索路径
 from DASP.module import DaspCommon, TaskServer, CommServer
 
 class Server(object):
-    def __init__(self, ID, GUIinfo, adjID, adjDirection, adjDirectionOtherSide, IPlist,IP,PORT,datalist):
+    def __init__(self, ID, GuiInfo, nbrID, nbrDirection, nbrDirectionOtherSide, RouteTable,IP,Port,datalist):
         DaspCommon.nodeID = ID
-        DaspCommon.GUIinfo = GUIinfo
+        DaspCommon.GuiInfo = GuiInfo
         DaspCommon.IP = socket.gethostbyname(IP)
-        DaspCommon.PORT = PORT
-        DaspCommon.adjID = adjID
-        DaspCommon.adjDirection = adjDirection
-        DaspCommon.adjDirectionOtherSide = adjDirectionOtherSide
-        DaspCommon.IPlist = IPlist
+        DaspCommon.Port = Port
+        DaspCommon.nbrID = nbrID
+        DaspCommon.nbrDirection = nbrDirection
+        DaspCommon.nbrDirectionOtherSide = nbrDirectionOtherSide
+        DaspCommon.RouteTable = RouteTable
 
     def run(self):
         #创建接口服务器
-        self.CommServerThread = []
-        for i in range(6):
-            commserver = CommServer(DaspCommon.IP,DaspCommon.PORT[i])
+        self.commServerThread = []
+        for _,port in enumerate(DaspCommon.Port[1:]):
+            commserver = CommServer(DaspCommon.IP, port)
             t = threading.Thread(target=commserver.run,args=())
-            self.CommServerThread.append(t)
+            t.setDaemon(True)
+            self.commServerThread.append(t)
 
-        taskserver = TaskServer(DaspCommon.IP,DaspCommon.PORT[6])
-        self.TaskServerThread = threading.Thread(target=taskserver.run,args=())
-        self.SystemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
+        taskserver = TaskServer(DaspCommon.IP,DaspCommon.Port[0])
+        self.taskServerThread = threading.Thread(target=taskserver.run,args=())
+        self.taskServerThread.setDaemon(True)
+        self.systemTaskThread = threading.Thread(target=taskserver.systemtask,args=())
+        self.systemTaskThread.setDaemon(True)
 
-        for i in range(6):
-            self.CommServerThread[i].start()
-        self.TaskServerThread.start()
-        self.SystemTaskThread.start()
+        for _,thread in enumerate(self.commServerThread):
+            thread.start()
+        self.taskServerThread.start()
+        self.systemTaskThread.start()
+
+        while True:
+            time.sleep(1)
+
 
 
 
