@@ -137,8 +137,9 @@ class DaspCommon():
         nbrSocket: 邻居通信套接字
         RouteTable: 邻居IP及端口列表
         GuiInfo: UI界面IP及端口
-        self.headformat: 自定义消息头格式，methods+length，2个无符号整形变量
-        self.headerSize: 自定义消息头长度，8个字节
+        headformat: 自定义消息头格式，methods+length，2个无符号整形变量
+        headerSize: 自定义消息头长度，8个字节
+        systemFlag: 系统标志，用于判断系统是否初始化完成
         (包括读取拓扑文件的信息，以及所有类共有的信息)
     '''
     # 类变量，直接通过DaspCommon.维护
@@ -153,6 +154,7 @@ class DaspCommon():
     GuiInfo = ["localhost",50000]    
     headformat = "!2I"
     headerSize = 8
+    systemFlag = False
     def __init__(self):
         pass
 

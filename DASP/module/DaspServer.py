@@ -232,6 +232,7 @@ class TaskServer(BaseServer):
         """
         name = jdata["DappName"]
         self.sendRunDatatoGUI("Receive new task requests.",name)
+        while not DaspCommon.systemFlag: time.sleep(0.01)
         task = Task(name, self)
         BaseServer.TaskDict[name] = task
         task.load()
@@ -268,20 +269,20 @@ class TaskServer(BaseServer):
         """
         系统任务，不断ping邻居节点，维护拓扑
         """
-        i = 0
+        DaspCommon.systemFlag = False
         self.sendRunDatatoGUI("{} system start.".format(DaspCommon.nodeID))
         while(True):
-            i = i + 1
             for ele in reversed(DaspCommon.RouteTable):
                 if ele:
                     index = DaspCommon.nbrID.index(ele[4])
                     self.pingID(ele[0], ele[1], ele[4], DaspCommon.nbrDirectionOtherSide[index])
 
-            if i == 1:  
+            if DaspCommon.systemFlag == False:  
                 # 第一轮开启系统自启动任务进程
                 self.startthreads = threading.Thread(target=self.autostarttask, args=())
                 self.startthreads.start()
-
+            
+            DaspCommon.systemFlag = True
             self.sendRunDatatoGUI("The current neighbors are {}".format(str(DaspCommon.nbrID)))
             time.sleep(Const.SYSTEM_TASK_TIME)
      
@@ -455,6 +456,7 @@ class CommServer(BaseServer):
         回应任务发送数据信号，并存储数据
         """
         name = jdata["DappName"]
+        while not DaspCommon.systemFlag: time.sleep(0.01)
         if name not in BaseServer.TaskDict:
             task = Task(name, self)
             BaseServer.TaskDict[name] = task
