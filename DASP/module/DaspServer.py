@@ -297,48 +297,18 @@ class TaskServer(BaseServer):
                 dapp_autostart.append(i)
         del dapp_autostart[0]        
         # 依据time排序
-        dapp_autostart = sorted(dapp_autostart,key=(lambda x:x[2]))
+        dapp_autostart = sorted(dapp_autostart,key=(lambda x:x[1]))
         beforetime = 0
         for ele in dapp_autostart:
-            time.sleep(float(ele[2]) - beforetime)
-            if ele[1] == "default":  # 默认模式，以当前网络字典序最小的节点启动算法
-                name = ele[0]
-                BaseServer.TaskDict[name] = Task(name, self)
-                BaseServer.TaskDict[name].load()
-                BaseServer.TaskDict[name].reset()
-                ## 如果当前节点在任务中
-                if DaspCommon.nodeID in BaseServer.TaskDict[name].taskID:
-                    BaseServer.TaskDict[name].startCommPattern()
-                    while(BaseServer.TaskDict[name].leader == None): time.sleep(0.1)
-                    if BaseServer.TaskDict[name].leader == DaspCommon.nodeID:
-                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        s.connect((self.host, self.port))
-                        data = {
-                            "key": "newtask",
-                            "DappName": ele[0],
-                            "DebugMode": False, 
-                            "DatabaseInfo": [],
-                            "ObservedVariable": []
-                        }
-                        self.sendall_length(s, data)
-                        s.close()
-
-            elif ele[1] == DaspCommon.nodeID:  #本节点为根节点
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect((self.host, self.port))
-                data = {
-                    "key": "newtask",
-                    "DappName": ele[0],
-                    "DebugMode": False, 
-                    "DatabaseInfo": [],
-                    "ObservedVariable": []
-                }
-                self.sendall_length(s, data)
-                s.close()
-            else:  #启动节点为其他节点
-                pass
-
-            beforetime = float(ele[2])
+            name = ele[0]
+            time.sleep(float(ele[1]) - beforetime)
+            # self.sendRunDatatoGUI(f"Prepare to start autostart task: {name}.")
+            if name not in BaseServer.TaskDict:
+                task = Task(name, self)
+                BaseServer.TaskDict[name] = task
+                task.load()
+                task.startCommPattern()
+            beforetime = float(ele[1])
 
 class CommServer(BaseServer):
     """

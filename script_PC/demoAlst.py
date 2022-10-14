@@ -24,12 +24,11 @@ DappName = "timeloop"
 print("start task: "+DappName)
 controlMixin.startTask(DappName,startNode)
 
-
 node_num = 8
 # Heatpump断开并被删除连接后重连
-time.sleep(120)
+time.sleep(10)
 nodelist[node_num].kill()
-time.sleep(260)
+time.sleep(240)
 
 # 重新启动room_2节点进程
 node = Node(node_num)
