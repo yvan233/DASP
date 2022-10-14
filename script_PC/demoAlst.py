@@ -25,7 +25,7 @@ print("开始任务："+DappName)
 controlMixin.startTask(DappName,startNode)
 
 
-node_num = 5
+node_num = 8
 
 # room_2断开并被删除连接后重连
 time.sleep(120/4)
@@ -36,7 +36,7 @@ time.sleep(260/4)
 node = Node(node_num)
 nodelist[node_num] = node
 time.sleep(2)
-controlMixin.startTask(DappName,"room_6")
+controlMixin.startTask(DappName,"heatpump")
 
 
 moniter.wait()

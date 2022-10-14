@@ -376,6 +376,12 @@ class Task(DaspCommon):
         添加本节点和指定id邻居节点的连接
         """
         if id in self.taskID:
+            
+            for ele in DaspCommon.RouteTable:
+                if ele:
+                    if ele[4] == id:
+                        self.taskRouteTable.append(ele)
+                        break
             self.taskNbrID.append(id)
             self.taskNbrDirection.append(direction)
             self.nbrSyncStatus.append(0)
@@ -526,7 +532,7 @@ class Task(DaspCommon):
                             else:
                                 if j in self.childDirection:
                                     index = self.childDirection.index(j) 
-                                    del self.childID[index]     
+                                    del self.childID[index]
                                     del self.childDirection[index]
                                     del self.childData[index]
                                 edges[j] = False
@@ -554,7 +560,7 @@ class Task(DaspCommon):
                                     min_uid = nodeID
                                     flag = True
                                     step = 1
-                                    if token > min_uid :
+                                    if token > min_uid:
                                         for ele in nbrDirection:
                                             self.sendAlstData(ele,["search",min_uid])
                                 self.sendDatatoGUI("childID:{}".format(self.childID))
