@@ -338,6 +338,7 @@ class Task(DaspCommon):
         """
         通过TCP的形式将信息发送至指定ID的节点
         """
+        self.runFlag.wait()
         self.owner.send(id,data)
 
     def sendData(self, data):
@@ -782,7 +783,6 @@ class Task(DaspCommon):
         """
         同步通信函数，将datalist中的数据分别发到direclist的邻居方向
         """
-        self.runFlag.wait()  #系统运行标志
         if (self.syncTurnFlag2 == 0):
             self.syncTurnFlag2 = 1 - self.syncTurnFlag2
             for i in reversed(range(len(direclist))):
@@ -805,7 +805,6 @@ class Task(DaspCommon):
         """
         同步函数，所有节点同步一次
         """
-        self.runFlag.wait()  #系统运行标志
         if self.syncTurnFlag == 0:   
             self.syncTurnFlag = 1 - self.syncTurnFlag
             data = {
