@@ -56,3 +56,4 @@ if __name__ == '__main__':
     GuiInfo = [localIP, 50000]
     server = system.Server(selfID, GuiInfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfRouteTable, selfIP, selfPort, selfDatalist)
     server.run()
+    server.runSystemTask()

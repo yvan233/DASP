@@ -273,7 +273,7 @@ class TaskServer(BaseServer):
         DaspCommon.systemFlag = False
         self.sendRunDatatoGUI("{} system start.".format(DaspCommon.nodeID))
         if platform.system() == "Linux":
-            time.sleep(10)  # wait for other nodes to start
+            time.sleep(5)  # wait for other nodes to start
         while(True):
             for ele in reversed(DaspCommon.RouteTable):
                 if ele:
@@ -402,7 +402,7 @@ class CommServer(BaseServer):
                 self.pingID(self.IP, self.Port[direction], ID, DaspCommon.nbrDirectionOtherSide[ID])
                 self.sendRunDatatoGUI(f"Reconnected successfully with neighbor node {ID}, connection with {ID} has been added.")
             else:
-                info = f"The direction {DaspCommon.nodeID} of node {direction} is occupied, please choose another direction!"
+                info = f"The direction {direction} of node {DaspCommon.nodeID} is occupied, please choose another direction!"
                 self.sendRunDatatoGUI(info)
             self.addTaskNbrID(ID, direction)
 
