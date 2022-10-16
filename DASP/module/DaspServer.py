@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import platform
 import socket
 import struct
 import threading
@@ -271,6 +272,8 @@ class TaskServer(BaseServer):
         """
         DaspCommon.systemFlag = False
         self.sendRunDatatoGUI("{} system start.".format(DaspCommon.nodeID))
+        if platform.system() == "Linux":
+            time.sleep(10)  # wait for other nodes to start
         while(True):
             for ele in reversed(DaspCommon.RouteTable):
                 if ele:
@@ -391,8 +394,8 @@ class CommServer(BaseServer):
         回应ping信号，如果发送的节点之前不在邻居节点中 且 申请方向未被占用，则加入网络
         """
         ID = jdata["id"]
-        direction = jdata["requestdirection"]
         if ID not in DaspCommon.nbrID:
+            direction = jdata["requestdirection"]
             if direction not in DaspCommon.nbrDirection:
                 DaspCommon.RouteTable.append([self.IP,self.Port[direction],jdata["host"],jdata["port"],ID])
                 DaspCommon.nbrID.append(ID)
