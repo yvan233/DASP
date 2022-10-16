@@ -277,8 +277,7 @@ class TaskServer(BaseServer):
         while(True):
             for ele in reversed(DaspCommon.RouteTable):
                 if ele:
-                    index = DaspCommon.nbrID.index(ele[4])
-                    self.pingID(ele[0], ele[1], ele[4], DaspCommon.nbrDirectionOtherSide[index])
+                    self.pingID(ele[0], ele[1], ele[4], DaspCommon.nbrDirectionOtherSide[ele[4]])
 
             if DaspCommon.systemFlag == False:  
                 # 第一轮开启系统自启动任务进程
@@ -400,6 +399,7 @@ class CommServer(BaseServer):
                 DaspCommon.RouteTable.append([self.IP,self.Port[direction],jdata["host"],jdata["port"],ID])
                 DaspCommon.nbrID.append(ID)
                 DaspCommon.nbrDirection.append(direction)
+                self.pingID(self.IP, self.Port[direction], ID, DaspCommon.nbrDirectionOtherSide[ID])
                 self.sendRunDatatoGUI(f"Reconnected successfully with neighbor node {ID}, connection with {ID} has been added.")
             else:
                 info = f"The direction {DaspCommon.nodeID} of node {direction} is occupied, please choose another direction!"

@@ -32,7 +32,7 @@ if __name__ == '__main__':
     selfPort = Port[order]
     selfDatalist = datalist[order]
     selfRouteTable = []
-    selfAdjDirectionOtherSide = []
+    selfAdjDirectionOtherSide = {}
     n = len(IP)
     for i in range(len(selfAdjID)):
         selfRouteTable.append([])
@@ -45,7 +45,7 @@ if __name__ == '__main__':
                 for k in range(len(nbrID[j])):
                     if nbrID[j][k] == selfID:
                         selfRouteTable[i].append(Port[j][nbrDirection[j][k]])
-                        selfAdjDirectionOtherSide.append(nbrDirection[j][k])
+                        selfAdjDirectionOtherSide[ID[j]] = nbrDirection[j][k]
                         break
                 selfRouteTable[i].append(ID[j])
                 break
