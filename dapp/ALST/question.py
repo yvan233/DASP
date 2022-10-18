@@ -13,7 +13,7 @@ def taskFunction(self:Task,id,nbrDirection:list,datalist):
     min_uid = id
     flag = True
     step = 1
-    leader_state = "non-leader"  
+    leader_state = "non-leader"
     for ele in nbrDirection:
         self.sendAsynchData(ele,["search",id])
     j,(data,token) = self.getAsynchData()

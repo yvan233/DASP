@@ -80,7 +80,7 @@ if __name__ == '__main__':
         print("RouteTable: "+ json.dumps(selfRouteTableprint, indent=2))
         server = system.Server(selfID, GuiInfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfRouteTable, selfIP, selfPORT, selfDatalist)
         server.run()
-        time.sleep(15)  # 等待15秒，确保所有节点都已经启动
+        time.sleep(15)  # wait for other nodes to start
         server.runSystemTask()
     else:
         print("该节点IP未被录入！")
