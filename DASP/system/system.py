@@ -34,13 +34,11 @@ class Server(object):
         for _,thread in enumerate(self.commServerThread):
             thread.start()
         self.taskServerThread.start()
-        self.systemTaskThread.start()
 
+    def runSystemTask(self):
+        self.systemTaskThread.start()
         while True:
             time.sleep(1)
-
-
-
 
         
 

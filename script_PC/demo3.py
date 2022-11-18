@@ -19,6 +19,7 @@ for i in range(nodeNum):
     node = Node(i)
     nodelist.append(node)
 
+time.sleep(2)
 DappName = "testpause"
 print("start task")
 controlMixin.startTask(DappName,startNode)

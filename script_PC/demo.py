@@ -19,6 +19,7 @@ for i in range(nodeNum):
     node = Node(i)
     nodelist.append(node)
 
+time.sleep(2)
 DappName = "ALST"
 print("start task: "+DappName)
 controlMixin.startTask(DappName,startNode)

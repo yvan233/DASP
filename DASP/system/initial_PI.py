@@ -58,7 +58,7 @@ if __name__ == '__main__':
         selfPORT = PORT[order]
         selfDatalist = datalist[order]
         selfRouteTable = []
-        selfAdjDirectionOtherSide = []
+        selfAdjDirectionOtherSide = {}
         n = len(IP)
         for i in range(len(selfAdjID)):
             selfRouteTable.append([])
@@ -71,7 +71,7 @@ if __name__ == '__main__':
                     for k in range(len(nbrID[j])):
                         if nbrID[j][k] == selfID:
                             selfRouteTable[i].append(PORT[j][nbrDirection[j][k]-1])
-                            selfAdjDirectionOtherSide.append(nbrDirection[j][k])
+                            selfAdjDirectionOtherSide[ID[j]] = nbrDirection[j][k]
                             break
                     selfRouteTable[i].append(ID[j])
                     break
@@ -80,6 +80,8 @@ if __name__ == '__main__':
         print("RouteTable: "+ json.dumps(selfRouteTableprint, indent=2))
         server = system.Server(selfID, GuiInfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfRouteTable, selfIP, selfPORT, selfDatalist)
         server.run()
+        time.sleep(15)  # wait for other nodes to start
+        server.runSystemTask()
     else:
         print("该节点IP未被录入！")
 
