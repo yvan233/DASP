@@ -1,6 +1,3 @@
-import copy
-import time 
-
 def taskFunction(self,id,nbrDirection,datalist):
     # init 
     # 生成树节点标识

@@ -66,7 +66,7 @@ class ControlMixin():
 
     def startTaskList(self, DappNamelist, nodeID):
         '''
-        以nodeID为根节点运行指定名称的DAPP列表
+        以nodeID为发起节点运行指定名称的DAPP列表
         '''
         if DappNamelist:
             for ele in DappNamelist:

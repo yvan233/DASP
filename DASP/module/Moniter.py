@@ -25,7 +25,13 @@ class Moniter:
                 print ("Moniter error!")
             else:
                 if jdata["key"] == "RunData":
-                    print(f"{jdata['time']} {jdata['id']:>10} {jdata['DappName']:>12}: {jdata['info']}")
+                    if jdata['DappName'] == "FindTopology" and isinstance(jdata['info'],list):
+                        filename = "utils/tree.json"
+                        with open(filename, 'w') as f:
+                            json.dump(jdata['info'], f)
+                        # print(f"{jdata['time']} {jdata['id']:>10} {jdata['DappName']:>12}: {jdata['info']}")
+                    else:
+                        print(f"{jdata['time']} {jdata['id']:>10} {jdata['DappName']:>12}: {jdata['info']}")
                 elif jdata["key"] == "EndData":
                     print(f"{jdata['time']} {jdata['id']:>10} {jdata['DappName']:>12}: Task finished. The result:\n{jdata['info']}")
                 elif jdata["key"] == "RunFlag":

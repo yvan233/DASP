@@ -144,6 +144,13 @@ class BaseServer(DaspCommon):
                     if ele[4] in BaseServer.TaskDict[DappName].childID:
                         self.send(ele[4], data=jdata)
 
+    def forward2parentID(self, jdata, DappName):
+        """
+        将json消息转发给父节点
+        """
+        if BaseServer.TaskDict[DappName].parentID != DaspCommon.nodeID:
+            self.send(BaseServer.TaskDict[DappName].parentID, data=jdata)
+
     def deleteTaskNbrID(self, id):  
         """
         删除本节点的任务和指定id邻居节点的所有连接(任务字典中的变量)

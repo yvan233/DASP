@@ -30,11 +30,10 @@ time.sleep(10)
 nodelist[node_num].kill()
 time.sleep(240)
 
-# 重新启动room_2节点进程
+# 重新启动节点进程
 node = Node(node_num)
 nodelist[node_num] = node
 time.sleep(2)
 controlMixin.startTask(DappName,"heatpump")
-
 
 moniter.wait()
