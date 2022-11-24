@@ -26,26 +26,26 @@ if __name__ == '__main__':
 
     order = int(sys.argv[1])
     selfID = ID[order]
-    selfAdjID = nbrID[order]
-    selfAdjDirection = nbrDirection[order]
+    selfNbrID = nbrID[order]
+    selfNbrDirection = nbrDirection[order]
     selfIP = IP[order]
     selfPort = Port[order]
     selfDatalist = datalist[order]
     selfRouteTable = []
-    selfAdjDirectionOtherSide = {}
+    selfNbrDirectionOtherSide = {}
     n = len(IP)
-    for i in range(len(selfAdjID)):
+    for i in range(len(selfNbrID)):
         selfRouteTable.append([])
-        direction = selfAdjDirection[i]
+        direction = selfNbrDirection[i]
         selfRouteTable[i].append(selfIP)
         selfRouteTable[i].append(selfPort[direction])
         for j in range(n):
-            if ID[j] == selfAdjID[i]:
+            if ID[j] == selfNbrID[i]:
                 selfRouteTable[i].append(IP[j])
                 for k in range(len(nbrID[j])):
                     if nbrID[j][k] == selfID:
                         selfRouteTable[i].append(Port[j][nbrDirection[j][k]])
-                        selfAdjDirectionOtherSide[ID[j]] = nbrDirection[j][k]
+                        selfNbrDirectionOtherSide[ID[j]] = nbrDirection[j][k]
                         break
                 selfRouteTable[i].append(ID[j])
                 break
@@ -54,6 +54,6 @@ if __name__ == '__main__':
     print("RouteTable: "+ json.dumps(selfRouteTableprint, indent=2))
 
     GuiInfo = [localIP, 50000]
-    server = system.Server(selfID, GuiInfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfRouteTable, selfIP, selfPort, selfDatalist)
+    server = system.Server(selfID, GuiInfo, selfNbrID, selfNbrDirection, selfNbrDirectionOtherSide, selfRouteTable, selfIP, selfPort, selfDatalist)
     server.run()
     server.runSystemTask()

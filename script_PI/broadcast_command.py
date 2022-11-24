@@ -4,7 +4,7 @@ import paramiko
 import os
 import csv
     
-localpath = os.getcwd() + "/DASP/task_info/system/binding.csv"
+localpath = os.getcwd() + "/Dapp/Base/binding.csv"
 # 读取节点信息
 with open(localpath,'r')as f:
     data = csv.reader(f)
@@ -27,9 +27,8 @@ for ele in binding[1:]:
                 # 打开一个Channel并执行命令
                 # stdin, stdout, stderr = ssh.exec_command('ls') 
                 cmd = "sudo reboot"
-                # cmd =  "cp -r xingtian/. xt2"
-                # cmd = "sudo cp yanhu/DASP/myscript_pi.service /etc/systemd/system/myscript_pi.service"
-                # cmd = "sudo systemctl enable myscript_pi.service"
+                # cmd = "sudo cp honeycomb/DASP/system/dasp.service /etc/systemd/system/dasp.service"
+                # cmd = "sudo systemctl enable dasp.service"
                 stdin, stdout, stderr = ssh.exec_command(cmd,timeout=2)  # stdout 为正确输出，stderr为错误输出，同时是有1个变量有值
                 # 打印执行结果
                 print(stdout.read().decode('utf-8'))

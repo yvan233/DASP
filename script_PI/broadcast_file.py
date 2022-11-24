@@ -150,7 +150,7 @@ class SSH(object):
             print(traceback.format_exc())
 
 if __name__ == "__main__":
-    localpath = os.getcwd() + "/DASP/task_info/system/binding.csv"
+    localpath = os.getcwd() + "/Dapp/Base/binding.csv"
     # 读取节点信息
     with open(localpath,'r')as f:
         data = csv.reader(f)
@@ -176,10 +176,14 @@ if __name__ == "__main__":
                     # ssh.sftp_get_dir(remote_dir, local_dir)  
 
                     ## 同步文件夹
-                    remote_dir = '/home/pi/yanhu/DASP'
+                    remote_dir = '/home/pi/honeycomb/DASP'
                     local_dir = './DASP'
                     ssh.sftp_put_dir(local_dir, remote_dir)  
-                    
+
+                    remote_dir = '/home/pi/honeycomb/Dapp'
+                    local_dir = './Dapp'
+                    ssh.sftp_put_dir(local_dir, remote_dir)  
+
                     ssh.close()
                     print( ele[0] + '成功！')  
                 except Exception as e:

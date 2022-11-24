@@ -225,10 +225,10 @@ class TaskServer(BaseServer):
 
                 else:
                     info = "您输入的任务信息有误！"
-                    self.sendall_length(conn, info, methods = 9)
+                    self.sendRunDatatoGUI(info+jdata)
             else:
                 info = "暂未提供POST以外的接口"
-                self.sendall_length(conn, info, methods = 9)
+                self.sendRunDatatoGUI(info)
         except Exception as e:
             self.sendRunDatatoGUI("Task server error!")
             print(traceback.format_exc())
@@ -384,11 +384,11 @@ class CommServer(BaseServer):
 
                 else:
                     info = "请不要直接访问通信服务器"
-                    self.sendall_length(conn, info, methods = 9)
+                    self.sendRunDatatoGUI(info)
 
             else:
                 info = "非POST方法，请不要直接访问通信服务器"
-                self.sendall_length(conn, info, methods = 9)
+                self.sendRunDatatoGUI(info)
                 
         except Exception as e:
             self.sendRunDatatoGUI("Communication server error!")

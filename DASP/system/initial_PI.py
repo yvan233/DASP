@@ -4,12 +4,11 @@ import json
 import subprocess
 import time
 import os
-# 设置当前工作目录
-os.chdir('/home/pi/yanhu')
+os.chdir('/home/pi/honeycomb')
 import system
 if __name__ == '__main__':
     time.sleep(2)
-    path = "/home/pi/yanhu/DASP/Dapp/Base/binding.csv"
+    path = "/home/pi/honeycomb/Dapp/Base/binding.csv"
     with open(path,'r')as f:
         data = csv.reader(f)
         idiplist = []
@@ -34,7 +33,7 @@ if __name__ == '__main__':
         nbrID = []
         datalist = []
         nbrDirection = []
-        path = "/home/pi/yanhu/DASP/Dapp/Base/topology.json"
+        path = "/home/pi/honeycomb/Dapp/Base/topology.json"
         text = codecs.open(path, 'r', 'utf-8').read()
         js = json.loads(text)
         for ele in js:
@@ -52,35 +51,35 @@ if __name__ == '__main__':
                 datalist.append(ele["datalist"])
                 
         order = ID.index(selfID)
-        selfAdjID = nbrID[order]
-        selfAdjDirection = nbrDirection[order]
+        selfNbrID = nbrID[order]
+        selfNbrDirection = nbrDirection[order]
         selfIP = IP[order]
         selfPORT = PORT[order]
         selfDatalist = datalist[order]
         selfRouteTable = []
-        selfAdjDirectionOtherSide = {}
+        selfNbrDirectionOtherSide = {}
         n = len(IP)
-        for i in range(len(selfAdjID)):
+        for i in range(len(selfNbrID)):
             selfRouteTable.append([])
-            direction = selfAdjDirection[i] - 1
+            direction = selfNbrDirection[i]
             selfRouteTable[i].append(selfIP)
             selfRouteTable[i].append(selfPORT[direction])
             for j in range(n):
-                if ID[j] == selfAdjID[i]:
+                if ID[j] == selfNbrID[i]:
                     selfRouteTable[i].append(IP[j])
                     for k in range(len(nbrID[j])):
                         if nbrID[j][k] == selfID:
-                            selfRouteTable[i].append(PORT[j][nbrDirection[j][k]-1])
-                            selfAdjDirectionOtherSide[ID[j]] = nbrDirection[j][k]
+                            selfRouteTable[i].append(PORT[j][nbrDirection[j][k]])
+                            selfNbrDirectionOtherSide[ID[j]] = nbrDirection[j][k]
                             break
                     selfRouteTable[i].append(ID[j])
                     break
                 
         selfRouteTableprint = [str(ele) for ele in selfRouteTable]
         print("RouteTable: "+ json.dumps(selfRouteTableprint, indent=2))
-        server = system.Server(selfID, GuiInfo, selfAdjID, selfAdjDirection, selfAdjDirectionOtherSide, selfRouteTable, selfIP, selfPORT, selfDatalist)
+        server = system.Server(selfID, GuiInfo, selfNbrID, selfNbrDirection, selfNbrDirectionOtherSide, selfRouteTable, selfIP, selfPORT, selfDatalist)
         server.run()
-        time.sleep(15)  # wait for other nodes to start
+        time.sleep(5)  # wait for other nodes to start
         server.runSystemTask()
     else:
         print("该节点IP未被录入！")
