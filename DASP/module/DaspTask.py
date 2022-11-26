@@ -476,91 +476,94 @@ class Task(DaspCommon):
         min_uid = nodeID
         flag = True
         step = 1
-        for ele in nbrDirection:
-            self.sendAlstData(ele,["search",min_uid])
-        j,(data,token) = self.getAlstData()
-        while True:
-            if step == 1:
-                __,parent,child = alst(nbrDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token)
-                step = 2
-                # generate complete
-                setTree(parent,child)
-                # self.sendDatatoGUI("parentID:{},childID:{}".format(self.parentID,self.childID))
-                self.starttask()
-            if step == 2:           
-                if not self.deleteDirection.empty():
-                    while not self.deleteDirection.empty():
-                        direction = self.deleteDirection.get_nowait()
-                        if self.parentDirection == direction:
-                            self.parentID = DaspCommon.nodeID
-                            self.parentDirection = -1
-                            flag,parent,child,edges = reset()
-                            min_uid = nodeID
-                            flag = True
-                            step = 1
-                            for ele in nbrDirection:
-                                self.sendAlstData(ele,["search",min_uid])
-                            j,(data,token) = self.getAlstData()
-                        elif direction in self.childDirection:
-                            index = self.childDirection.index(direction) 
-                            del edges[direction]
-                            del self.childID[index]     
-                            del self.childDirection[index]
-                            del self.childData[index]
-                        else:
-                            del edges[direction]
-                else:
-                    for i,que in enumerate(self.nbrAlstData):
-                        if not que.empty():
-                            qdata = que.get_nowait()
-                            j,(data,token) = nbrDirection[i],qdata
-                            if j == self.parentDirection:
+        if nbrDirection:
+            for ele in nbrDirection:
+                self.sendAlstData(ele,["search",min_uid])
+            j,(data,token) = self.getAlstData()
+            while True:
+                if step == 1:
+                    __,parent,child = alst(nbrDirection,nodeID,flag,parent,child,edges,min_uid,j,data,token)
+                    step = 2
+                    # generate complete
+                    setTree(parent,child)
+                    # self.sendDatatoGUI("parentID:{},childID:{}".format(self.parentID,self.childID))
+                    self.starttask()
+                if step == 2:           
+                    if not self.deleteDirection.empty():
+                        while not self.deleteDirection.empty():
+                            direction = self.deleteDirection.get_nowait()
+                            if self.parentDirection == direction:
                                 self.parentID = DaspCommon.nodeID
                                 self.parentDirection = -1
                                 flag,parent,child,edges = reset()
                                 min_uid = nodeID
                                 flag = True
                                 step = 1
-                                if token > min_uid :
-                                    for ele in nbrDirection:
-                                        self.sendAlstData(ele,["search",min_uid])
+                                for ele in nbrDirection:
+                                    self.sendAlstData(ele,["search",min_uid])
+                                j,(data,token) = self.getAlstData()
+                            elif direction in self.childDirection:
+                                index = self.childDirection.index(direction) 
+                                del edges[direction]
+                                del self.childID[index]     
+                                del self.childDirection[index]
+                                del self.childData[index]
                             else:
-                                if j in self.childDirection:
-                                    index = self.childDirection.index(j) 
-                                    del self.childID[index]
-                                    del self.childDirection[index]
-                                    del self.childData[index]
-                                edges[j] = False
-                                # Only the leader node can directly maintain the spanning tree
-                                if self.leader == nodeID:                                    
-                                    if token > self.leader:
-                                        self.sendAlstData(j,["search",self.leader])
-                                    elif token < self.leader:
-                                        step = 1
-                                    else:
-                                        edges[j] = True
-                                        if data == "join":
-                                            if j not in self.childDirection:
-                                                self.childDirection.append(j)
-                                                self.childID.append(nbrID[nbrDirection.index(j)])
-                                                self.childData.append([])
-                                            self.sendAlstData(j,["end",self.leader]) 
-                                        elif data == "search":
-                                            self.sendAlstData(j,["end",self.leader]) 
-                                # The intermediate node enters the generation phase 
-                                # after receiving the alst message from its neighbor
-                                else:
+                                del edges[direction]
+                    else:
+                        for i,que in enumerate(self.nbrAlstData):
+                            if not que.empty():
+                                qdata = que.get_nowait()
+                                j,(data,token) = nbrDirection[i],qdata
+                                if j == self.parentDirection:
+                                    self.parentID = DaspCommon.nodeID
+                                    self.parentDirection = -1
                                     flag,parent,child,edges = reset()
                                     min_uid = nodeID
                                     flag = True
                                     step = 1
-                                    if token > min_uid:
+                                    if token > min_uid :
                                         for ele in nbrDirection:
                                             self.sendAlstData(ele,["search",min_uid])
-                            break
+                                else:
+                                    if j in self.childDirection:
+                                        index = self.childDirection.index(j) 
+                                        del self.childID[index]
+                                        del self.childDirection[index]
+                                        del self.childData[index]
+                                    edges[j] = False
+                                    # Only the leader node can directly maintain the spanning tree
+                                    if self.leader == nodeID:                                    
+                                        if token > self.leader:
+                                            self.sendAlstData(j,["search",self.leader])
+                                        elif token < self.leader:
+                                            step = 1
+                                        else:
+                                            edges[j] = True
+                                            if data == "join":
+                                                if j not in self.childDirection:
+                                                    self.childDirection.append(j)
+                                                    self.childID.append(nbrID[nbrDirection.index(j)])
+                                                    self.childData.append([])
+                                                self.sendAlstData(j,["end",self.leader]) 
+                                            elif data == "search":
+                                                self.sendAlstData(j,["end",self.leader]) 
+                                    # The intermediate node enters the generation phase 
+                                    # after receiving the alst message from its neighbor
+                                    else:
+                                        flag,parent,child,edges = reset()
+                                        min_uid = nodeID
+                                        flag = True
+                                        step = 1
+                                        if token > min_uid:
+                                            for ele in nbrDirection:
+                                                self.sendAlstData(ele,["search",min_uid])
+                                break
 
-                time.sleep(0.01)
-
+                    time.sleep(0.01)
+        else:
+            self.starttask()
+            
     def starttask(self):
         if self.parentDirection == -1:
             self.sendDatatoGUI("(Root node) The spanning tree has been built.")
